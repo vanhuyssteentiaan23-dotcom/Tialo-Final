@@ -32,22 +32,31 @@ export default function LoginPage() {
     if (!supabase) return setMessage('Supabase is not connected in Vercel yet.')
     setBusy(true)
 
-    if (mode === 'login') {
-      const result = await supabase.auth.signInWithPassword({ email, password })
+    try {
+      if (mode === 'login') {
+        const result = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+        if (result.error) throw result.error
+        await routeAfterLogin(supabase, result.data.user.id)
+        return
+      }
+
+      const redirectTo = `${window.location.origin}/onboarding`
+      const result = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { emailRedirectTo: redirectTo },
+      })
+      if (result.error) throw result.error
+
+      if (result.data.session) {
+        await routeAfterLogin(supabase, result.data.user.id)
+      } else {
+        setMessage('Account created. Check your email to confirm your account, then sign in.')
+      }
+    } catch (error) {
+      setMessage(error?.message || 'Something went wrong. Please try again.')
+    } finally {
       setBusy(false)
-      if (result.error) return setMessage(result.error.message)
-      await routeAfterLogin(supabase, result.data.user.id)
-      return
-    }
-
-    const result = await supabase.auth.signUp({ email, password })
-    setBusy(false)
-    if (result.error) return setMessage(result.error.message)
-
-    if (result.data.session) {
-      await routeAfterLogin(supabase, result.data.user.id)
-    } else {
-      setMessage('Account created. Check your email to confirm your account, then sign in.')
     }
   }
 
@@ -61,7 +70,7 @@ export default function LoginPage() {
         <input aria-label="Password" type="password" required minLength={8} value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password (8+ characters)" style={inputStyle}/>
         <button className="btn primary" disabled={busy}>{busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}</button>
       </form>
-      {message && <p className="muted" style={{marginTop:16}}>{message}</p>}
+      {message && <p className="muted" style={{marginTop:16,lineHeight:1.5}}>{message}</p>}
       <button className="btn secondary" style={{width:'100%',marginTop:14}} onClick={()=>setMode(mode==='login'?'signup':'login')}>{mode === 'login' ? 'Create a new account' : 'I already have an account'}</button>
       <button className="btn secondary" style={{width:'100%',marginTop:10}} onClick={()=>window.location.href='/'}>Back</button>
     </div>
