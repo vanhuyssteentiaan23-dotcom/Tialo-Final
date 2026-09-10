@@ -3,6 +3,21 @@
 import { useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
 
+async function routeAfterLogin(supabase, userId) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name,date_of_birth,role')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (!profile?.full_name || !profile?.date_of_birth || !profile?.role) {
+    window.location.href = '/onboarding'
+    return
+  }
+
+  window.location.href = '/dashboard'
+}
+
 export default function LoginPage() {
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
@@ -16,13 +31,24 @@ export default function LoginPage() {
     const supabase = getSupabaseBrowserClient()
     if (!supabase) return setMessage('Supabase is not connected in Vercel yet.')
     setBusy(true)
-    const result = mode === 'login'
-      ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password })
+
+    if (mode === 'login') {
+      const result = await supabase.auth.signInWithPassword({ email, password })
+      setBusy(false)
+      if (result.error) return setMessage(result.error.message)
+      await routeAfterLogin(supabase, result.data.user.id)
+      return
+    }
+
+    const result = await supabase.auth.signUp({ email, password })
     setBusy(false)
     if (result.error) return setMessage(result.error.message)
-    if (mode === 'signup') setMessage('Account created. Check your email if confirmation is enabled, then sign in.')
-    else window.location.href = '/dashboard'
+
+    if (result.data.session) {
+      await routeAfterLogin(supabase, result.data.user.id)
+    } else {
+      setMessage('Account created. Check your email to confirm your account, then sign in.')
+    }
   }
 
   return <main className="shell" style={{minHeight:'100vh',display:'grid',placeItems:'center',padding:24}}>
