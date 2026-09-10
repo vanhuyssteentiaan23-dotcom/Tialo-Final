@@ -14,16 +14,40 @@ const cards = [
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
+  const [profile, setProfile] = useState(null)
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient()
-    if (!supabase) return setChecking(false)
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) window.location.href = '/login'
-      else setUser(data.user)
+    async function load() {
+      const supabase = getSupabaseBrowserClient()
+      if (!supabase) {
+        setChecking(false)
+        return
+      }
+
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      if (!currentUser) {
+        window.location.href = '/login'
+        return
+      }
+
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('full_name,date_of_birth,role')
+        .eq('id', currentUser.id)
+        .maybeSingle()
+
+      if (!currentProfile?.full_name || !currentProfile?.date_of_birth || !currentProfile?.role) {
+        window.location.href = '/onboarding'
+        return
+      }
+
+      setUser(currentUser)
+      setProfile(currentProfile)
       setChecking(false)
-    })
+    }
+
+    load()
   }, [])
 
   async function signOut() {
@@ -41,8 +65,8 @@ export default function Dashboard() {
     </nav>
     <section className="section" style={{paddingTop:60}}>
       <div className="eyebrow">Student Dashboard</div>
-      <h1 style={{fontSize:48,margin:'18px 0 8px'}}>Your academic command centre.</h1>
-      <p className="muted" style={{maxWidth:700,lineHeight:1.7}}>This is the clean foundation. The next build stages will connect every module to Supabase so accounts, subjects, materials, exams, tasks and progress persist securely per student.</p>
+      <h1 style={{fontSize:48,margin:'18px 0 8px'}}>Welcome, {profile?.full_name?.split(' ')[0]}.</h1>
+      <p className="muted" style={{maxWidth:700,lineHeight:1.7}}>Your academic command centre. Subjects, materials, AI tutoring, mock exams, daily tasks and progress will all live here.</p>
       <div className="grid" style={{marginTop:36}}>{cards.map(([title,text]) => <article className="card" key={title}><h3>{title}</h3><p>{text}</p><button className="btn secondary" style={{marginTop:8}}>Coming next</button></article>)}</div>
     </section>
   </main>
