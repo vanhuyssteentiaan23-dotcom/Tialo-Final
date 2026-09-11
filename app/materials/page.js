@@ -41,12 +41,32 @@ export default function MaterialsPage() {
   async function getUser() {
     const supabase = getSupabaseBrowserClient()
     if (!supabase) return null
-    const { data: { user } } = await supabase.auth.getUser()
+
+    let { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      const { data: refreshData } = await supabase.auth.refreshSession()
+      user = refreshData?.user || null
+    }
+
     if (!user) {
       window.location.href = '/login'
       return null
     }
+
     return user
+  }
+
+  async function getFreshAccessToken(supabase) {
+    const { data: sessionData } = await supabase.auth.getSession()
+    if (sessionData?.session?.access_token) return sessionData.session.access_token
+
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+    if (refreshError || !refreshData?.session?.access_token) {
+      throw new Error('Your login session has expired. Please log in again.')
+    }
+
+    return refreshData.session.access_token
   }
 
   async function loadMaterials(subjectId) {
@@ -122,14 +142,13 @@ export default function MaterialsPage() {
     setNotice('')
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) throw new Error('Your session has expired. Please log in again.')
+      const accessToken = await getFreshAccessToken(supabase)
 
       const response = await fetch('/api/materials/extract', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ materialId: material.id }),
       })
