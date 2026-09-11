@@ -67,6 +67,35 @@ async function authenticate(request) {
   return { supabase, user }
 }
 
+function extractModelText(result) {
+  if (typeof result?.output_text === 'string' && result.output_text.trim()) return result.output_text.trim()
+  const pieces = []
+  for (const item of result?.output || []) {
+    for (const content of item?.content || []) {
+      if (typeof content?.text === 'string' && content.text.trim()) pieces.push(content.text.trim())
+    }
+  }
+  return pieces.join('\n').trim()
+}
+
+function parseExamData(result) {
+  const raw = extractModelText(result)
+  if (!raw) return null
+  const candidates = [raw]
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)
+  if (fenced?.[1]) candidates.push(fenced[1].trim())
+  const firstBrace = raw.indexOf('{')
+  const lastBrace = raw.lastIndexOf('}')
+  if (firstBrace >= 0 && lastBrace > firstBrace) candidates.push(raw.slice(firstBrace, lastBrace + 1))
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate)
+      if (parsed && Array.isArray(parsed.questions)) return parsed
+    } catch {}
+  }
+  return null
+}
+
 async function generateExam({ supabase, user, subjectId, count }) {
   const { data: subject, error: subjectError } = await supabase.from('subjects').select('id,name').eq('id', subjectId).eq('user_id', user.id).maybeSingle()
   if (subjectError) return NextResponse.json({ error: subjectError.message }, { status: 400 })
@@ -130,15 +159,13 @@ async function generateExam({ supabase, user, subjectId, count }) {
     return NextResponse.json({ error: result?.error?.message || 'The mock exam could not be generated right now.' }, { status: 502 })
   }
 
-  let examData
-  try {
-    const raw = result.output_text || ''
-    examData = JSON.parse(raw)
-  } catch {
+  const examData = parseExamData(result)
+  if (!examData) {
+    console.error('OpenAI Mock Exam returned no parseable structured output:', JSON.stringify(result).slice(0, 4000))
     return NextResponse.json({ error: 'The AI returned an invalid exam format. Please try again.' }, { status: 502 })
   }
 
-  const questions = Array.isArray(examData?.questions) ? examData.questions.slice(0, count) : []
+  const questions = Array.isArray(examData.questions) ? examData.questions.slice(0, count) : []
   if (questions.length !== count) return NextResponse.json({ error: 'The AI did not generate the required number of questions. Please try again.' }, { status: 502 })
 
   for (const question of questions) {
