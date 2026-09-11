@@ -17,7 +17,13 @@ function getServerSupabase(request) {
   const authorization = request.headers.get('authorization') || ''
   const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
   if (!url || !key || !token) return null
-  return { client: createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } }), token }
+
+  const client = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  })
+
+  return { client, token }
 }
 
 function cleanText(text) {
@@ -27,10 +33,15 @@ function cleanText(text) {
 export async function POST(request) {
   const server = getServerSupabase(request)
   if (!server) return NextResponse.json({ error: 'Authentication is required.' }, { status: 401 })
-  const { client: supabase, token } = server
+  const { client: supabase } = server
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-  if (authError || !user) return NextResponse.json({ error: 'Your session is invalid or expired. Please refresh the page and try again.' }, { status: 401 })
+  // The access token is attached to the Supabase client itself so every
+  // Auth and database request is made on behalf of the signed-in user.
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    console.error('Material extraction auth failed:', authError?.message || 'No user returned')
+    return NextResponse.json({ error: 'Your session is invalid or expired. Please refresh the page and try again.' }, { status: 401 })
+  }
 
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid request.' }, { status: 400 }) }
