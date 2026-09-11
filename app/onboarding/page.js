@@ -38,6 +38,11 @@ export default function Onboarding() {
         const age = calculateAge(profile.date_of_birth)
         if (profile.role === 'parent' && age >= 18) { window.location.href = '/parent'; return }
         if (profile.role === 'student' && age >= 16) { window.location.href = '/dashboard'; return }
+        if (profile.role === 'student' && age < 16) {
+          const { data: activeLink } = await supabase.from('parent_child').select('id').eq('child_id', currentUser.id).eq('status', 'active').limit(1).maybeSingle()
+          if (activeLink) { window.location.href = '/dashboard'; return }
+          setSavedUnder16(true)
+        }
       }
       setLoading(false)
     }
