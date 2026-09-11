@@ -37,7 +37,21 @@ export default function Dashboard() {
       if (profileError || !currentProfile?.full_name || !currentProfile?.date_of_birth || !currentProfile?.role) { window.location.href = '/onboarding'; return }
       const age = calculateAge(currentProfile.date_of_birth)
       if (currentProfile.role === 'parent' && age >= 18) { window.location.href = '/parent'; return }
-      if (age < 16) { window.location.href = '/onboarding'; return }
+
+      if (currentProfile.role === 'student' && age < 16) {
+        const { data: activeLink, error: linkError } = await supabase
+          .from('parent_child')
+          .select('id')
+          .eq('child_id', currentUser.id)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle()
+        if (linkError || !activeLink) {
+          window.location.href = '/parent-link'
+          return
+        }
+      }
+
       setUser(currentUser); setProfile(currentProfile)
       const { data: subjectRows, error: subjectsError } = await supabase.from('subjects').select('*').order('created_at', { ascending: true })
       if (subjectsError) setSubjectError('Your subjects could not be loaded yet.')
