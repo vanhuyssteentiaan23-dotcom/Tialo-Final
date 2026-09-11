@@ -54,18 +54,50 @@ async function generateTasks({ supabase, user, subjectId, taskDate }) {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'The Daily Tasks AI is not connected yet. Add OPENAI_API_KEY to Vercel.' }, { status: 503 })
 
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      tasks: {
+        type: 'array',
+        minItems: 4,
+        maxItems: 4,
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            title: { type: 'string' },
+            description: { type: 'string' },
+            estimated_minutes: { type: 'integer', minimum: 15, maximum: 90 },
+            priority: { type: 'string', enum: ['high', 'medium', 'low'] },
+          },
+          required: ['title', 'description', 'estimated_minutes', 'priority'],
+        },
+      },
+    },
+    required: ['tasks'],
+  }
+
   const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: process.env.OPENAI_TUTOR_MODEL || 'gpt-5.6-luna',
-      instructions: `You are TIALO's study planner. Create exactly 4 realistic study tasks for ${subject.name} for ${taskDate}. Use ONLY the supplied study material to choose topics. Do not invent topics or facts. Make the tasks useful for a Grade 12 student and vary them across review, active recall, practice and exam preparation when supported by the material. Return JSON only with this shape: {"tasks":[{"title":"...","description":"...","estimated_minutes":30,"priority":"high|medium|low"}]}. estimated_minutes must be between 15 and 90.\n\nSUPPLIED STUDY MATERIAL:\n${context}`,
+      instructions: `You are TIALO's study planner. Create exactly 4 realistic study tasks for ${subject.name} for ${taskDate}. Use ONLY the supplied study material to choose topics. Do not invent topics or facts. Make the tasks useful for a Grade 12 student and vary them across review, active recall, practice and exam preparation when supported by the material. Return only the requested structured data.\n\nSUPPLIED STUDY MATERIAL:\n${context}`,
       input: `Create today's four study tasks for ${subject.name}.`,
+      text: { format: { type: 'json_schema', name: 'daily_study_plan', strict: true, schema } },
     }),
   })
   const result = await response.json().catch(() => ({}))
-  if (!response.ok) return NextResponse.json({ error: result?.error?.message || 'Could not generate study tasks.' }, { status: 502 })
+  if (!response.ok) {
+    console.error('OpenAI Daily Tasks error:', result)
+    return NextResponse.json({ error: result?.error?.message || 'Could not generate study tasks.' }, { status: 502 })
+  }
   const data = parseJson(result)
-  if (!data || data.tasks.length !== 4) return NextResponse.json({ error: 'The AI returned an invalid study plan. Please try again.' }, { status: 502 })
+  if (!data || data.tasks.length !== 4) {
+    console.error('OpenAI Daily Tasks returned no parseable structured output:', JSON.stringify(result).slice(0, 4000))
+    return NextResponse.json({ error: 'The AI returned an invalid study plan. Please try again.' }, { status: 502 })
+  }
 
   await supabase.from('daily_study_tasks').delete().eq('user_id', user.id).eq('subject_id', subjectId).eq('task_date', taskDate).eq('completed', false)
   const rows = data.tasks.map(task => ({ user_id: user.id, subject_id: subjectId, title: String(task.title).slice(0, 180), description: String(task.description || '').slice(0, 500), task_date: taskDate, estimated_minutes: Math.min(Math.max(Number(task.estimated_minutes) || 30, 15), 90), priority: ['high','medium','low'].includes(task.priority) ? task.priority : 'medium' }))
