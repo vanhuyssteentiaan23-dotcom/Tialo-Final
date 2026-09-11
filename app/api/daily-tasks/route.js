@@ -30,13 +30,31 @@ async function auth(request) {
   return { supabase, user }
 }
 
+function extractModelText(result) {
+  if (typeof result?.output_text === 'string' && result.output_text.trim()) return result.output_text.trim()
+  const pieces = []
+  for (const item of result?.output || []) {
+    for (const content of item?.content || []) {
+      if (typeof content?.text === 'string' && content.text.trim()) pieces.push(content.text.trim())
+    }
+  }
+  return pieces.join('\n').trim()
+}
+
 function parseJson(result) {
-  const raw = typeof result?.output_text === 'string' ? result.output_text.trim() : ''
+  const raw = extractModelText(result)
   if (!raw) return null
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)
-  for (const candidate of [raw, fenced?.[1]?.trim()]) {
+  const candidates = [raw, fenced?.[1]?.trim()]
+  const firstBrace = raw.indexOf('{')
+  const lastBrace = raw.lastIndexOf('}')
+  if (firstBrace >= 0 && lastBrace > firstBrace) candidates.push(raw.slice(firstBrace, lastBrace + 1))
+  for (const candidate of candidates) {
     if (!candidate) continue
-    try { const parsed = JSON.parse(candidate); if (Array.isArray(parsed?.tasks)) return parsed } catch {}
+    try {
+      const parsed = JSON.parse(candidate)
+      if (Array.isArray(parsed?.tasks)) return parsed
+    } catch {}
   }
   return null
 }
