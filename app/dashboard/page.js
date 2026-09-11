@@ -36,6 +36,7 @@ export default function Dashboard() {
       const { data: currentProfile, error: profileError } = await supabase.from('profiles').select('full_name,date_of_birth,role').eq('id', currentUser.id).maybeSingle()
       if (profileError || !currentProfile?.full_name || !currentProfile?.date_of_birth || !currentProfile?.role) { window.location.href = '/onboarding'; return }
       const age = calculateAge(currentProfile.date_of_birth)
+      if (currentProfile.role === 'parent' && age >= 18) { window.location.href = '/parent'; return }
       if (age < 16) { window.location.href = '/onboarding'; return }
       setUser(currentUser); setProfile(currentProfile)
       const { data: subjectRows, error: subjectsError } = await supabase.from('subjects').select('*').order('created_at', { ascending: true })
