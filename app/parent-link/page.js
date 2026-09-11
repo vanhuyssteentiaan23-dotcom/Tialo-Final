@@ -28,9 +28,8 @@ export default function ParentLinkPage() {
   async function respond(id, accepted) {
     setWorking(true); setError(''); setMessage('')
     const supabase = getSupabaseBrowserClient()
-    const update = accepted ? { status: 'active', accepted_at: new Date().toISOString() } : { status: 'rejected', accepted_at: null }
-    const { error: updateError } = await supabase.from('parent_child').update(update).eq('id', id)
-    if (updateError) setError(updateError.message)
+    const { error: responseError } = await supabase.rpc('respond_parent_link', { link_id: id, accept_link: accepted })
+    if (responseError) setError(responseError.message)
     else if (accepted) { setMessage('Parent link accepted. Your parent can now see your academic progress.'); setLinks(current => current.filter(link => link.id !== id)) }
     else { setMessage('Parent link declined.'); setLinks(current => current.filter(link => link.id !== id)) }
     setWorking(false)
