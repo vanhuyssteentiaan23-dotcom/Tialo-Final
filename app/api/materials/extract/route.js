@@ -78,7 +78,8 @@ export async function POST(request) {
     const buffer = new Uint8Array(await file.arrayBuffer())
     const pdf = await getDocumentProxy(buffer)
     const result = await extractText(pdf, { mergePages: true })
-    const extractedText = cleanText(typeof result.text === 'string' ? result.text : result.text.join('\n\n'))
+    const rawText = Array.isArray(result.text) ? result.text.join('\n\n') : result.text || ''
+    const extractedText = cleanText(rawText)
 
     if (!extractedText) throw new Error('No selectable text was found in this PDF. A scanned/image-only PDF will need OCR.')
 
