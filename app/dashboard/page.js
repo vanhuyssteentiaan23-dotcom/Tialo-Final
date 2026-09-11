@@ -61,17 +61,13 @@ export default function Dashboard() {
       setUser(currentUser)
       setProfile(currentProfile)
 
-      // RLS limits this query to the signed-in user's records.
       const { data: subjectRows, error: subjectsError } = await supabase
         .from('subjects')
         .select('*')
         .order('created_at', { ascending: true })
 
-      if (subjectsError) {
-        setSubjectError('Your subjects could not be loaded yet.')
-      } else {
-        setSubjects(subjectRows || [])
-      }
+      if (subjectsError) setSubjectError('Your subjects could not be loaded yet.')
+      else setSubjects(subjectRows || [])
 
       setLoading(false)
     }
@@ -98,7 +94,7 @@ export default function Dashboard() {
         <div className="sidebar-label">Workspace</div>
         <nav className="sidebar-nav">
           <a className="side-link active" href="/dashboard"><span>⌂</span> Overview</a>
-          <a className="side-link" href="#subjects"><span>▣</span> Subjects</a>
+          <a className="side-link" href="/subjects"><span>▣</span> Subjects</a>
           <a className="side-link" href="#ai-tutor"><span>◈</span> AI Tutor</a>
           <a className="side-link" href="#exams"><span>□</span> Mock Exams</a>
           <a className="side-link" href="#tasks"><span>✓</span> Daily Tasks</a>
@@ -137,12 +133,12 @@ export default function Dashboard() {
           </section>
 
           <section id="subjects" className="dashboard-section">
-            <div className="section-heading"><div><span className="section-kicker">YOUR LEARNING</span><h2>Subjects</h2><p>Add the subjects you are currently studying.</p></div><button className="btn primary" disabled title="Subject management is the next build step">+ Add subject</button></div>
+            <div className="section-heading"><div><span className="section-kicker">YOUR LEARNING</span><h2>Subjects</h2><p>Add and manage the subjects you are currently studying.</p></div><a className="btn primary" href="/subjects">+ Add subject</a></div>
             {subjectError && <div className="notice">{subjectError}</div>}
             {subjects.length === 0 ? (
-              <div className="empty-state"><div className="empty-icon">▣</div><h3>Your subjects will appear here</h3><p>Once subject management is connected, you’ll be able to add each subject and keep its learning material completely separate.</p></div>
+              <div className="empty-state"><div className="empty-icon">▣</div><h3>Your subjects will appear here</h3><p>Add your first subject to start organising learning material, AI tutor context, mock exams and progress.</p><a className="btn primary" href="/subjects" style={{ marginTop: 12 }}>Add your first subject</a></div>
             ) : (
-              <div className="subject-grid">{subjects.map((subject, index) => <article className="subject-card" key={subject.id || index}><div className="subject-number">{String(index + 1).padStart(2, '0')}</div><h3>{subject.name || subject.title || `Subject ${index + 1}`}</h3><p>Materials and progress for this subject.</p></article>)}</div>
+              <div className="subject-grid">{subjects.map((subject, index) => <article className="subject-card" key={subject.id || index}><div className="subject-number">{String(index + 1).padStart(2, '0')}</div><h3>{subject.name || subject.title || `Subject ${index + 1}`}</h3><p>Materials and progress for this subject.</p><a className="btn secondary" href="/subjects" style={{ marginTop: 8 }}>Manage subjects</a></article>)}</div>
             )}
           </section>
 
