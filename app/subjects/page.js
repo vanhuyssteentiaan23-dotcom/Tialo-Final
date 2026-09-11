@@ -43,6 +43,10 @@ export default function SubjectsPage() {
 
     const supabase = getSupabaseBrowserClient()
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      window.location.href = '/login'
+      return
+    }
 
     const { error: insertError } = await supabase
       .from('subjects')
@@ -108,10 +112,11 @@ export default function SubjectsPage() {
             {subjects.map(subject => (
               <article className="card" key={subject.id}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <div className="eyebrow" style={{ fontSize: 10 }}>Subject</div>
                     <h3 style={{ fontSize: 22, marginTop: 14 }}>{subject.name}</h3>
-                    <p>Materials and academic tools will be added here next.</p>
+                    <p>Upload your notes, textbooks and presentations for this subject.</p>
+                    <a className="btn primary" href={`/materials?subject=${encodeURIComponent(subject.id)}`} style={{ marginTop: 10 }}>Upload materials</a>
                   </div>
                   <button className="btn secondary" onClick={() => deleteSubject(subject.id)} aria-label={`Delete ${subject.name}`}>Delete</button>
                 </div>
