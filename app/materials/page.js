@@ -20,7 +20,7 @@ function safeFilename(name) {
 
 function formatBytes(bytes) {
   if (!bytes) return '0 KB'
-  const units = ['B', 'KB', 'MB', 'GB']
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
   const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
   return `${(bytes / Math.pow(1024, index)).toFixed(index === 0 ? 0 : 1)} ${units[index]}`
 }
@@ -41,32 +41,25 @@ export default function MaterialsPage() {
   async function getUser() {
     const supabase = getSupabaseBrowserClient()
     if (!supabase) return null
-
     let { data: { user } } = await supabase.auth.getUser()
-
     if (!user) {
       const { data: refreshData } = await supabase.auth.refreshSession()
       user = refreshData?.user || null
     }
-
     if (!user) {
       window.location.href = '/login'
       return null
     }
-
     return user
   }
 
   async function getFreshAccessToken(supabase) {
-    const { data: sessionData } = await supabase.auth.getSession()
-    if (sessionData?.session?.access_token) return sessionData.session.access_token
-
-    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
-    if (refreshError || !refreshData?.session?.access_token) {
+    // Force a token refresh instead of reusing a stale access token.
+    const { data, error: refreshError } = await supabase.auth.refreshSession()
+    if (refreshError || !data?.session?.access_token) {
       throw new Error('Your login session has expired. Please log in again.')
     }
-
-    return refreshData.session.access_token
+    return data.session.access_token
   }
 
   async function loadMaterials(subjectId) {
@@ -133,17 +126,13 @@ export default function MaterialsPage() {
 
   async function processMaterial(material) {
     if (!material || material.mime_type !== 'application/pdf') return
-
     const supabase = getSupabaseBrowserClient()
     if (!supabase) return
-
     setProcessingId(material.id)
     setError('')
     setNotice('')
-
     try {
       const accessToken = await getFreshAccessToken(supabase)
-
       const response = await fetch('/api/materials/extract', {
         method: 'POST',
         headers: {
@@ -152,10 +141,8 @@ export default function MaterialsPage() {
         },
         body: JSON.stringify({ materialId: material.id }),
       })
-
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error || 'Could not process this material.')
-
       setNotice(`${material.title || material.file_name || 'Material'} is ready for TIALO to learn from.`)
       await loadMaterials(selectedSubject)
     } catch (processError) {
@@ -181,7 +168,6 @@ export default function MaterialsPage() {
     const failures = []
     const uploadedMaterials = []
     let completed = 0
-
     for (const file of selectedFiles) {
       const filename = `${crypto.randomUUID()}-${safeFilename(file.name)}`
       const storagePath = `${user.id}/${selectedSubject}/${filename}`
@@ -190,7 +176,6 @@ export default function MaterialsPage() {
         failures.push(`${file.name}: ${uploadError.message}`)
         continue
       }
-
       const { data: material, error: materialError } = await supabase.from('materials').insert({
         user_id: user.id,
         subject_id: selectedSubject,
@@ -202,7 +187,6 @@ export default function MaterialsPage() {
         processing_status: 'uploaded',
         uploaded_at: new Date().toISOString(),
       }).select('id,subject_id,title,file_name,mime_type,file_size,storage_path,processing_status,processing_error,uploaded_at,extracted_at').single()
-
       if (materialError) {
         await supabase.storage.from('study-materials').remove([storagePath])
         failures.push(`${file.name}: ${materialError.message}`)
@@ -211,19 +195,14 @@ export default function MaterialsPage() {
       completed += 1
       uploadedMaterials.push(material)
     }
-
     setSelectedFiles([])
     await loadMaterials(selectedSubject)
     setUploading(false)
-
     if (failures.length) setError(failures.join(' • '))
     if (completed) setNotice(`${completed} material${completed === 1 ? '' : 's'} uploaded to ${subject?.name || 'your subject'}.`)
-
     const pdfs = uploadedMaterials.filter(material => material.mime_type === 'application/pdf')
     if (pdfs.length) {
-      for (const material of pdfs) {
-        await processMaterial(material)
-      }
+      for (const material of pdfs) await processMaterial(material)
     }
   }
 
@@ -256,11 +235,8 @@ export default function MaterialsPage() {
         <div className="eyebrow">Stage 5 · Materials</div>
         <h1 style={{ fontSize: 'clamp(40px, 6vw, 64px)', margin: '18px 0 8px' }}>Your study materials</h1>
         <p className="muted" style={{ maxWidth: 760, lineHeight: 1.7 }}>Upload your own notes, textbooks and presentations. These files stay private to your account and will become the source material for TIALO’s academic tools.</p>
-
         {subjects.length === 0 ? (
-          <div className="empty-state" style={{ marginTop: 32 }}>
-            <div className="empty-icon">▣</div><h3>Add a subject first</h3><p>Create a subject before uploading study material.</p><a className="btn primary" href="/subjects" style={{ marginTop: 14 }}>Go to subjects</a>
-          </div>
+          <div className="empty-state" style={{ marginTop: 32 }}><div className="empty-icon">▣</div><h3>Add a subject first</h3><p>Create a subject before uploading study material.</p><a className="btn primary" href="/subjects" style={{ marginTop: 14 }}>Go to subjects</a></div>
         ) : (
           <>
             <div className="panel" style={{ marginTop: 32 }}>
