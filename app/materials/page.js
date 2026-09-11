@@ -54,7 +54,6 @@ export default function MaterialsPage() {
   }
 
   async function getFreshAccessToken(supabase) {
-    // Force a token refresh instead of reusing a stale access token.
     const { data, error: refreshError } = await supabase.auth.refreshSession()
     if (refreshError || !data?.session?.access_token) {
       throw new Error('Your login session has expired. Please log in again.')
@@ -91,7 +90,10 @@ export default function MaterialsPage() {
       else {
         const rows = data || []
         setSubjects(rows)
-        if (rows[0]) setSelectedSubject(rows[0].id)
+        const requestedSubject = new URLSearchParams(window.location.search).get('subject')
+        const requestedExists = requestedSubject && rows.some(subject => subject.id === requestedSubject)
+        if (requestedExists) setSelectedSubject(requestedSubject)
+        else if (rows[0]) setSelectedSubject(rows[0].id)
       }
       setLoading(false)
     }
@@ -135,10 +137,7 @@ export default function MaterialsPage() {
       const accessToken = await getFreshAccessToken(supabase)
       const response = await fetch('/api/materials/extract', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ materialId: material.id }),
       })
       const result = await response.json().catch(() => ({}))
@@ -176,17 +175,7 @@ export default function MaterialsPage() {
         failures.push(`${file.name}: ${uploadError.message}`)
         continue
       }
-      const { data: material, error: materialError } = await supabase.from('materials').insert({
-        user_id: user.id,
-        subject_id: selectedSubject,
-        title: file.name,
-        file_name: file.name,
-        mime_type: file.type,
-        file_size: file.size,
-        storage_path: storagePath,
-        processing_status: 'uploaded',
-        uploaded_at: new Date().toISOString(),
-      }).select('id,subject_id,title,file_name,mime_type,file_size,storage_path,processing_status,processing_error,uploaded_at,extracted_at').single()
+      const { data: material, error: materialError } = await supabase.from('materials').insert({ user_id: user.id, subject_id: selectedSubject, title: file.name, file_name: file.name, mime_type: file.type, file_size: file.size, storage_path: storagePath, processing_status: 'uploaded', uploaded_at: new Date().toISOString() }).select('id,subject_id,title,file_name,mime_type,file_size,storage_path,processing_status,processing_error,uploaded_at,extracted_at').single()
       if (materialError) {
         await supabase.storage.from('study-materials').remove([storagePath])
         failures.push(`${file.name}: ${materialError.message}`)
@@ -212,18 +201,13 @@ export default function MaterialsPage() {
     if (!supabase) return
     setError('')
     const { error: storageError } = material.storage_path ? await supabase.storage.from('study-materials').remove([material.storage_path]) : { error: null }
-    if (storageError) {
-      setError(storageError.message)
-      return
-    }
+    if (storageError) { setError(storageError.message); return }
     const { error: dbError } = await supabase.from('materials').delete().eq('id', material.id)
     if (dbError) setError(dbError.message)
     else setMaterials(current => current.filter(item => item.id !== material.id))
   }
 
-  if (loading) {
-    return <main className="shell dashboard-loading"><div className="loader-card"><div className="brand">TIA<span>LO</span></div><p>Loading your materials…</p></div></main>
-  }
+  if (loading) return <main className="shell dashboard-loading"><div className="loader-card"><div className="brand">TIA<span>LO</span></div><p>Loading your materials…</p></div></main>
 
   return (
     <main className="shell" style={{ minHeight: '100vh' }}>
