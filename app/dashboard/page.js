@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
 
 const quickActions = [
-  { icon: '◈', title: 'AI Tutor', text: 'Ask questions and learn step by step.', status: 'Coming next' },
-  { icon: '▣', title: 'Mock Exams', text: 'Create practice exams from your own material.', status: 'Coming next' },
-  { icon: '✓', title: 'Daily Tasks', text: 'Stay on top of today’s study priorities.', status: 'Coming next' },
-  { icon: '↗', title: 'Progress', text: 'See scores, study time and weak areas.', status: 'Coming next' },
+  { icon: '◈', title: 'AI Tutor', text: 'Ask questions and learn step by step.', status: 'Ready', href: '/ai-tutor' },
+  { icon: '▣', title: 'Mock Exams', text: 'Create practice exams from your own material.', status: 'Coming next', href: '#' },
+  { icon: '✓', title: 'Daily Tasks', text: 'Stay on top of today’s study priorities.', status: 'Coming next', href: '#' },
+  { icon: '↗', title: 'Progress', text: 'See scores, study time and weak areas.', status: 'Coming next', href: '#' },
 ]
 
 function calculateAge(dateOfBirth) {
@@ -95,7 +95,7 @@ export default function Dashboard() {
         <nav className="sidebar-nav">
           <a className="side-link active" href="/dashboard"><span>⌂</span> Overview</a>
           <a className="side-link" href="/subjects"><span>▣</span> Subjects</a>
-          <a className="side-link" href="#ai-tutor"><span>◈</span> AI Tutor</a>
+          <a className="side-link" href="/ai-tutor"><span>◈</span> AI Tutor</a>
           <a className="side-link" href="#exams"><span>□</span> Mock Exams</a>
           <a className="side-link" href="#tasks"><span>✓</span> Daily Tasks</a>
           <a className="side-link" href="#progress"><span>↗</span> Progress</a>
@@ -144,7 +144,7 @@ export default function Dashboard() {
 
           <section className="dashboard-section" id="ai-tutor">
             <div className="section-heading"><div><span className="section-kicker">TIALO TOOLS</span><h2>Your academic tools</h2><p>Built around your subjects and your own learning material.</p></div></div>
-            <div className="tool-grid">{quickActions.map(action => <article className="tool-card" key={action.title}><div className="tool-icon">{action.icon}</div><div><h3>{action.title}</h3><p>{action.text}</p></div><span className="tool-status">{action.status}</span></article>)}</div>
+            <div className="tool-grid">{quickActions.map(action => <a className="tool-card" href={action.href} key={action.title}><div className="tool-icon">{action.icon}</div><div><h3>{action.title}</h3><p>{action.text}</p></div><span className="tool-status">{action.status}</span></a>)}</div>
           </section>
 
           <section className="privacy-strip"><div><strong>Your data belongs to your account.</strong><p>TIALO keeps your academic records separated using your signed-in account and database access rules.</p></div><span>SECURE WORKSPACE</span></section>
