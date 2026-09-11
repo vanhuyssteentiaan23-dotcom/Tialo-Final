@@ -33,6 +33,7 @@ export default function MaterialsPage() {
   const [selectedFiles, setSelectedFiles] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [processingId, setProcessingId] = useState(null)
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -56,7 +57,7 @@ export default function MaterialsPage() {
     }
     const { data, error: queryError } = await supabase
       .from('materials')
-      .select('id,subject_id,title,file_name,mime_type,file_size,storage_path,processing_status,processing_error,uploaded_at')
+      .select('id,subject_id,title,file_name,mime_type,file_size,storage_path,processing_status,processing_error,uploaded_at,extracted_at')
       .eq('subject_id', subjectId)
       .order('uploaded_at', { ascending: false })
     if (queryError) setError(queryError.message)
@@ -110,6 +111,42 @@ export default function MaterialsPage() {
     setSelectedFiles(current => current.filter((_, itemIndex) => itemIndex !== index))
   }
 
+  async function processMaterial(material) {
+    if (!material || material.mime_type !== 'application/pdf') return
+
+    const supabase = getSupabaseBrowserClient()
+    if (!supabase) return
+
+    setProcessingId(material.id)
+    setError('')
+    setNotice('')
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Your session has expired. Please log in again.')
+
+      const response = await fetch('/api/materials/extract', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ materialId: material.id }),
+      })
+
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || 'Could not process this material.')
+
+      setNotice(`${material.title || material.file_name || 'Material'} is ready for TIALO to learn from.`)
+      await loadMaterials(selectedSubject)
+    } catch (processError) {
+      setError(processError instanceof Error ? processError.message : 'Material processing failed.')
+      await loadMaterials(selectedSubject)
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
   async function uploadFiles() {
     if (!selectedSubject || selectedFiles.length === 0) return
     setUploading(true)
@@ -123,6 +160,7 @@ export default function MaterialsPage() {
     }
     const subject = subjects.find(item => item.id === selectedSubject)
     const failures = []
+    const uploadedMaterials = []
     let completed = 0
 
     for (const file of selectedFiles) {
@@ -134,7 +172,7 @@ export default function MaterialsPage() {
         continue
       }
 
-      const { error: materialError } = await supabase.from('materials').insert({
+      const { data: material, error: materialError } = await supabase.from('materials').insert({
         user_id: user.id,
         subject_id: selectedSubject,
         title: file.name,
@@ -144,7 +182,7 @@ export default function MaterialsPage() {
         storage_path: storagePath,
         processing_status: 'uploaded',
         uploaded_at: new Date().toISOString(),
-      })
+      }).select('id,subject_id,title,file_name,mime_type,file_size,storage_path,processing_status,processing_error,uploaded_at,extracted_at').single()
 
       if (materialError) {
         await supabase.storage.from('study-materials').remove([storagePath])
@@ -152,13 +190,22 @@ export default function MaterialsPage() {
         continue
       }
       completed += 1
+      uploadedMaterials.push(material)
     }
 
     setSelectedFiles([])
     await loadMaterials(selectedSubject)
     setUploading(false)
+
     if (failures.length) setError(failures.join(' • '))
     if (completed) setNotice(`${completed} material${completed === 1 ? '' : 's'} uploaded to ${subject?.name || 'your subject'}.`)
+
+    const pdfs = uploadedMaterials.filter(material => material.mime_type === 'application/pdf')
+    if (pdfs.length) {
+      for (const material of pdfs) {
+        await processMaterial(material)
+      }
+    }
   }
 
   async function deleteMaterial(material) {
@@ -215,7 +262,7 @@ export default function MaterialsPage() {
             {notice && <div className="notice" style={{ marginTop: 18, borderColor: 'rgba(69,230,161,.2)', background: 'rgba(69,230,161,.05)', color: '#9dd9be' }}>{notice}</div>}
             <section style={{ marginTop: 42 }}>
               <div className="section-heading"><div><span className="section-kicker">UPLOADED</span><h2>{subjects.find(item => item.id === selectedSubject)?.name || 'Subject'} materials</h2><p>Private files stored in your TIALO workspace.</p></div></div>
-              {materials.length === 0 ? <div className="empty-state"><div className="empty-icon">□</div><h3>No materials uploaded yet</h3><p>Upload your first study file above. Processing and AI learning features will be connected in the next stages.</p></div> : <div className="grid">{materials.map(material => <article className="card" key={material.id}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><div style={{ minWidth: 0 }}><div className="eyebrow" style={{ fontSize: 9 }}>{ACCEPTED_TYPES[material.mime_type] || 'FILE'}</div><h3 style={{ marginTop: 14, overflowWrap: 'anywhere' }}>{material.title || material.file_name || 'Untitled material'}</h3><p>{formatBytes(material.file_size)} · {material.processing_status || 'uploaded'}</p></div><button className="btn secondary" onClick={() => deleteMaterial(material)}>Delete</button></div></article>)}</div>}
+              {materials.length === 0 ? <div className="empty-state"><div className="empty-icon">□</div><h3>No materials uploaded yet</h3><p>Upload your first study file above. Processing and AI learning features will be connected in the next stages.</p></div> : <div className="grid">{materials.map(material => <article className="card" key={material.id}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><div style={{ minWidth: 0, flex: 1 }}><div className="eyebrow" style={{ fontSize: 9 }}>{ACCEPTED_TYPES[material.mime_type] || 'FILE'}</div><h3 style={{ marginTop: 14, overflowWrap: 'anywhere' }}>{material.title || material.file_name || 'Untitled material'}</h3><p>{formatBytes(material.file_size)} · {material.processing_status || 'uploaded'}</p>{material.processing_error && <p style={{ color: '#f4a6a6', fontSize: 12, lineHeight: 1.5 }}>{material.processing_error}</p>}{material.extracted_at && <p style={{ color: '#9dd9be', fontSize: 12 }}>✓ Text extracted and ready</p>}</div><div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'stretch' }}>{material.mime_type === 'application/pdf' && <button className="btn primary" disabled={processingId === material.id} onClick={() => processMaterial(material)}>{processingId === material.id ? 'Reading…' : material.extracted_at ? 'Read again' : 'Read material'}</button>}<button className="btn secondary" onClick={() => deleteMaterial(material)}>Delete</button></div></div></article>)}</div>}
             </section>
           </>
         )}
