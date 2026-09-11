@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { PDFParse } from 'pdf-parse'
+import pdfParse from 'pdf-parse'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -71,11 +71,10 @@ export async function POST(request) {
 
     if (downloadError || !file) throw new Error(downloadError?.message || 'Could not download the private material.')
 
-    const parser = new PDFParse({ data: Buffer.from(await file.arrayBuffer()) })
-    const result = await parser.getText()
-    await parser.destroy()
-
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const result = await pdfParse(buffer)
     const extractedText = cleanText(result.text || '')
+
     if (!extractedText) throw new Error('No selectable text was found in this PDF. A scanned/image-only PDF will need OCR.')
 
     const { error: updateError } = await supabase
