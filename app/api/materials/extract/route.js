@@ -8,14 +8,17 @@ export const maxDuration = 60
 function getServerSupabase(request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  const authorization = request.headers.get('authorization')
+  const authorization = request.headers.get('authorization') || ''
+  const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
 
-  if (!url || !key || !authorization?.startsWith('Bearer ')) return null
+  if (!url || !key || !token) return null
 
-  return createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { Authorization: authorization } },
-  })
+  return {
+    client: createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }),
+    token,
+  }
 }
 
 function cleanText(text) {
@@ -28,12 +31,13 @@ function cleanText(text) {
 }
 
 export async function POST(request) {
-  const supabase = getServerSupabase(request)
-  if (!supabase) {
+  const server = getServerSupabase(request)
+  if (!server) {
     return NextResponse.json({ error: 'Authentication is required.' }, { status: 401 })
   }
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const { client: supabase, token } = server
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
   if (authError || !user) {
     return NextResponse.json({ error: 'Your session is invalid or expired.' }, { status: 401 })
   }
