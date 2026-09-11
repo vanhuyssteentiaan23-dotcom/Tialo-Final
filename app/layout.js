@@ -1,4 +1,5 @@
 import './globals.css'
+import NavRepair from './components/NavRepair'
 
 export const metadata = {
   title: 'TIALO — AI Academic Coach',
@@ -8,7 +9,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body><NavRepair />{children}</body>
     </html>
   )
 }
