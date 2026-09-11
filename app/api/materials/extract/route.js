@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import pdfParse from 'pdf-parse'
+import { extractText, getDocumentProxy } from 'unpdf'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -71,9 +71,10 @@ export async function POST(request) {
 
     if (downloadError || !file) throw new Error(downloadError?.message || 'Could not download the private material.')
 
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const result = await pdfParse(buffer)
-    const extractedText = cleanText(result.text || '')
+    const buffer = new Uint8Array(await file.arrayBuffer())
+    const pdf = await getDocumentProxy(buffer)
+    const result = await extractText(pdf, { mergePages: true })
+    const extractedText = cleanText(typeof result.text === 'string' ? result.text : result.text.join('\n\n'))
 
     if (!extractedText) throw new Error('No selectable text was found in this PDF. A scanned/image-only PDF will need OCR.')
 
@@ -90,7 +91,7 @@ export async function POST(request) {
 
     if (updateError) throw new Error(updateError.message)
 
-    return NextResponse.json({ ok: true, materialId: material.id, characters: extractedText.length })
+    return NextResponse.json({ ok: true, materialId: material.id, characters: extractedText.length, pages: result.totalPages })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Material extraction failed.'
     await supabase
