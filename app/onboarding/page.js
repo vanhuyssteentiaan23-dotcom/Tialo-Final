@@ -19,6 +19,7 @@ export default function Onboarding() {
   const [user, setUser] = useState(null)
   const [fullName, setFullName] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
+  const [accountType, setAccountType] = useState('student')
   const [error, setError] = useState('')
   const [savedUnder16, setSavedUnder16] = useState(false)
 
@@ -47,10 +48,15 @@ export default function Onboarding() {
 
       if (profile?.full_name) setFullName(profile.full_name)
       if (profile?.date_of_birth) setDateOfBirth(profile.date_of_birth)
+      if (profile?.role === 'parent') setAccountType('parent')
 
-      if (profile?.date_of_birth && profile?.role) {
+      if (profile?.full_name && profile?.date_of_birth && profile?.role) {
         const age = calculateAge(profile.date_of_birth)
-        if (age >= 16) {
+        if (profile.role === 'parent' && age >= 18) {
+          window.location.href = '/dashboard'
+          return
+        }
+        if (profile.role === 'student' && age >= 16) {
           window.location.href = '/dashboard'
           return
         }
@@ -73,10 +79,13 @@ export default function Onboarding() {
     if (!dateOfBirth) return setError('Please enter your date of birth.')
     if (age === null || age < 0 || age > 100) return setError('Please enter a valid date of birth.')
 
+    if (accountType === 'parent' && age < 18) {
+      return setError('A parent or guardian account must be 18 or older.')
+    }
+
     setSaving(true)
     const supabase = getSupabaseBrowserClient()
-
-    const role = age < 16 ? 'student' : 'student'
+    const role = accountType === 'parent' ? 'parent' : 'student'
 
     const { error: updateError } = await supabase
       .from('profiles')
@@ -93,7 +102,7 @@ export default function Onboarding() {
       return
     }
 
-    if (age < 16) {
+    if (role === 'student' && age < 16) {
       setSavedUnder16(true)
       setSaving(false)
       return
@@ -113,12 +122,12 @@ export default function Onboarding() {
           <div className="eyebrow">Parent / Guardian Required</div>
           <h1 style={{ fontSize: 40, margin: '16px 0 12px' }}>Your profile is saved.</h1>
           <p className="muted" style={{ lineHeight: 1.7 }}>
-            Because you are under 16, TIALO requires a linked parent or guardian before you can access the student dashboard.
+            Because this student is under 16, a parent or guardian must be linked before student dashboard access is enabled.
           </p>
           <p className="muted" style={{ lineHeight: 1.7 }}>
-            The next step is for your parent or guardian to create their TIALO account and link your student profile.
+            Parent linking will be completed through the secure parent portal in the next onboarding stage.
           </p>
-          <button className="btn" style={{ marginTop: 18 }} onClick={() => window.location.href = '/'}>Back to home</button>
+          <button className="btn secondary" style={{ marginTop: 18 }} onClick={() => window.location.href = '/'}>Back to home</button>
         </section>
       </main>
     )
@@ -127,36 +136,50 @@ export default function Onboarding() {
   return (
     <main className="shell" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
       <section className="card" style={{ maxWidth: 620, width: '100%', padding: 36 }}>
-        <div className="eyebrow">Step 1 of 1</div>
-        <h1 style={{ fontSize: 40, margin: '16px 0 8px' }}>Set up your TIALO profile.</h1>
+        <div className="eyebrow">Stage 2 • Profile setup</div>
+        <h1 style={{ fontSize: 40, margin: '16px 0 8px' }}>Let’s set up your TIALO account.</h1>
         <p className="muted" style={{ lineHeight: 1.7, marginBottom: 28 }}>
-          Tell us your name and date of birth so TIALO can set up the correct student experience.
+          Your answers determine which TIALO experience and access rules apply to your account.
         </p>
 
         <form onSubmit={saveProfile}>
-          <label className="field">
+          <div className="field">
+            <span>Account type</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
+              <button type="button" className={accountType === 'student' ? 'btn primary' : 'btn secondary'} onClick={() => setAccountType('student')}>
+                Student
+              </button>
+              <button type="button" className={accountType === 'parent' ? 'btn primary' : 'btn secondary'} onClick={() => setAccountType('parent')}>
+                Parent / Guardian
+              </button>
+            </div>
+          </div>
+
+          <label className="field" style={{ marginTop: 18 }}>
             <span>Full name</span>
-            <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" autoComplete="name" />
+            <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" autoComplete="name" required />
           </label>
 
           <label className="field" style={{ marginTop: 18 }}>
             <span>Date of birth</span>
-            <input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} />
+            <input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} required />
           </label>
 
           {age !== null && age >= 0 && age <= 100 && (
             <div className="card" style={{ marginTop: 18, padding: 16 }}>
               <strong>Age: {age}</strong>
               <p className="muted" style={{ margin: '6px 0 0' }}>
-                {age < 16 ? 'A parent or guardian will need to be linked before dashboard access.' : 'You can use the full student dashboard.'}
+                {accountType === 'parent'
+                  ? age < 18 ? 'Parent / Guardian accounts require an age of 18 or older.' : 'Parent / Guardian account ready.'
+                  : age < 16 ? 'A parent or guardian must be linked before student dashboard access.' : 'Student dashboard access is available.'}
               </p>
             </div>
           )}
 
-          {error && <p style={{ marginTop: 18 }}>{error}</p>}
+          {error && <p style={{ marginTop: 18 }} role="alert">{error}</p>}
 
-          <button className="btn" type="submit" disabled={saving} style={{ marginTop: 24, width: '100%' }}>
-            {saving ? 'Saving…' : 'Continue to TIALO'}
+          <button className="btn primary" type="submit" disabled={saving} style={{ marginTop: 24, width: '100%' }}>
+            {saving ? 'Saving profile…' : 'Save and continue'}
           </button>
         </form>
       </section>
