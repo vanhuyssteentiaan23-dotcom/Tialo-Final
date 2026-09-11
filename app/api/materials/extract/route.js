@@ -11,8 +11,22 @@ async function ensurePdfJs() {
   await pdfjsReady
 }
 
+function normalizeSupabaseUrl(rawUrl) {
+  if (!rawUrl) return null
+
+  try {
+    const parsed = new URL(rawUrl.trim())
+    if (parsed.hostname.endsWith('.supabase.co')) {
+      return `${parsed.protocol}//${parsed.host}`
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 function getServerSupabase(request) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
   const authorization = request.headers.get('authorization') || ''
   const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
@@ -23,7 +37,7 @@ function getServerSupabase(request) {
     global: { headers: { Authorization: `Bearer ${token}` } },
   })
 
-  return { client, token }
+  return { client }
 }
 
 function cleanText(text) {
@@ -35,8 +49,6 @@ export async function POST(request) {
   if (!server) return NextResponse.json({ error: 'Authentication is required.' }, { status: 401 })
   const { client: supabase } = server
 
-  // The access token is attached to the Supabase client itself so every
-  // Auth and database request is made on behalf of the signed-in user.
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     console.error('Material extraction auth failed:', authError?.message || 'No user returned')
