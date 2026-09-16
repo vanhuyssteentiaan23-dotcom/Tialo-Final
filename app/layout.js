@@ -1,6 +1,8 @@
 import './globals.css'
+import './theme-system.css'
 import './dashboard/premium-dashboard.css'
 import NavRepair from './components/NavRepair'
+import ThemeSync from './components/ThemeSync'
 
 export const metadata = {
   title: 'TIALO — AI Academic Coach',
@@ -10,7 +12,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body><NavRepair />{children}</body>
+      <body><ThemeSync /><NavRepair />{children}</body>
     </html>
   )
 }
