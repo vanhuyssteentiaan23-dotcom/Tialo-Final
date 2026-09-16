@@ -1,6 +1,6 @@
 import './globals.css'
-import './theme-system.css'
 import './dashboard/premium-dashboard.css'
+import './theme-system.css'
 import NavRepair from './components/NavRepair'
 import ThemeSync from './components/ThemeSync'
 
