@@ -1,14 +1,23 @@
 'use client'
 
 import './dashboard-futuristic.css'
+import './dashboard-reference.css'
 import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
 
 const quickActions = [
-  { icon: '◈', title: 'AI Tutor', text: 'Learn from your uploaded material.', href: '/ai-tutor' },
-  { icon: '□', title: 'Mock Exams', text: 'Test yourself with exam-style questions.', href: '/mock-exams' },
-  { icon: '✓', title: 'Daily Tasks', text: 'Work through today’s study priorities.', href: '/daily-tasks' },
-  { icon: '↗', title: 'Progress', text: 'Review scores, study time and growth.', href: '/progress' },
+  { icon: '✦', title: 'AI Tutor', text: 'Ask questions, get explanations, learn faster.', href: '/ai-tutor' },
+  { icon: '▤', title: 'Mock Exams', text: 'Practice with real exam questions.', href: '/mock-exams' },
+  { icon: '✓', title: 'Daily Tasks', text: 'Stay consistent and stay on track.', href: '/daily-tasks' },
+  { icon: '▥', title: 'Progress', text: 'Track your results and improvement.', href: '/progress' },
+]
+
+const themes = [
+  { id: 'tialo-neon', name: 'TIALO Neon', description: 'Futuristic dark with neon accents', color: 'linear-gradient(135deg,#00f6ff,#00ffb3)' },
+  { id: 'ai-default', name: 'AI Default', description: 'Clean blue/purple AI theme', color: 'linear-gradient(135deg,#65a7ff,#9b6cff)' },
+  { id: 'midnight', name: 'Midnight', description: 'Deep dark minimal', color: 'linear-gradient(135deg,#dbe7f7,#667892)' },
+  { id: 'emerald', name: 'Emerald', description: 'Green futuristic', color: 'linear-gradient(135deg,#00ff9d,#00c98b)' },
+  { id: 'sunset', name: 'Sunset', description: 'Orange/pink accents', color: 'linear-gradient(135deg,#ffb347,#ff4f9a)' },
 ]
 
 function calculateAge(dateOfBirth) {
@@ -27,12 +36,14 @@ export default function Dashboard() {
   const [subjects, setSubjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [subjectError, setSubjectError] = useState('')
-  const [aiTheme, setAiTheme] = useState(false)
+  const [theme, setTheme] = useState('tialo-neon')
+  const [themeOpen, setThemeOpen] = useState(false)
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem('tialo-color-theme') === 'ai-default'
-    setAiTheme(savedTheme)
-    document.documentElement.classList.toggle('tialo-ai-default', savedTheme)
+    const saved = window.localStorage.getItem('tialo-color-theme') || 'tialo-neon'
+    setTheme(saved)
+    document.documentElement.classList.remove('tialo-ai-default', 'tialo-midnight', 'tialo-emerald', 'tialo-sunset')
+    if (saved !== 'tialo-neon') document.documentElement.classList.add(`tialo-${saved.replace('tialo-', '')}`)
 
     async function load() {
       const supabase = getSupabaseBrowserClient()
@@ -56,20 +67,22 @@ export default function Dashboard() {
     load()
   }, [])
 
+  function chooseTheme(next) {
+    setTheme(next)
+    setThemeOpen(false)
+    window.localStorage.setItem('tialo-color-theme', next)
+    document.documentElement.classList.remove('tialo-ai-default', 'tialo-midnight', 'tialo-emerald', 'tialo-sunset')
+    if (next !== 'tialo-neon') document.documentElement.classList.add(`tialo-${next.replace('tialo-', '')}`)
+  }
+
   async function signOut() {
     const supabase = getSupabaseBrowserClient()
     await supabase?.auth.signOut()
     window.location.href = '/'
   }
 
-  function toggleTheme() {
-    const next = !aiTheme
-    setAiTheme(next)
-    document.documentElement.classList.toggle('tialo-ai-default', next)
-    window.localStorage.setItem('tialo-color-theme', next ? 'ai-default' : 'tialo-neon')
-  }
-
   const firstName = useMemo(() => profile?.full_name?.trim().split(/\s+/)[0] || 'Student', [profile])
+  const activeTheme = themes.find(item => item.id === theme) || themes[0]
 
   if (loading) return <main className="shell dashboard-loading"><div className="loader-card"><div className="brand">TIA<span>LO</span></div><p>Loading your academic workspace…</p></div></main>
 
@@ -80,16 +93,18 @@ export default function Dashboard() {
         <div className="sidebar-label">Workspace</div>
         <nav className="sidebar-nav">
           <a className="side-link active" href="/dashboard"><span>⌂</span> Overview</a>
-          <a className="side-link" href="/subjects"><span>▣</span> Subjects</a>
-          <a className="side-link" href="/ai-tutor"><span>◈</span> AI Tutor</a>
-          <a className="side-link" href="/mock-exams"><span>□</span> Mock Exams</a>
+          <a className="side-link" href="/subjects"><span>▱</span> Subjects</a>
+          <a className="side-link" href="/ai-tutor"><span>✦</span> AI Tutor</a>
+          <a className="side-link" href="/mock-exams"><span>▤</span> Mock Exams</a>
           <a className="side-link" href="/daily-tasks"><span>✓</span> Daily Tasks</a>
-          <a className="side-link" href="/progress"><span>↗</span> Progress</a>
+          <a className="side-link" href="/progress"><span>▥</span> Progress</a>
           <a className="side-link" href="/billing"><span>R</span> Subscription</a>
         </nav>
+        <div className="sidebar-quote"><span>DISCIPLINE<br />CREATES<br />FREEDOM.</span><i></i></div>
         <div className="sidebar-bottom">
           <div className="student-mini"><div className="avatar">{firstName.charAt(0).toUpperCase()}</div><div><strong>{firstName}</strong><span>Student account</span></div></div>
-          <button className="side-signout" onClick={signOut}>Sign out</button>
+          <button className="side-settings" type="button">⚙ <span>Settings</span></button>
+          <button className="side-signout" onClick={signOut}>⇥ &nbsp; Sign out</button>
         </div>
       </aside>
 
@@ -97,11 +112,18 @@ export default function Dashboard() {
         <header className="dashboard-topbar">
           <div className="topbar-left"><span className="topbar-title">TIALO Workspace</span><span className="topbar-dot">●</span><span className="muted">Private & secure</span></div>
           <div className="topbar-right">
-            <button className="theme-control" type="button" onClick={toggleTheme} aria-label="Change colour theme">
-              <span className="theme-control-icon">✦</span>
-              <span><strong>{aiTheme ? 'AI Default' : 'TIALO Neon'}</strong><small>Colour theme</small></span>
-              <span className="theme-toggle">{aiTheme ? 'TIALO' : 'AI'}</span>
-            </button>
+            <div className="topbar-search"><span className="search-icon">⌕</span><span>Search subjects, notes, or ask anything...</span><span className="search-key">⌘ K</span></div>
+            <div className="theme-wrap">
+              <button className="theme-control" type="button" onClick={() => setThemeOpen(value => !value)} aria-expanded={themeOpen}>
+                <span className="theme-control-icon">✦</span><span><strong>{activeTheme.name}</strong></span><span className="theme-toggle">⌄</span>
+              </button>
+              {themeOpen && <div className="theme-menu">
+                <div className="theme-menu-title">Choose theme</div>
+                {themes.map(item => <button key={item.id} className={`theme-option ${theme === item.id ? 'selected' : ''}`} type="button" onClick={() => chooseTheme(item.id)}><span className="theme-swatch" style={{ background: item.color }}></span><span><strong>{item.name}</strong><small>{item.description}</small></span><b>{theme === item.id ? '✓' : ''}</b></button>)}
+              </div>}
+            </div>
+            <button className="topbar-icon" type="button" aria-label="Dark mode">☾</button>
+            <button className="topbar-icon notification" type="button" aria-label="Notifications">♧<i></i></button>
             <div className="topbar-profile"><div className="topbar-avatar">{firstName.charAt(0).toUpperCase()}</div><div><strong>{firstName}</strong><span>{user?.email}</span></div></div>
           </div>
         </header>
@@ -109,36 +131,37 @@ export default function Dashboard() {
         <div className="dashboard-content">
           <section className="welcome-card">
             <div className="welcome-copy">
-              <span className="section-kicker">YOUR ACADEMIC COACH</span>
-              <h1>Ready when you are,<br /><span>{firstName}.</span></h1>
-              <p>One intelligent workspace for your subjects, study material, practice exams and progress.</p>
-              <div className="welcome-actions"><a className="btn primary" href="/ai-tutor">Open AI Tutor <span>→</span></a><a className="btn secondary" href="/daily-tasks">View today’s tasks</a></div>
+              <span className="section-kicker">WELCOME BACK, {firstName.toUpperCase()}</span>
+              <h1>Smarter study.<br /><span>Brighter future.</span></h1>
+              <p>Your AI academic coach is here to help you learn, practise and improve.</p>
+              <div className="welcome-actions"><a className="btn primary" href="/ai-tutor">✦ &nbsp; Open AI Tutor <span>→</span></a><a className="btn secondary" href="/daily-tasks">☷ &nbsp; Today’s Tasks</a></div>
             </div>
             <div className="welcome-orbit" aria-hidden="true"><div className="orbit-ring ring-one"></div><div className="orbit-ring ring-two"></div><div className="orbit-core"><span>AI</span><small>COACH</small></div></div>
+            <div className="hero-quote">“A MORE<br />CONFIDENT YOU<br />STARTS HERE.”<i></i></div>
           </section>
 
           <section className="dashboard-section dashboard-section-tight">
-            <div className="section-heading"><div><span className="section-kicker">AT A GLANCE</span><h2>Your workspace</h2></div></div>
+            <div className="section-heading"><div><span className="section-kicker">AT A GLANCE</span></div></div>
             <div className="stat-grid redesigned-stats">
-              <a className="stat-card featured-stat" href="/subjects"><div className="stat-icon">▣</div><span>Subjects</span><strong>{subjects.length}</strong><small>In your workspace <b>→</b></small></a>
-              <a className="stat-card" href="/daily-tasks"><div className="stat-icon">✓</div><span>Daily Tasks</span><strong>→</strong><small>Open your study plan <b>→</b></small></a>
-              <a className="stat-card" href="/mock-exams"><div className="stat-icon">□</div><span>Mock Exams</span><strong>→</strong><small>Practice and review <b>→</b></small></a>
-              <a className="stat-card" href="/progress"><div className="stat-icon">↗</div><span>Progress</span><strong>→</strong><small>Track your performance <b>→</b></small></a>
+              <a className="stat-card" href="/subjects"><div className="stat-icon">▱</div><span>Subjects</span><strong>{subjects.length}</strong><small>In your workspace <b>→</b></small></a>
+              <a className="stat-card" href="/daily-tasks"><div className="stat-icon">✓</div><span>Daily tasks</span><strong>0</strong><small>Tasks remaining <b>→</b></small></a>
+              <a className="stat-card" href="/mock-exams"><div className="stat-icon">▤</div><span>Mock exams</span><strong>0</strong><small>Completed <b>→</b></small></a>
+              <a className="stat-card" href="/progress"><div className="stat-icon">▥</div><span>Progress</span><strong>Get started</strong><small>Track your performance <b>→</b></small></a>
             </div>
           </section>
 
           <section className="dashboard-section">
-            <div className="section-heading"><div><span className="section-kicker">YOUR LEARNING</span><h2>Subjects</h2><p>Build your study workspace around the subjects you are taking.</p></div><a className="btn primary" href="/subjects">+ Add subject</a></div>
+            <div className="section-heading"><div><span className="section-kicker">YOUR SUBJECTS</span><h2>Continue learning</h2><p>Manage your subjects, upload material and start studying.</p></div><a className="btn primary add-subject" href="/subjects">＋ &nbsp; Add subject</a></div>
             {subjectError && <div className="notice">{subjectError}</div>}
-            {subjects.length === 0 ? <div className="empty-state"><div className="empty-icon">▣</div><h3>Start with your first subject</h3><p>Add a subject, then upload your learning material so TIALO can build your academic tools around it.</p><a className="btn primary" href="/subjects" style={{ marginTop: 16 }}>Add your first subject</a></div> : <div className="subject-grid redesigned-subjects">{subjects.map((subject, index) => <a className="subject-card" href="/subjects" key={subject.id || index}><div className="subject-top"><span className="subject-number">{String(index + 1).padStart(2, '0')}</span><span className="subject-arrow">↗</span></div><h3>{subject.name || subject.title || `Subject ${index + 1}`}</h3><p>Open subject workspace</p></a>)}</div>}
+            {subjects.length === 0 ? <div className="empty-state"><div className="empty-icon">▱</div><h3>Start with your first subject</h3><p>Add a subject, then upload your learning material so TIALO can build your academic tools around it.</p><a className="btn primary" href="/subjects" style={{ marginTop: 16 }}>Add your first subject</a></div> : <div className="subject-grid redesigned-subjects">{subjects.map((subject, index) => <a className="subject-card" href="/subjects" key={subject.id || index}><div className="subject-art"><span></span><span></span><span></span></div><div className="subject-body"><div className="subject-top"><span className="subject-icon">▱</span><span className="subject-arrow">→</span></div><h3>{subject.name || subject.title || `Subject ${index + 1}`}</h3><p>0 materials</p><div className="subject-progress"><span></span></div><small>0%</small></div></a>)}</div>}
           </section>
 
           <section className="dashboard-section">
-            <div className="section-heading"><div><span className="section-kicker">STUDY TOOLS</span><h2>Go straight to what you need</h2><p>Everything connects back to your subjects and uploaded material.</p></div></div>
-            <div className="tool-grid redesigned-tools">{quickActions.map(action => <a className="tool-card" href={action.href} key={action.title}><div className="tool-icon">{action.icon}</div><div><h3>{action.title}</h3><p>{action.text}</p></div><span className="tool-status">Open <b>→</b></span></a>)}</div>
+            <div className="section-heading"><div><span className="section-kicker">STUDY TOOLS</span><p>Everything you need in one place.</p></div></div>
+            <div className="tool-grid redesigned-tools">{quickActions.map(action => <a className="tool-card" href={action.href} key={action.title}><div className="tool-icon">{action.icon}</div><div><h3>{action.title}</h3><p>{action.text}</p></div><span className="tool-status">→</span></a>)}</div>
           </section>
 
-          <section className="privacy-strip redesigned-privacy"><div><div className="privacy-title"><span>✓</span> Your academic workspace is private</div><p>Your signed-in account keeps your subjects, material, results and study records separated from other students.</p></div><span>SECURE BY DESIGN</span></section>
+          <div className="dashboard-motto"><span>LEARN</span><span>PRACTISE</span><span>IMPROVE</span><span>SUCCEED</span><i></i></div>
         </div>
       </section>
     </main>
