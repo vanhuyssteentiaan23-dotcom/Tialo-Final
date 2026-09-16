@@ -3,6 +3,7 @@
 import './dashboard-futuristic.css'
 import './dashboard-reference.css'
 import './dashboard-reference-finish.css'
+import './dashboard-final-fix.css'
 import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
 
