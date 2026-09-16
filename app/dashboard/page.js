@@ -26,8 +26,13 @@ export default function Dashboard() {
   const [subjects, setSubjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [subjectError, setSubjectError] = useState('')
+  const [aiTheme, setAiTheme] = useState(false)
 
   useEffect(() => {
+    const savedTheme = window.localStorage.getItem('tialo-color-theme') === 'ai-default'
+    setAiTheme(savedTheme)
+    document.documentElement.classList.toggle('tialo-ai-default', savedTheme)
+
     async function load() {
       const supabase = getSupabaseBrowserClient()
       if (!supabase) { window.location.href = '/login'; return }
@@ -54,6 +59,13 @@ export default function Dashboard() {
     const supabase = getSupabaseBrowserClient()
     await supabase?.auth.signOut()
     window.location.href = '/'
+  }
+
+  function toggleTheme() {
+    const next = !aiTheme
+    setAiTheme(next)
+    document.documentElement.classList.toggle('tialo-ai-default', next)
+    window.localStorage.setItem('tialo-color-theme', next ? 'ai-default' : 'tialo-neon')
   }
 
   const firstName = useMemo(() => profile?.full_name?.trim().split(/\s+/)[0] || 'Student', [profile])
@@ -83,7 +95,14 @@ export default function Dashboard() {
       <section className="dashboard-main">
         <header className="dashboard-topbar">
           <div className="topbar-left"><span className="topbar-title">TIALO Workspace</span><span className="topbar-dot">●</span><span className="muted">Private & secure</span></div>
-          <div className="topbar-profile"><div className="topbar-avatar">{firstName.charAt(0).toUpperCase()}</div><div><strong>{firstName}</strong><span>{user?.email}</span></div></div>
+          <div className="topbar-right">
+            <button className="theme-control" type="button" onClick={toggleTheme} aria-label="Change colour theme">
+              <span className="theme-control-icon">✦</span>
+              <span><strong>{aiTheme ? 'AI Default' : 'TIALO Neon'}</strong><small>Colour theme</small></span>
+              <span className="theme-toggle">{aiTheme ? 'TIALO' : 'AI'}</span>
+            </button>
+            <div className="topbar-profile"><div className="topbar-avatar">{firstName.charAt(0).toUpperCase()}</div><div><strong>{firstName}</strong><span>{user?.email}</span></div></div>
+          </div>
         </header>
 
         <div className="dashboard-content">
@@ -91,7 +110,7 @@ export default function Dashboard() {
             <div className="welcome-copy">
               <span className="section-kicker">YOUR ACADEMIC COACH</span>
               <h1>Ready when you are,<br /><span>{firstName}.</span></h1>
-              <p>Learn smarter with one focused workspace for your subjects, study material, practice exams and progress.</p>
+              <p>One intelligent workspace for your subjects, study material, practice exams and progress.</p>
               <div className="welcome-actions"><a className="btn primary" href="/ai-tutor">Open AI Tutor <span>→</span></a><a className="btn secondary" href="/daily-tasks">View today’s tasks</a></div>
             </div>
             <div className="welcome-orbit" aria-hidden="true"><div className="orbit-ring ring-one"></div><div className="orbit-ring ring-two"></div><div className="orbit-core"><span>AI</span><small>COACH</small></div></div>
