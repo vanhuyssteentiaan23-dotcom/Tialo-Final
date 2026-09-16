@@ -1,5 +1,6 @@
 'use client'
 
+import './dashboard-futuristic.css'
 import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
 
