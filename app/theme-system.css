@@ -1,0 +1,55 @@
+/* TIALO global theme system. The selected dashboard theme follows the student across the entire app. */
+:root{--tialo-accent:#00f5ff;--tialo-accent-2:#7c3cff;--tialo-accent-3:#00ff9d;--tialo-warm:#ff7b54;--tialo-pink:#ff3fa4;--tialo-bg:#020711;--tialo-surface:#071628;--tialo-surface-2:#0a1b2d;--tialo-border:rgba(0,245,255,.18);--tialo-text:#eef8ff;--tialo-muted:#8fa9c2}
+html.tialo-neon{--tialo-accent:#00f5ff;--tialo-accent-2:#7c3cff;--tialo-accent-3:#00ff9d;--tialo-warm:#00f5ff;--tialo-pink:#7c3cff;--tialo-bg:#020711;--tialo-surface:#071628;--tialo-surface-2:#0b1d32;--tialo-border:rgba(0,245,255,.22);--tialo-muted:#8fa9c2}
+html.tialo-ai-default{--tialo-accent:#65a7ff;--tialo-accent-2:#9b5cff;--tialo-accent-3:#6d8dff;--tialo-warm:#65a7ff;--tialo-pink:#a879ff;--tialo-bg:#050711;--tialo-surface:#0a1226;--tialo-surface-2:#111735;--tialo-border:rgba(101,167,255,.25);--tialo-muted:#9aaed0}
+html.tialo-midnight{--tialo-accent:#b7c9df;--tialo-accent-2:#71839d;--tialo-accent-3:#dce8f5;--tialo-warm:#b7c9df;--tialo-pink:#71839d;--tialo-bg:#05080d;--tialo-surface:#0b1018;--tialo-surface-2:#111a26;--tialo-border:rgba(183,201,223,.20);--tialo-muted:#91a0b3}
+html.tialo-emerald{--tialo-accent:#00ff9d;--tialo-accent-2:#00c98b;--tialo-accent-3:#65ffcf;--tialo-warm:#00ff9d;--tialo-pink:#00c98b;--tialo-bg:#020b09;--tialo-surface:#071b16;--tialo-surface-2:#0b2820;--tialo-border:rgba(0,255,157,.23);--tialo-muted:#8fbbaa}
+html.tialo-sunset{--tialo-accent:#ff9a55;--tialo-accent-2:#ff3fa4;--tialo-accent-3:#ffc15c;--tialo-warm:#ff7b54;--tialo-pink:#ff3fa4;--tialo-bg:#0c050a;--tialo-surface:#1b0b12;--tialo-surface-2:#28101b;--tialo-border:rgba(255,123,84,.27);--tialo-muted:#c5a2a8}
+
+html[class*="tialo-"] body{background:var(--tialo-bg)!important;color:var(--tialo-text)!important}
+html[class*="tialo-"] .shell{background:radial-gradient(circle at 12% -5%,color-mix(in srgb,var(--tialo-accent) 12%,transparent),transparent 28%),radial-gradient(circle at 92% 8%,color-mix(in srgb,var(--tialo-accent-2) 12%,transparent),transparent 28%),linear-gradient(180deg,var(--tialo-bg) 0%,var(--tialo-surface) 100%)!important;color:var(--tialo-text)!important}
+html[class*="tialo-"] .nav{background:color-mix(in srgb,var(--tialo-bg) 88%,transparent)!important;border-color:var(--tialo-border)!important}
+html[class*="tialo-"] .brand span,html[class*="tialo-"] .eyebrow,html[class*="tialo-"] .section-kicker{color:var(--tialo-accent)!important}
+html[class*="tialo-"] .eyebrow{border-color:var(--tialo-border)!important;background:color-mix(in srgb,var(--tialo-accent) 7%,transparent)!important}
+html[class*="tialo-"] .primary{background:linear-gradient(135deg,var(--tialo-accent),var(--tialo-accent-2))!important;color:#031018!important;box-shadow:0 10px 30px color-mix(in srgb,var(--tialo-accent) 18%,transparent)!important}
+html.tialo-ai-default .primary{color:#fff!important}
+html.tialo-midnight .primary{color:#06101c!important}
+html.tialo-sunset .primary{color:#18040d!important}
+html[class*="tialo-"] .secondary{border-color:var(--tialo-border)!important;background:color-mix(in srgb,var(--tialo-surface-2) 78%,transparent)!important;color:#fff!important}
+html[class*="tialo-"] .panel,html[class*="tialo-"] .card{background:linear-gradient(145deg,color-mix(in srgb,var(--tialo-surface-2) 96%,transparent),color-mix(in srgb,var(--tialo-bg) 92%,transparent))!important;border-color:var(--tialo-border)!important;box-shadow:0 25px 70px rgba(0,0,0,.25)!important}
+html[class*="tialo-"] .card h3,html[class*="tialo-"] .panel h2,html[class*="tialo-"] .panel h3{color:var(--tialo-text)!important}
+html[class*="tialo-"] .card p,html[class*="tialo-"] .panel p,html[class*="tialo-"] .muted{color:var(--tialo-muted)!important}
+html[class*="tialo-"] input,html[class*="tialo-"] textarea,html[class*="tialo-"] select{background:color-mix(in srgb,var(--tialo-surface-2) 92%,transparent)!important;color:var(--tialo-text)!important;border-color:var(--tialo-border)!important}
+html[class*="tialo-"] input:focus,html[class*="tialo-"] textarea:focus,html[class*="tialo-"] select:focus{outline:none!important;border-color:var(--tialo-accent)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--tialo-accent) 10%,transparent)!important}
+html[class*="tialo-"] .notice{border-color:color-mix(in srgb,var(--tialo-accent) 30%,transparent)!important;background:color-mix(in srgb,var(--tialo-accent) 6%,transparent)!important}
+
+/* Make each theme visibly change the whole dashboard and every shared UI surface. */
+html[class*="tialo-"] .dashboard-shell{background:var(--tialo-bg)!important}
+html[class*="tialo-"] .dashboard-shell .sidebar{border-color:var(--tialo-border)!important;background:linear-gradient(180deg,color-mix(in srgb,var(--tialo-bg) 98%,var(--tialo-accent) 2%),color-mix(in srgb,var(--tialo-surface) 96%,var(--tialo-accent-2) 4%))!important}
+html[class*="tialo-"] .dashboard-shell .side-link.active{background:linear-gradient(90deg,color-mix(in srgb,var(--tialo-accent) 16%,transparent),color-mix(in srgb,var(--tialo-accent-2) 8%,transparent))!important;box-shadow:inset 2px 0 var(--tialo-accent),0 0 25px color-mix(in srgb,var(--tialo-accent) 6%,transparent)!important}
+html[class*="tialo-"] .dashboard-shell .side-link.active span,html[class*="tialo-"] .dashboard-shell .topbar-dot,html[class*="tialo-"] .dashboard-shell .stat-icon,html[class*="tialo-"] .dashboard-shell .subject-icon,html[class*="tialo-"] .dashboard-shell .tool-status{color:var(--tialo-accent)!important}
+html[class*="tialo-"] .dashboard-shell .dashboard-topbar{border-color:var(--tialo-border)!important;background:color-mix(in srgb,var(--tialo-bg) 88%,transparent)!important}
+html[class*="tialo-"] .dashboard-shell .topbar-search,html[class*="tialo-"] .dashboard-shell .theme-control{border-color:var(--tialo-border)!important;background:linear-gradient(135deg,color-mix(in srgb,var(--tialo-accent) 7%,transparent),color-mix(in srgb,var(--tialo-accent-2) 8%,transparent))!important}
+html[class*="tialo-"] .dashboard-shell .welcome-card{border-color:color-mix(in srgb,var(--tialo-accent) 38%,transparent)!important;background:radial-gradient(circle at 78% 48%,color-mix(in srgb,var(--tialo-accent) 13%,transparent),transparent 23%),radial-gradient(circle at 62% 75%,color-mix(in srgb,var(--tialo-accent-2) 14%,transparent),transparent 30%),linear-gradient(135deg,var(--tialo-surface),color-mix(in srgb,var(--tialo-surface-2) 92%,var(--tialo-accent-2) 8%))!important}
+html[class*="tialo-"] .dashboard-shell .welcome-copy h1 span{background:linear-gradient(90deg,var(--tialo-accent),var(--tialo-accent-2),var(--tialo-accent-3))!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
+html[class*="tialo-"] .dashboard-shell .stat-card,html[class*="tialo-"] .dashboard-shell .subject-card,html[class*="tialo-"] .dashboard-shell .tool-card{border-color:var(--tialo-border)!important;background:linear-gradient(145deg,color-mix(in srgb,var(--tialo-surface-2) 96%,transparent),color-mix(in srgb,var(--tialo-bg) 94%,transparent))!important}
+html[class*="tialo-"] .dashboard-shell .stat-card:hover,html[class*="tialo-"] .dashboard-shell .subject-card:hover,html[class*="tialo-"] .dashboard-shell .tool-card:hover{border-color:color-mix(in srgb,var(--tialo-accent) 50%,transparent)!important;box-shadow:0 0 28px color-mix(in srgb,var(--tialo-accent) 9%,transparent),0 20px 45px rgba(0,0,0,.3)!important}
+html[class*="tialo-"] .dashboard-shell .stat-card small b,html[class*="tialo-"] .dashboard-shell .section-kicker,html[class*="tialo-"] .dashboard-shell .subject-number,html[class*="tialo-"] .dashboard-shell .privacy-strip>span{color:var(--tialo-accent)!important}
+html[class*="tialo-"] .dashboard-shell .stat-icon,html[class*="tialo-"] .dashboard-shell .tool-icon,html[class*="tialo-"] .dashboard-shell .privacy-title span{border-color:var(--tialo-border)!important;background:color-mix(in srgb,var(--tialo-accent) 8%,transparent)!important;color:var(--tialo-accent)!important}
+html[class*="tialo-"] .dashboard-shell .subject-progress span{background:linear-gradient(90deg,var(--tialo-accent),var(--tialo-accent-2))!important;box-shadow:0 0 10px var(--tialo-accent)!important}
+html[class*="tialo-"] .dashboard-shell .primary{background:linear-gradient(100deg,var(--tialo-accent),var(--tialo-accent-2),var(--tialo-accent-3))!important}
+
+/* Sunset gets a strong orange/pink identity rather than a tiny accent. */
+html.tialo-sunset .dashboard-shell:after{background:radial-gradient(circle,rgba(255,63,164,.22),transparent 68%)!important}
+html.tialo-sunset .dashboard-shell .welcome-card:before{border-color:rgba(255,154,85,.30)!important;box-shadow:0 0 0 34px rgba(255,154,85,.035),0 0 0 70px rgba(255,63,164,.045)!important}
+html.tialo-sunset .dashboard-shell .welcome-card:after{border-top-color:#ff9a55!important;border-right-color:#ff3fa4!important;box-shadow:0 -10px 35px rgba(255,63,164,.20)!important}
+html.tialo-sunset .dashboard-shell .subject-art{background:radial-gradient(circle at 30% 30%,rgba(255,154,85,.25),transparent 30%),linear-gradient(145deg,#281016,#210b1d)!important}
+html.tialo-sunset .dashboard-shell .subject-art:before{border-color:rgba(255,154,85,.48)!important}
+html.tialo-sunset .dashboard-shell .subject-art:after{border-color:rgba(255,63,164,.55)!important}
+html.tialo-sunset .dashboard-shell .tool-card:nth-child(2),html.tialo-sunset .dashboard-shell .tool-card:nth-child(3),html.tialo-sunset .dashboard-shell .tool-card:nth-child(4){border-color:rgba(255,63,164,.22)!important}
+html.tialo-sunset .dashboard-shell .tool-card:nth-child(2) .tool-icon,html.tialo-sunset .dashboard-shell .tool-card:nth-child(3) .tool-icon,html.tialo-sunset .dashboard-shell .tool-card:nth-child(4) .tool-icon{color:#ff9a55!important;border-color:rgba(255,154,85,.30)!important;background:rgba(255,63,164,.07)!important}
+
+/* Other themes also get their own stronger visual field. */
+html.tialo-ai-default .dashboard-shell:after{background:radial-gradient(circle,rgba(155,92,255,.18),transparent 68%)!important}
+html.tialo-emerald .dashboard-shell:after{background:radial-gradient(circle,rgba(0,255,157,.18),transparent 68%)!important}
+html.tialo-midnight .dashboard-shell:after{background:radial-gradient(circle,rgba(183,201,223,.08),transparent 68%)!important}
