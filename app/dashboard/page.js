@@ -2,6 +2,7 @@
 
 import './dashboard-futuristic.css'
 import './dashboard-reference.css'
+import './dashboard-reference-finish.css'
 import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
 
@@ -114,13 +115,8 @@ export default function Dashboard() {
           <div className="topbar-right">
             <div className="topbar-search"><span className="search-icon">⌕</span><span>Search subjects, notes, or ask anything...</span><span className="search-key">⌘ K</span></div>
             <div className="theme-wrap">
-              <button className="theme-control" type="button" onClick={() => setThemeOpen(value => !value)} aria-expanded={themeOpen}>
-                <span className="theme-control-icon">✦</span><span><strong>{activeTheme.name}</strong></span><span className="theme-toggle">⌄</span>
-              </button>
-              {themeOpen && <div className="theme-menu">
-                <div className="theme-menu-title">Choose theme</div>
-                {themes.map(item => <button key={item.id} className={`theme-option ${theme === item.id ? 'selected' : ''}`} type="button" onClick={() => chooseTheme(item.id)}><span className="theme-swatch" style={{ background: item.color }}></span><span><strong>{item.name}</strong><small>{item.description}</small></span><b>{theme === item.id ? '✓' : ''}</b></button>)}
-              </div>}
+              <button className="theme-control" type="button" onClick={() => setThemeOpen(value => !value)} aria-expanded={themeOpen}><span className="theme-control-icon">✦</span><span><strong>{activeTheme.name}</strong></span><span className="theme-toggle">⌄</span></button>
+              {themeOpen && <div className="theme-menu"><div className="theme-menu-title">Choose theme</div>{themes.map(item => <button key={item.id} className={`theme-option ${theme === item.id ? 'selected' : ''}`} type="button" onClick={() => chooseTheme(item.id)}><span className="theme-swatch" style={{ background: item.color }}></span><span><strong>{item.name}</strong><small>{item.description}</small></span><b>{theme === item.id ? '✓' : ''}</b></button>)}</div>}
             </div>
             <button className="topbar-icon" type="button" aria-label="Dark mode">☾</button>
             <button className="topbar-icon notification" type="button" aria-label="Notifications">♧<i></i></button>
@@ -130,37 +126,15 @@ export default function Dashboard() {
 
         <div className="dashboard-content">
           <section className="welcome-card">
-            <div className="welcome-copy">
-              <span className="section-kicker">WELCOME BACK, {firstName.toUpperCase()}</span>
-              <h1>Smarter study.<br /><span>Brighter future.</span></h1>
-              <p>Your AI academic coach is here to help you learn, practise and improve.</p>
-              <div className="welcome-actions"><a className="btn primary" href="/ai-tutor">✦ &nbsp; Open AI Tutor <span>→</span></a><a className="btn secondary" href="/daily-tasks">☷ &nbsp; Today’s Tasks</a></div>
-            </div>
-            <div className="welcome-orbit" aria-hidden="true"><div className="orbit-ring ring-one"></div><div className="orbit-ring ring-two"></div><div className="orbit-core"><span>AI</span><small>COACH</small></div></div>
-            <div className="hero-quote">“A MORE<br />CONFIDENT YOU<br />STARTS HERE.”<i></i></div>
+            <div className="welcome-copy"><span className="section-kicker">WELCOME BACK, {firstName.toUpperCase()}</span><h1>Smarter study.<br /><span>Brighter future.</span></h1><p>Your AI academic coach is here to help you learn, practise and improve.</p><div className="welcome-actions"><a className="btn primary" href="/ai-tutor">✦ &nbsp; Open AI Tutor <span>→</span></a><a className="btn secondary" href="/daily-tasks">☷ &nbsp; Today’s Tasks</a></div></div>
+            <div className="welcome-orbit" aria-hidden="true"><div className="orbit-ring ring-one"></div><div className="orbit-ring ring-two"></div><div className="orbit-core"><span>AI</span><small>COACH</small></div></div><div className="hero-quote">“A MORE<br />CONFIDENT YOU<br />STARTS HERE.”<i></i></div>
           </section>
 
-          <section className="dashboard-section dashboard-section-tight">
-            <div className="section-heading"><div><span className="section-kicker">AT A GLANCE</span></div></div>
-            <div className="stat-grid redesigned-stats">
-              <a className="stat-card" href="/subjects"><div className="stat-icon">▱</div><span>Subjects</span><strong>{subjects.length}</strong><small>In your workspace <b>→</b></small></a>
-              <a className="stat-card" href="/daily-tasks"><div className="stat-icon">✓</div><span>Daily tasks</span><strong>0</strong><small>Tasks remaining <b>→</b></small></a>
-              <a className="stat-card" href="/mock-exams"><div className="stat-icon">▤</div><span>Mock exams</span><strong>0</strong><small>Completed <b>→</b></small></a>
-              <a className="stat-card" href="/progress"><div className="stat-icon">▥</div><span>Progress</span><strong>Get started</strong><small>Track your performance <b>→</b></small></a>
-            </div>
-          </section>
+          <section className="dashboard-section dashboard-section-tight"><div className="section-heading"><div><span className="section-kicker">AT A GLANCE</span></div></div><div className="stat-grid redesigned-stats"><a className="stat-card" href="/subjects"><div className="stat-icon">▱</div><span>Subjects</span><strong>{subjects.length}</strong><small>In your workspace <b>→</b></small></a><a className="stat-card" href="/daily-tasks"><div className="stat-icon">✓</div><span>Daily tasks</span><strong>0</strong><small>Tasks remaining <b>→</b></small></a><a className="stat-card" href="/mock-exams"><div className="stat-icon">▤</div><span>Mock exams</span><strong>0</strong><small>Completed <b>→</b></small></a><a className="stat-card" href="/progress"><div className="stat-icon">▥</div><span>Progress</span><strong>Get started</strong><small>Track your performance <b>→</b></small></a></div></section>
 
-          <section className="dashboard-section">
-            <div className="section-heading"><div><span className="section-kicker">YOUR SUBJECTS</span><h2>Continue learning</h2><p>Manage your subjects, upload material and start studying.</p></div><a className="btn primary add-subject" href="/subjects">＋ &nbsp; Add subject</a></div>
-            {subjectError && <div className="notice">{subjectError}</div>}
-            {subjects.length === 0 ? <div className="empty-state"><div className="empty-icon">▱</div><h3>Start with your first subject</h3><p>Add a subject, then upload your learning material so TIALO can build your academic tools around it.</p><a className="btn primary" href="/subjects" style={{ marginTop: 16 }}>Add your first subject</a></div> : <div className="subject-grid redesigned-subjects">{subjects.map((subject, index) => <a className="subject-card" href="/subjects" key={subject.id || index}><div className="subject-art"><span></span><span></span><span></span></div><div className="subject-body"><div className="subject-top"><span className="subject-icon">▱</span><span className="subject-arrow">→</span></div><h3>{subject.name || subject.title || `Subject ${index + 1}`}</h3><p>0 materials</p><div className="subject-progress"><span></span></div><small>0%</small></div></a>)}</div>}
-          </section>
+          <section className="dashboard-section"><div className="section-heading"><div><span className="section-kicker">YOUR SUBJECTS</span><h2>Continue learning</h2><p>Manage your subjects, upload material and start studying.</p></div><a className="btn primary add-subject" href="/subjects">＋ &nbsp; Add subject</a></div>{subjectError && <div className="notice">{subjectError}</div>}{subjects.length === 0 ? <div className="empty-state"><div className="empty-icon">▱</div><h3>Start with your first subject</h3><p>Add a subject, then upload your learning material so TIALO can build your academic tools around it.</p><a className="btn primary" href="/subjects" style={{ marginTop: 16 }}>Add your first subject</a></div> : <div className="subject-grid redesigned-subjects">{subjects.map((subject, index) => <a className="subject-card" href="/subjects" key={subject.id || index}><div className="subject-art"><span></span><span></span><span></span></div><div className="subject-body"><div className="subject-top"><span className="subject-icon">▱</span><span className="subject-arrow">→</span></div><h3>{subject.name || subject.title || `Subject ${index + 1}`}</h3><p>0 materials</p><div className="subject-progress"><span></span></div><small>0%</small></div></a>)}</div>}</section>
 
-          <section className="dashboard-section">
-            <div className="section-heading"><div><span className="section-kicker">STUDY TOOLS</span><p>Everything you need in one place.</p></div></div>
-            <div className="tool-grid redesigned-tools">{quickActions.map(action => <a className="tool-card" href={action.href} key={action.title}><div className="tool-icon">{action.icon}</div><div><h3>{action.title}</h3><p>{action.text}</p></div><span className="tool-status">→</span></a>)}</div>
-          </section>
-
+          <section className="dashboard-section"><div className="section-heading"><div><span className="section-kicker">STUDY TOOLS</span><p>Everything you need in one place.</p></div></div><div className="tool-grid redesigned-tools">{quickActions.map(action => <a className="tool-card" href={action.href} key={action.title}><div className="tool-icon">{action.icon}</div><div><h3>{action.title}</h3><p>{action.text}</p></div><span className="tool-status">→</span></a>)}</div></section>
           <div className="dashboard-motto"><span>LEARN</span><span>PRACTISE</span><span>IMPROVE</span><span>SUCCEED</span><i></i></div>
         </div>
       </section>
