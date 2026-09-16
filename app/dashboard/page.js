@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
 
 const quickActions = [
-  { icon: '◈', title: 'AI Tutor', text: 'Ask questions and learn step by step.', status: 'Ready', href: '/ai-tutor' },
-  { icon: '▣', title: 'Mock Exams', text: 'Create practice exams from your own material.', status: 'Ready', href: '/mock-exams' },
-  { icon: '✓', title: 'Daily Tasks', text: 'Stay on top of today’s study priorities.', status: 'Ready', href: '/daily-tasks' },
-  { icon: '↗', title: 'Progress', text: 'See scores, study time and weak areas.', status: 'Ready', href: '/progress' },
+  { icon: '◈', title: 'AI Tutor', text: 'Learn from your uploaded material.', href: '/ai-tutor' },
+  { icon: '□', title: 'Mock Exams', text: 'Test yourself with exam-style questions.', href: '/mock-exams' },
+  { icon: '✓', title: 'Daily Tasks', text: 'Work through today’s study priorities.', href: '/daily-tasks' },
+  { icon: '↗', title: 'Progress', text: 'Review scores, study time and growth.', href: '/progress' },
 ]
 
 function calculateAge(dateOfBirth) {
@@ -37,21 +37,10 @@ export default function Dashboard() {
       if (profileError || !currentProfile?.full_name || !currentProfile?.date_of_birth || !currentProfile?.role) { window.location.href = '/onboarding'; return }
       const age = calculateAge(currentProfile.date_of_birth)
       if (currentProfile.role === 'parent' && age >= 18) { window.location.href = '/parent'; return }
-
       if (currentProfile.role === 'student' && age < 16) {
-        const { data: activeLink, error: linkError } = await supabase
-          .from('parent_child')
-          .select('id')
-          .eq('child_id', currentUser.id)
-          .eq('status', 'active')
-          .limit(1)
-          .maybeSingle()
-        if (linkError || !activeLink) {
-          window.location.href = '/parent-link'
-          return
-        }
+        const { data: activeLink, error: linkError } = await supabase.from('parent_child').select('id').eq('child_id', currentUser.id).eq('status', 'active').limit(1).maybeSingle()
+        if (linkError || !activeLink) { window.location.href = '/parent-link'; return }
       }
-
       setUser(currentUser); setProfile(currentProfile)
       const { data: subjectRows, error: subjectsError } = await supabase.from('subjects').select('*').order('created_at', { ascending: true })
       if (subjectsError) setSubjectError('Your subjects could not be loaded yet.')
@@ -90,14 +79,46 @@ export default function Dashboard() {
           <button className="side-signout" onClick={signOut}>Sign out</button>
         </div>
       </aside>
+
       <section className="dashboard-main">
-        <header className="dashboard-topbar"><div><span className="topbar-title">Academic workspace</span><span className="topbar-dot">●</span><span className="muted">Private & secure</span></div><span className="top-email">{user?.email}</span></header>
+        <header className="dashboard-topbar">
+          <div className="topbar-left"><span className="topbar-title">TIALO Workspace</span><span className="topbar-dot">●</span><span className="muted">Private & secure</span></div>
+          <div className="topbar-profile"><div className="topbar-avatar">{firstName.charAt(0).toUpperCase()}</div><div><strong>{firstName}</strong><span>{user?.email}</span></div></div>
+        </header>
+
         <div className="dashboard-content">
-          <div className="dashboard-hero"><div><div className="eyebrow">Student Dashboard</div><h1>Good to see you, {firstName}.</h1><p>Everything you need to learn, practise and improve — in one place.</p></div><div className="hero-badge"><span>●</span> Ready to learn</div></div>
-          <section className="stat-grid"><article className="stat-card"><span>Subjects</span><strong>{subjects.length}</strong><small>Added to your workspace</small></article><article className="stat-card"><span>Daily tasks</span><strong>—</strong><small>Open your study plan</small></article><article className="stat-card"><span>Mock exams</span><strong>—</strong><small>View your results</small></article><article className="stat-card"><span>Progress</span><strong>↗</strong><small>See your performance</small></article></section>
-          <section id="subjects" className="dashboard-section"><div className="section-heading"><div><span className="section-kicker">YOUR LEARNING</span><h2>Subjects</h2><p>Add and manage the subjects you are currently studying.</p></div><a className="btn primary" href="/subjects">+ Add subject</a></div>{subjectError && <div className="notice">{subjectError}</div>}{subjects.length === 0 ? <div className="empty-state"><div className="empty-icon">▣</div><h3>Your subjects will appear here</h3><p>Add your first subject to start organising learning material, AI tutor context, mock exams and progress.</p><a className="btn primary" href="/subjects" style={{ marginTop: 12 }}>Add your first subject</a></div> : <div className="subject-grid">{subjects.map((subject, index) => <article className="subject-card" key={subject.id || index}><div className="subject-number">{String(index + 1).padStart(2, '0')}</div><h3>{subject.name || subject.title || `Subject ${index + 1}`}</h3><p>Materials and progress for this subject.</p><a className="btn secondary" href="/subjects" style={{ marginTop: 8 }}>Manage subjects</a></article>)}</div>}</section>
-          <section className="dashboard-section" id="ai-tutor"><div className="section-heading"><div><span className="section-kicker">TIALO TOOLS</span><h2>Your academic tools</h2><p>Built around your subjects and your own learning material.</p></div></div><div className="tool-grid">{quickActions.map(action => <a className="tool-card" href={action.href} key={action.title}><div className="tool-icon">{action.icon}</div><div><h3>{action.title}</h3><p>{action.text}</p></div><span className="tool-status">{action.status}</span></a>)}</div></section>
-          <section className="privacy-strip"><div><strong>Your data belongs to your account.</strong><p>TIALO keeps your academic records separated using your signed-in account and database access rules. Subscription expiry does not delete your academic data.</p></div><span>SECURE WORKSPACE</span></section>
+          <section className="welcome-card">
+            <div className="welcome-copy">
+              <span className="section-kicker">YOUR ACADEMIC COACH</span>
+              <h1>Ready when you are,<br /><span>{firstName}.</span></h1>
+              <p>Learn smarter with one focused workspace for your subjects, study material, practice exams and progress.</p>
+              <div className="welcome-actions"><a className="btn primary" href="/ai-tutor">Open AI Tutor <span>→</span></a><a className="btn secondary" href="/daily-tasks">View today’s tasks</a></div>
+            </div>
+            <div className="welcome-orbit" aria-hidden="true"><div className="orbit-ring ring-one"></div><div className="orbit-ring ring-two"></div><div className="orbit-core"><span>AI</span><small>COACH</small></div></div>
+          </section>
+
+          <section className="dashboard-section dashboard-section-tight">
+            <div className="section-heading"><div><span className="section-kicker">AT A GLANCE</span><h2>Your workspace</h2></div></div>
+            <div className="stat-grid redesigned-stats">
+              <a className="stat-card featured-stat" href="/subjects"><div className="stat-icon">▣</div><span>Subjects</span><strong>{subjects.length}</strong><small>In your workspace <b>→</b></small></a>
+              <a className="stat-card" href="/daily-tasks"><div className="stat-icon">✓</div><span>Daily Tasks</span><strong>→</strong><small>Open your study plan <b>→</b></small></a>
+              <a className="stat-card" href="/mock-exams"><div className="stat-icon">□</div><span>Mock Exams</span><strong>→</strong><small>Practice and review <b>→</b></small></a>
+              <a className="stat-card" href="/progress"><div className="stat-icon">↗</div><span>Progress</span><strong>→</strong><small>Track your performance <b>→</b></small></a>
+            </div>
+          </section>
+
+          <section className="dashboard-section">
+            <div className="section-heading"><div><span className="section-kicker">YOUR LEARNING</span><h2>Subjects</h2><p>Build your study workspace around the subjects you are taking.</p></div><a className="btn primary" href="/subjects">+ Add subject</a></div>
+            {subjectError && <div className="notice">{subjectError}</div>}
+            {subjects.length === 0 ? <div className="empty-state"><div className="empty-icon">▣</div><h3>Start with your first subject</h3><p>Add a subject, then upload your learning material so TIALO can build your academic tools around it.</p><a className="btn primary" href="/subjects" style={{ marginTop: 16 }}>Add your first subject</a></div> : <div className="subject-grid redesigned-subjects">{subjects.map((subject, index) => <a className="subject-card" href="/subjects" key={subject.id || index}><div className="subject-top"><span className="subject-number">{String(index + 1).padStart(2, '0')}</span><span className="subject-arrow">↗</span></div><h3>{subject.name || subject.title || `Subject ${index + 1}`}</h3><p>Open subject workspace</p></a>)}</div>}
+          </section>
+
+          <section className="dashboard-section">
+            <div className="section-heading"><div><span className="section-kicker">STUDY TOOLS</span><h2>Go straight to what you need</h2><p>Everything connects back to your subjects and uploaded material.</p></div></div>
+            <div className="tool-grid redesigned-tools">{quickActions.map(action => <a className="tool-card" href={action.href} key={action.title}><div className="tool-icon">{action.icon}</div><div><h3>{action.title}</h3><p>{action.text}</p></div><span className="tool-status">Open <b>→</b></span></a>)}</div>
+          </section>
+
+          <section className="privacy-strip redesigned-privacy"><div><div className="privacy-title"><span>✓</span> Your academic workspace is private</div><p>Your signed-in account keeps your subjects, material, results and study records separated from other students.</p></div><span>SECURE BY DESIGN</span></section>
         </div>
       </section>
     </main>
