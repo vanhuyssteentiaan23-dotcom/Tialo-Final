@@ -4,6 +4,7 @@ import './dashboard-futuristic.css'
 import './dashboard-reference.css'
 import './dashboard-reference-finish.css'
 import './dashboard-final-fix.css'
+import './dashboard-final.css'
 import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
 
@@ -128,7 +129,7 @@ export default function Dashboard() {
         <div className="dashboard-content">
           <section className="welcome-card">
             <div className="welcome-copy"><span className="section-kicker">WELCOME BACK, {firstName.toUpperCase()}</span><h1>Smarter study.<br /><span>Brighter future.</span></h1><p>Your AI academic coach is here to help you learn, practise and improve.</p><div className="welcome-actions"><a className="btn primary" href="/ai-tutor">✦ &nbsp; Open AI Tutor <span>→</span></a><a className="btn secondary" href="/daily-tasks">☷ &nbsp; Today’s Tasks</a></div></div>
-            <div className="hero-planet" aria-hidden="true"><div className="planet-glow"></div><div className="planet-body"></div><div className="planet-arc arc-a"></div><div className="planet-arc arc-b"></div><div className="planet-stars"><i></i><i></i><i></i><i></i></div></div>
+            <div className="welcome-visual" aria-hidden="true"></div>
           </section>
 
           <section className="dashboard-section dashboard-section-tight"><div className="section-heading"><div><span className="section-kicker">AT A GLANCE</span></div></div><div className="stat-grid redesigned-stats"><a className="stat-card" href="/subjects"><div className="stat-icon">▱</div><span>Subjects</span><strong>{subjects.length}</strong><small>In your workspace <b>→</b></small></a><a className="stat-card" href="/daily-tasks"><div className="stat-icon">✓</div><span>Daily tasks</span><strong>0</strong><small>Tasks remaining <b>→</b></small></a><a className="stat-card" href="/mock-exams"><div className="stat-icon">▤</div><span>Mock exams</span><strong>0</strong><small>Completed <b>→</b></small></a><a className="stat-card" href="/progress"><div className="stat-icon">▥</div><span>Progress</span><strong>Get started</strong><small>Track your performance <b>→</b></small></a></div></section>
