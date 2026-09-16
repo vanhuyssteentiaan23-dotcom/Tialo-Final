@@ -1,4 +1,5 @@
 import './globals.css'
+import './dashboard/premium-dashboard.css'
 import NavRepair from './components/NavRepair'
 
 export const metadata = {
