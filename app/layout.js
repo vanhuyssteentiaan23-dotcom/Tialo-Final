@@ -1,6 +1,7 @@
 import './globals.css'
 import './dashboard/premium-dashboard.css'
 import './theme-system.css'
+import './reference-mirror.css'
 import NavRepair from './components/NavRepair'
 import ThemeSync from './components/ThemeSync'
 
