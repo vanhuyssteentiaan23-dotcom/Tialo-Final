@@ -51,7 +51,7 @@ export default function Dashboard(){
     <div className="tialo-hero-main">
       <div className="tialo-eyebrow"><span/>ACADEMIC COMMAND CENTER</div>
       <h1>Build momentum,<br/><em>one session at a time.</em></h1>
-      <p>Welcome back, {firstName{'}'}. Your workspace is ready. Pick a goal and keep moving.</p>
+      <p>Welcome back, {firstName}. Your workspace is ready. Pick a goal and keep moving.</p>
       <div className="tialo-hero-actions">
         <a href="/ai-tutor" className="tialo-hero-primary">✦ Ask TIALO <span>↗</span></a>
         <a href="/daily-tasks" className="tialo-hero-secondary">Open today’s tasks <span>→</span></a>
