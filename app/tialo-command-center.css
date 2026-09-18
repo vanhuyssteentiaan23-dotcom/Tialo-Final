@@ -1,0 +1,59 @@
+/* TIALO COMMAND CENTER — new product identity layer */
+.dashboard-shell .tialo-command-hero{
+ position:relative;min-height:310px;margin-bottom:54px;padding:42px 44px;
+ display:grid;grid-template-columns:minmax(0,1fr) 240px 190px;align-items:center;gap:28px;
+ overflow:hidden;border:1px solid rgba(0,245,255,.14);border-radius:24px;
+ background:linear-gradient(135deg,rgba(8,15,28,.98),rgba(8,10,22,.96));
+ box-shadow:0 30px 90px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.045);
+}
+.dashboard-shell .tialo-command-hero:before{
+ content:"";position:absolute;inset:0;pointer-events:none;
+ background:radial-gradient(circle at 70% 50%,rgba(0,245,255,.10),transparent 24%),radial-gradient(circle at 84% 18%,rgba(124,60,255,.14),transparent 30%);
+}
+.dashboard-shell .tialo-command-hero:after{
+ content:"";position:absolute;right:-100px;bottom:-160px;width:420px;height:420px;border:1px solid rgba(0,245,255,.07);border-radius:50%;
+ box-shadow:0 0 0 55px rgba(0,245,255,.018),0 0 0 110px rgba(124,60,255,.018);
+}
+.dashboard-shell .tialo-hero-main,.dashboard-shell .tialo-command-orb,.dashboard-shell .tialo-hero-meta{position:relative;z-index:1}
+.dashboard-shell .tialo-eyebrow{display:flex;align-items:center;gap:9px;color:#71839b;font-size:8px;font-weight:900;letter-spacing:.2em}
+.dashboard-shell .tialo-eyebrow span{width:6px;height:6px;border-radius:50%;background:var(--v2-cyan);box-shadow:0 0 12px var(--v2-cyan)}
+.dashboard-shell .tialo-hero-main h1{margin:18px 0 12px;font-size:clamp(36px,4vw,58px);line-height:.98;letter-spacing:-.06em;font-weight:900}
+.dashboard-shell .tialo-hero-main h1 em{font-style:normal;background:linear-gradient(90deg,var(--v2-cyan),#9b7cff 60%,#d36cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.dashboard-shell .tialo-hero-main p{max-width:530px;margin:0;color:#7d8da4;font-size:10px;line-height:1.7}
+.dashboard-shell .tialo-hero-actions{display:flex;gap:9px;margin-top:22px;flex-wrap:wrap}
+.dashboard-shell .tialo-hero-primary,.dashboard-shell .tialo-hero-secondary{height:38px;padding:0 14px;border-radius:10px;display:inline-flex;align-items:center;gap:16px;font-size:8px;font-weight:900;letter-spacing:.03em}
+.dashboard-shell .tialo-hero-primary{background:linear-gradient(110deg,var(--v2-cyan),#6d7cff,var(--v2-violet));color:#02060c;box-shadow:0 12px 30px rgba(0,245,255,.12)}
+.dashboard-shell .tialo-hero-primary span{font-size:13px}
+.dashboard-shell .tialo-hero-secondary{border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.025);color:#a5b2c5}
+.dashboard-shell .tialo-hero-secondary span{color:var(--v2-cyan);font-size:12px}
+.dashboard-shell .tialo-command-orb{width:210px;height:210px;display:grid;place-items:center;justify-self:center}
+.dashboard-shell .tialo-orb-ring{position:absolute;border-radius:50%;border:1px solid rgba(0,245,255,.15);transform:rotate(-18deg)}
+.dashboard-shell .tialo-orb-ring.r1{width:184px;height:184px;border-right-color:rgba(124,60,255,.65);box-shadow:0 0 35px rgba(0,245,255,.05)}
+.dashboard-shell .tialo-orb-ring.r2{width:140px;height:190px;transform:rotate(58deg);border-top-color:rgba(0,255,157,.65);border-bottom-color:rgba(124,60,255,.35)}
+.dashboard-shell .tialo-orb-core{width:102px;height:102px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 25%,#172a40,#060b15 68%);border:1px solid rgba(0,245,255,.28);box-shadow:0 0 65px rgba(0,245,255,.09),inset 0 0 35px rgba(124,60,255,.08)}
+.dashboard-shell .tialo-orb-core span{font-size:32px;line-height:1;font-weight:900;letter-spacing:-.06em;color:#f4f8ff}
+.dashboard-shell .tialo-orb-core small{margin-top:6px;text-align:center;color:#5e7189;font-size:6px;line-height:1.35;letter-spacing:.18em;font-weight:900}
+.dashboard-shell .tialo-hero-meta{align-self:end;border-left:1px solid rgba(255,255,255,.08);padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.dashboard-shell .tialo-hero-meta span{font-size:7px;color:#5d6c82;text-transform:uppercase;letter-spacing:.12em}
+.dashboard-shell .tialo-hero-meta strong{font-size:13px;color:#eaf1f8}
+.dashboard-shell .tialo-hero-meta small{font-size:7px;color:#66768c;line-height:1.5}
+.dashboard-shell .tialo-section-note{font-size:7px;font-weight:900;letter-spacing:.12em;color:var(--v2-green);border:1px solid rgba(0,255,157,.14);background:rgba(0,255,157,.035);padding:7px 9px;border-radius:8px}
+.dashboard-shell .stat-card,.dashboard-shell .analytics-card,.dashboard-shell .subject-card,.dashboard-shell .tool-card{transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+@media(max-width:1000px){
+ .dashboard-shell .tialo-command-hero{grid-template-columns:minmax(0,1fr) 190px;padding:34px}
+ .dashboard-shell .tialo-hero-meta{display:none}
+}
+@media(max-width:700px){
+ .dashboard-shell .tialo-command-hero{display:block;min-height:0;padding:28px;margin-bottom:38px}
+ .dashboard-shell .tialo-command-orb{position:absolute;right:-25px;top:25px;transform:scale(.62);opacity:.72}
+ .dashboard-shell .tialo-hero-main{padding-right:50px}
+ .dashboard-shell .tialo-hero-main h1{font-size:35px}
+ .dashboard-shell .tialo-hero-actions{margin-top:18px}
+}
+@media(max-width:430px){
+ .dashboard-shell .tialo-command-hero{padding:22px}
+ .dashboard-shell .tialo-command-orb{display:none}
+ .dashboard-shell .tialo-hero-main{padding-right:0}
+ .dashboard-shell .tialo-hero-main h1{font-size:31px}
+ .dashboard-shell .tialo-hero-primary,.dashboard-shell .tialo-hero-secondary{width:100%;justify-content:space-between}
+}
