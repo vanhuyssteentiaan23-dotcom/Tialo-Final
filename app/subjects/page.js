@@ -110,7 +110,7 @@ export default function SubjectsPage() {
           Add the subjects you are currently studying. Your learning materials, AI tutor context, mock exams and progress will be organised around these subjects.
         </p>
 
-        <form onSubmit={addSubject} className="panel" style={{ marginTop: 32, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <form onSubmit={addSubject} className="subjects-form" style={{ marginTop: 32 }}>
           <input
             value={name}
             onChange={event => setName(event.target.value)}
@@ -134,7 +134,7 @@ export default function SubjectsPage() {
             <p>Start by adding your first subject above.</p>
           </div>
         ) : (
-          <div className="grid" style={{ marginTop: 24 }}>
+          <div className="subjects-grid">
             {subjects.map(subject => {
               const subjectMaterials = materialsFor(subject.id)
               return <article className="card" key={subject.id}>
@@ -145,7 +145,7 @@ export default function SubjectsPage() {
                     <p>{subjectMaterials.length} material{subjectMaterials.length === 1 ? '' : 's'} · Upload notes, textbooks and presentations.</p>
                     <a className="btn primary" href={`/materials?subject=${encodeURIComponent(subject.id)}`} style={{ marginTop: 10 }}>＋ Upload materials</a>
                     <div style={{ marginTop: 18, display: 'grid', gap: 8 }}>
-                      {subjectMaterials.length === 0 ? <div className="muted" style={{ fontSize: 11, padding: '10px 0' }}>No materials uploaded for this subject.</div> :
+                      {subjectMaterials.length === 0 ? <div className="muted" style={{ fontSize: 11, padding: '6px 0' }}>No materials uploaded for this subject.</div> :
                         subjectMaterials.map(material => <div key={material.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, padding:'11px 12px', border:'1px solid rgba(255,255,255,.07)', borderRadius:10, background:'rgba(255,255,255,.025)' }}>
                           <div style={{ minWidth:0 }}><strong style={{display:'block',fontSize:11,overflowWrap:'anywhere'}}>{material.title || material.file_name}</strong><span className="muted" style={{fontSize:9}}>{material.processing_status || 'uploaded'}{material.extracted_at ? ' · ready' : ''}</span></div>
                           <button className="btn secondary" style={{flex:'0 0 auto'}} onClick={() => deleteMaterial(material)}>Delete</button>
