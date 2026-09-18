@@ -97,7 +97,29 @@ export default function SubjectsPage() {
   }
 
   return (
-    <main className="shell" style={{ minHeight: '100vh' }}>
+    <main className="shell subjects-page" style={{ minHeight: '100vh' }}>
+      <style>{`
+        .subjects-page .section{max-width:1100px;margin:0 auto}
+        .subjects-page .subjects-form{background:rgba(18,8,16,.72);border:1px solid rgba(255,90,120,.28);border-radius:22px;padding:18px;display:flex;gap:12px;align-items:center}
+        .subjects-page .subjects-form input{flex:1;min-width:0}
+        .subjects-page .subjects-form .btn{white-space:nowrap;min-height:52px}
+        .subjects-page .subjects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:18px;margin-top:24px}
+        .subjects-page .subject-panel{min-width:0;padding:22px;border:1px solid rgba(255,90,120,.25);border-radius:20px;background:linear-gradient(145deg,rgba(31,9,19,.9),rgba(11,5,12,.94));box-shadow:0 16px 35px rgba(0,0,0,.18)}
+        .subjects-page .subject-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+        .subjects-page .subject-header-main{min-width:0;flex:1}
+        .subjects-page .subject-title{font-size:22px;line-height:1.15;margin:12px 0 8px;overflow-wrap:anywhere}
+        .subjects-page .subject-description{font-size:12px;line-height:1.65;color:#b7a7ae;margin:0}
+        .subjects-page .subject-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+        .subjects-page .subject-actions .btn{white-space:nowrap}
+        .subjects-page .materials-list{display:grid;gap:9px;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.07)}
+        .subjects-page .material-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.025)}
+        .subjects-page .material-info{min-width:0;flex:1}
+        .subjects-page .material-name{display:block;font-size:12px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+        .subjects-page .material-meta{display:block;font-size:9px;color:#8e7d86;margin-top:5px}
+        .subjects-page .material-row .btn{flex:0 0 auto;white-space:nowrap}
+        @media(max-width:650px){.subjects-page .section{padding-left:14px;padding-right:14px}.subjects-page .subjects-form{align-items:stretch;flex-direction:column}.subjects-page .subjects-form .btn{width:100%}.subjects-page .subjects-grid{grid-template-columns:1fr}.subjects-page .subject-header{display:block}.subjects-page .subject-header>.btn{margin-top:12px}.subjects-page .material-row{align-items:flex-start}.subjects-page .material-row .btn{padding:9px 11px}}
+      `}</style>
+
       <nav className="nav">
         <a className="brand" href="/dashboard">TIA<span>LO</span></a>
         <a className="btn secondary" href="/dashboard">Back to dashboard</a>
@@ -137,14 +159,14 @@ export default function SubjectsPage() {
           <div className="subjects-grid">
             {subjects.map(subject => {
               const subjectMaterials = materialsFor(subject.id)
-              return <article className="card" key={subject.id}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
+              return <article className="subject-panel" key={subject.id}>
+                <div className="subject-header">
+                  <div className="subject-header-main">
                     <div className="eyebrow" style={{ fontSize: 10 }}>Subject</div>
-                    <h3 style={{ fontSize: 22, marginTop: 14 }}>{subject.name}</h3>
-                    <p>{subjectMaterials.length} material{subjectMaterials.length === 1 ? '' : 's'} · Upload notes, textbooks and presentations.</p>
-                    <a className="btn primary" href={`/materials?subject=${encodeURIComponent(subject.id)}`} style={{ marginTop: 10 }}>＋ Upload materials</a>
-                    <div style={{ marginTop: 18, display: 'grid', gap: 8 }}>
+                    <h3 className="subject-title">{subject.name}</h3>
+                    <p className="subject-description">{subjectMaterials.length} material{subjectMaterials.length === 1 ? '' : 's'} · Your notes, textbooks and presentations.</p>
+                    <div className="subject-actions"><a className="btn primary" href={`/materials?subject=${encodeURIComponent(subject.id)}`}>＋ Upload materials</a></div>
+                    <div className="materials-list">
                       {subjectMaterials.length === 0 ? <div className="muted" style={{ fontSize: 11, padding: '6px 0' }}>No materials uploaded for this subject.</div> :
                         subjectMaterials.map(material => <div key={material.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, padding:'11px 12px', border:'1px solid rgba(255,255,255,.07)', borderRadius:10, background:'rgba(255,255,255,.025)' }}>
                           <div style={{ minWidth:0 }}><strong style={{display:'block',fontSize:11,overflowWrap:'anywhere'}}>{material.title || material.file_name}</strong><span className="muted" style={{fontSize:9}}>{material.processing_status || 'uploaded'}{material.extracted_at ? ' · ready' : ''}</span></div>
@@ -153,7 +175,7 @@ export default function SubjectsPage() {
                       }
                     </div>
                   </div>
-                  <button className="btn secondary" onClick={() => deleteSubject(subject.id)} aria-label={`Delete ${subject.name}`}>Delete subject</button>
+                  <button type="button" className="btn secondary" onClick={() => deleteSubject(subject.id)} aria-label={`Delete ${subject.name}`}>Delete subject</button>
                 </div>
               </article>
             })}
