@@ -42,7 +42,18 @@ export default function Dashboard(){
    <div className="theme-wrap"><button className="theme-control" type="button" onClick={()=>setThemeOpen(v=>!v)} aria-expanded={themeOpen}><span className="theme-control-icon">✦</span><strong>{activeTheme.name}</strong><span className="theme-toggle">⌄</span></button>{themeOpen&&<div className="theme-menu"><div className="theme-menu-title">Choose theme</div>{themes.map(item=><button key={item.id} className={`theme-option ${theme===item.id?'selected':''}`} type="button" onClick={()=>chooseTheme(item.id)}><span className="theme-swatch" style={{background:item.color}}/><span><strong>{item.name}</strong><small>{item.description}</small></span><b>{theme===item.id?'✓':''}</b></button>)}</div>}</div>
    <button className="topbar-icon" type="button" aria-label="Dark mode">☾</button><button className="topbar-icon notification" type="button" aria-label="Notifications">♧</button><div className="topbar-profile"><div className="topbar-avatar">{firstName.charAt(0).toUpperCase()}</div><div><strong>{firstName}</strong><span>{user?.email}</span></div></div>
   </div></header>
-  <div className="dashboard-content"><section className="welcome-card"><div className="welcome-copy"><span className="section-kicker">WELCOME BACK, {firstName.toUpperCase()}</span><h1>Smarter study.<br/><span>Brighter future.</span></h1><p>Your AI academic coach is here to help you learn, practise and improve.</p><div className="welcome-actions"><a className="btn primary" href="/ai-tutor">✦ &nbsp;Open AI Tutor&nbsp; →</a><a className="btn secondary" href="/daily-tasks">☷ &nbsp;Today’s Tasks</a></div></div></section>
+  <div className="dashboard-content">
+   <section className="reference-page-heading">
+    <div>
+      <div className="reference-title">Overview</div>
+      <div className="reference-welcome">Welcome back, {firstName} 👋</div>
+      <p>Keep going. You’re building something amazing.</p>
+    </div>
+    <div className="reference-heading-right">
+      <span>{new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>
+      <div>✿ Consistency beats motivation.</div>
+    </div>
+   </section>
    <section className="dashboard-section dashboard-section-tight"><div className="section-heading"><div><span className="section-kicker">AT A GLANCE</span></div></div><div className="stat-grid redesigned-stats"><a className="stat-card" href="/subjects"><div className="stat-icon">▱</div><span>Subjects</span><strong>{subjects.length}</strong><small>In your workspace <b>→</b></small></a><a className="stat-card" href="/daily-tasks"><div className="stat-icon">✓</div><span>Daily tasks</span><strong>{taskRemaining}</strong><small>Tasks remaining <b>→</b></small></a><a className="stat-card" href="/mock-exams"><div className="stat-icon">▤</div><span>Mock exams</span><strong>{examCount}</strong><small>Completed <b>→</b></small></a><a className="stat-card" href="/progress"><div className="stat-icon">▥</div><span>Progress</span><strong>{averageScore == null ? "Get started" : `${averageScore}%`}</strong><small>Track your performance <b>→</b></small></a></div></section>
    <section className="dashboard-section analytics-section">
  <div className="section-heading"><div><span className="section-kicker">YOUR ACTIVITY</span><h2>Study momentum</h2><p>Track study time and keep a history of your mock-exam scores.</p></div><span className="analytics-live">LIVE DATA</span></div>
