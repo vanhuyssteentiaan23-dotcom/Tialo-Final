@@ -5,6 +5,7 @@ import { getSupabaseBrowserClient } from '../../lib/supabase'
 
 export default function SubjectsPage() {
   const [subjects, setSubjects] = useState([])
+  const [materials, setMaterials] = useState([])
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -25,9 +26,16 @@ export default function SubjectsPage() {
       .select('id,name,created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: true })
+    const { data: materialRows, error: materialError } = await supabase
+      .from('materials')
+      .select('id,subject_id,title,file_name,mime_type,file_size,processing_status,extracted_at,storage_path')
+      .eq('user_id', user.id)
+      .order('uploaded_at', { ascending: false })
 
     if (queryError) setError(queryError.message)
     else setSubjects(data || [])
+    if (materialError) setError(current => current || materialError.message)
+    else setMaterials(materialRows || [])
     setLoading(false)
   }
 
@@ -59,6 +67,24 @@ export default function SubjectsPage() {
     }
 
     setSaving(false)
+  }
+
+  async function deleteMaterial(material) {
+    if (!window.confirm(`Delete ${material.title || material.file_name || 'this material'}?`)) return
+    const supabase = getSupabaseBrowserClient()
+    if (!supabase) return
+    setError('')
+    const { error: dbError } = await supabase.from('materials').delete().eq('id', material.id).eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+    if (dbError) { setError(dbError.message); return }
+    if (material.storage_path) {
+      const { error: storageError } = await supabase.storage.from('study-materials').remove([material.storage_path])
+      if (storageError) setError(`Material deleted, but storage cleanup needs attention: ${storageError.message}`)
+    }
+    setMaterials(current => current.filter(item => item.id !== material.id))
+  }
+
+  function materialsFor(subjectId) {
+    return materials.filter(material => material.subject_id === subjectId)
   }
 
   async function deleteSubject(id) {
@@ -109,19 +135,28 @@ export default function SubjectsPage() {
           </div>
         ) : (
           <div className="grid" style={{ marginTop: 24 }}>
-            {subjects.map(subject => (
-              <article className="card" key={subject.id}>
+            {subjects.map(subject => {
+              const subjectMaterials = materialsFor(subject.id)
+              return <article className="card" key={subject.id}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ minWidth: 0 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <div className="eyebrow" style={{ fontSize: 10 }}>Subject</div>
                     <h3 style={{ fontSize: 22, marginTop: 14 }}>{subject.name}</h3>
-                    <p>Upload your notes, textbooks and presentations for this subject.</p>
-                    <a className="btn primary" href={`/materials?subject=${encodeURIComponent(subject.id)}`} style={{ marginTop: 10 }}>Upload materials</a>
+                    <p>{subjectMaterials.length} material{subjectMaterials.length === 1 ? '' : 's'} · Upload notes, textbooks and presentations.</p>
+                    <a className="btn primary" href={`/materials?subject=${encodeURIComponent(subject.id)}`} style={{ marginTop: 10 }}>＋ Upload materials</a>
+                    <div style={{ marginTop: 18, display: 'grid', gap: 8 }}>
+                      {subjectMaterials.length === 0 ? <div className="muted" style={{ fontSize: 11, padding: '10px 0' }}>No materials uploaded for this subject.</div> :
+                        subjectMaterials.map(material => <div key={material.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, padding:'11px 12px', border:'1px solid rgba(255,255,255,.07)', borderRadius:10, background:'rgba(255,255,255,.025)' }}>
+                          <div style={{ minWidth:0 }}><strong style={{display:'block',fontSize:11,overflowWrap:'anywhere'}}>{material.title || material.file_name}</strong><span className="muted" style={{fontSize:9}}>{material.processing_status || 'uploaded'}{material.extracted_at ? ' · ready' : ''}</span></div>
+                          <button className="btn secondary" style={{flex:'0 0 auto'}} onClick={() => deleteMaterial(material)}>Delete</button>
+                        </div>)
+                      }
+                    </div>
                   </div>
-                  <button className="btn secondary" onClick={() => deleteSubject(subject.id)} aria-label={`Delete ${subject.name}`}>Delete</button>
+                  <button className="btn secondary" onClick={() => deleteSubject(subject.id)} aria-label={`Delete ${subject.name}`}>Delete subject</button>
                 </div>
               </article>
-            ))}
+            })}
           </div>
         )}
       </section>
