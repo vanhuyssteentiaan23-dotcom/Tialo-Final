@@ -33,6 +33,9 @@ export default function Dashboard(){
  const weekDays=useMemo(()=>{const now=new Date(),day=(now.getDay()+6)%7,start=new Date(now);start.setDate(now.getDate()-day);return Array.from({length:7},(_,i)=>{const date=new Date(start);date.setDate(start.getDate()+i);const key=localDateKey(date);const minutes=(taskByDate[key]||[]).reduce((sum,t)=>sum+Number(t.estimated_minutes||0),0);return {date,key,minutes}})},[taskByDate])
  const selectedExams=selectedDate?(examByDate[selectedDate]||[]):[]
  const selectedTasks=selectedDate?(taskByDate[selectedDate]||[]):[]
+ const completedTaskDates=useMemo(()=>new Set(taskRows.filter(t=>t.completed).map(t=>t.completed_at?localDateKey(t.completed_at):t.task_date)),[taskRows])
+ const studyStreak=useMemo(()=>{let streak=0;const d=new Date();while(completedTaskDates.has(localDateKey(d))){streak++;d.setDate(d.getDate()-1)}return streak},[completedTaskDates])
+ const focusScore=useMemo(()=>{const subjectScore=Math.min(100,subjects.length*20);const materialScore=Math.min(100,materialCount*10);const taskScore=Math.min(100,(taskRows.filter(t=>t.completed).length)*8);const examScore=averageScore==null?0:averageScore;return Math.round(subjectScore*.2+materialScore*.2+taskScore*.2+examScore*.4)},[subjects,materialCount,taskRows,averageScore])
  if(loading)return <main className="shell dashboard-loading"><div className="loader-card"><div className="brand">TIA<span>LO</span></div><p>Loading your academic workspace…</p></div></main>
  return <main className="shell dashboard-shell">
   <div className={`mobile-nav-backdrop ${mobileNavOpen?"open":""}`} onClick={()=>setMobileNavOpen(false)} aria-hidden="true"/><aside className={`sidebar ${mobileNavOpen?"mobile-open":""}`}><div className="sidebar-head"><div className="brand">TIA<span>LO</span></div><button className="sidebar-close" type="button" onClick={()=>setMobileNavOpen(false)} aria-label="Close navigation">×</button></div><div className="sidebar-label">WORKSPACE</div><nav className="sidebar-nav">
@@ -44,18 +47,26 @@ export default function Dashboard(){
    <button className="topbar-icon" type="button" aria-label="Dark mode">☾</button><button className="topbar-icon notification" type="button" aria-label="Notifications">♧</button><div className="topbar-profile"><div className="topbar-avatar">{firstName.charAt(0).toUpperCase()}</div><div><strong>{firstName}</strong><span>{user?.email}</span></div></div>
   </div></header>
   <div className="dashboard-content">
-   <section className="reference-page-heading">
-    <div>
-      <div className="reference-title">Overview</div>
-      <div className="reference-welcome">Welcome back, {firstName} 👋</div>
-      <p>Keep going. You’re building something amazing.</p>
+   <section className="tialo-command-hero">
+    <div className="tialo-hero-main">
+      <div className="tialo-eyebrow"><span/>ACADEMIC COMMAND CENTER</div>
+      <h1>Build momentum,<br/><em>one session at a time.</em></h1>
+      <p>Welcome back, {firstName{'}'}. Your workspace is ready. Pick a goal and keep moving.</p>
+      <div className="tialo-hero-actions">
+        <a href="/ai-tutor" className="tialo-hero-primary">✦ Ask TIALO <span>↗</span></a>
+        <a href="/daily-tasks" className="tialo-hero-secondary">Open today’s tasks <span>→</span></a>
+      </div>
     </div>
-    <div className="reference-heading-right">
-      <span>{new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>
-      <div>✿ Consistency beats motivation.</div>
+    <div className="tialo-command-orb">
+      <div className="tialo-orb-ring r1"/><div className="tialo-orb-ring r2"/><div className="tialo-orb-core"><span>{focusScore}</span><small>FOCUS<br/>INDEX</small></div>
+    </div>
+    <div className="tialo-hero-meta">
+      <span>{new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})}</span>
+      <strong>{studyStreak > 0 ? studyStreak+' day streak' : 'Start your streak'}</strong>
+      <small>{studyStreak > 0 ? 'Keep it alive today.' : 'Complete a task to begin.'}</small>
     </div>
    </section>
-   <section className="dashboard-section dashboard-section-tight"><div className="section-heading"><div><span className="section-kicker">AT A GLANCE</span></div></div><div className="stat-grid redesigned-stats"><a className="stat-card" href="/subjects"><div className="stat-icon">▱</div><span>Subjects</span><strong>{subjects.length}</strong><small>In your workspace <b>→</b></small></a><a className="stat-card" href="/daily-tasks"><div className="stat-icon">✓</div><span>Daily tasks</span><strong>{taskRemaining}</strong><small>Tasks remaining <b>→</b></small></a><a className="stat-card" href="/mock-exams"><div className="stat-icon">▤</div><span>Mock exams</span><strong>{examCount}</strong><small>Completed <b>→</b></small></a><a className="stat-card" href="/progress"><div className="stat-icon">▥</div><span>Progress</span><strong>{averageScore == null ? "Get started" : `${averageScore}%`}</strong><small>Track your performance <b>→</b></small></a></div></section>
+   <section className="dashboard-section dashboard-section-tight"><div className="section-heading"><div><span className="section-kicker">AT A GLANCE</span><h2>Your academic pulse</h2><p>A live view of what is happening inside your workspace.</p></div><span className="tialo-section-note">UPDATED LIVE</span></div><div className="stat-grid redesigned-stats"><a className="stat-card" href="/subjects"><div className="stat-icon">▱</div><span>Subjects</span><strong>{subjects.length}</strong><small>In your workspace <b>→</b></small></a><a className="stat-card" href="/daily-tasks"><div className="stat-icon">✓</div><span>Daily tasks</span><strong>{taskRemaining}</strong><small>Tasks remaining <b>→</b></small></a><a className="stat-card" href="/mock-exams"><div className="stat-icon">▤</div><span>Mock exams</span><strong>{examCount}</strong><small>Completed <b>→</b></small></a><a className="stat-card" href="/progress"><div className="stat-icon">▥</div><span>Progress</span><strong>{averageScore == null ? "Get started" : `${averageScore}%`}</strong><small>Track your performance <b>→</b></small></a></div></section>
    <section className="dashboard-section analytics-section">
  <div className="section-heading"><div><span className="section-kicker">YOUR ACTIVITY</span><h2>Study momentum</h2><p>Track study time and keep a history of your mock-exam scores.</p></div><span className="analytics-live">LIVE DATA</span></div>
  <div className="analytics-grid">
