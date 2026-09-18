@@ -121,3 +121,155 @@
   .dashboard-shell .welcome-actions{display:grid}
   .dashboard-shell .welcome-actions .btn{width:100%;text-align:center}
 }
+
+
+/* =========================================================
+   REFERENCE MATCH — compact premium sidebar / cleaner header
+   Palette intentionally unchanged.
+   ========================================================= */
+@media(min-width:801px){
+  .dashboard-shell .sidebar{
+    width:126px!important;
+    min-width:126px!important;
+    padding:22px 10px 18px!important;
+    background:rgba(2,7,17,.96)!important;
+    border-right:1px solid rgba(0,245,255,.12)!important;
+    box-shadow:10px 0 45px rgba(0,0,0,.28)!important;
+  }
+  .dashboard-shell .dashboard-main{
+    margin-left:126px!important;
+    width:calc(100% - 126px)!important;
+  }
+  .dashboard-shell .sidebar-head{
+    justify-content:center!important;
+    margin-bottom:26px!important;
+  }
+  .dashboard-shell .sidebar .brand{
+    font-size:20px!important;
+    letter-spacing:.14em!important;
+    white-space:nowrap!important;
+  }
+  .dashboard-shell .sidebar-label{
+    font-size:7px!important;
+    letter-spacing:.16em!important;
+    text-align:center!important;
+    margin:0 0 10px!important;
+    color:#53677e!important;
+  }
+  .dashboard-shell .sidebar-nav{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:4px!important;
+  }
+  .dashboard-shell .side-link{
+    width:100%!important;
+    height:42px!important;
+    min-height:42px!important;
+    padding:5px 4px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:4px!important;
+    border-radius:9px!important;
+    font-size:8px!important;
+    font-weight:700!important;
+    line-height:1!important;
+    letter-spacing:.01em!important;
+    color:#8391a4!important;
+    text-align:center!important;
+  }
+  .dashboard-shell .side-link span{
+    display:block!important;
+    width:auto!important;
+    margin:0!important;
+    font-size:13px!important;
+    line-height:1!important;
+    color:#8fa4ba!important;
+  }
+  .dashboard-shell .side-link.active{
+    box-shadow:inset 2px 0 0 var(--n1),0 0 24px color-mix(in srgb,var(--n1) 6%,transparent)!important;
+    background:linear-gradient(90deg,color-mix(in srgb,var(--n1) 13%,transparent),rgba(124,60,255,.06))!important;
+  }
+  .dashboard-shell .side-link.active span{
+    color:var(--n1)!important;
+  }
+  .dashboard-shell .sidebar-quote{
+    display:flex!important;
+    margin:26px 2px 0!important;
+    min-height:142px!important;
+    padding:16px 9px!important;
+    border:1px solid rgba(255,255,255,.07)!important;
+    border-radius:12px!important;
+    background:linear-gradient(160deg,rgba(16,9,20,.92),rgba(6,8,16,.96))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.025),0 15px 35px rgba(0,0,0,.24)!important;
+    align-items:flex-start!important;
+    justify-content:flex-start!important;
+    overflow:hidden!important;
+  }
+  .dashboard-shell .sidebar-quote span{
+    font-family:Georgia,serif!important;
+    font-size:10px!important;
+    line-height:1.35!important;
+    letter-spacing:.02em!important;
+    color:#dce7f3!important;
+  }
+  .dashboard-shell .sidebar-quote i{
+    width:18px!important;
+    height:2px!important;
+    margin-top:auto!important;
+    background:linear-gradient(90deg,var(--n1),var(--n2))!important;
+    box-shadow:0 0 12px color-mix(in srgb,var(--n1) 45%,transparent)!important;
+  }
+  .dashboard-shell .sidebar-bottom{
+    margin-top:auto!important;
+    padding-top:14px!important;
+    border-top:1px solid rgba(255,255,255,.06)!important;
+  }
+  .dashboard-shell .student-mini{
+    justify-content:center!important;
+  }
+  .dashboard-shell .student-mini>div:last-child{
+    display:none!important;
+  }
+  .dashboard-shell .student-mini .avatar{
+    width:34px!important;
+    height:34px!important;
+    font-size:11px!important;
+  }
+  .dashboard-shell .side-settings,
+  .dashboard-shell .side-signout{
+    justify-content:center!important;
+    font-size:8px!important;
+    padding:7px 0!important;
+  }
+  .dashboard-shell .side-settings span{
+    display:none!important;
+  }
+
+  /* Match the reference header: search + notification + profile. */
+  .dashboard-shell .theme-wrap,
+  .dashboard-shell .topbar-icon[aria-label="Dark mode"]{
+    display:none!important;
+  }
+  .dashboard-shell .dashboard-topbar{
+    padding:0 28px!important;
+    height:70px!important;
+  }
+  .dashboard-shell .topbar-left{
+    display:none!important;
+  }
+  .dashboard-shell .topbar-right{
+    width:100%!important;
+    justify-content:flex-end!important;
+  }
+  .dashboard-shell .topbar-search{
+    margin-right:auto!important;
+    width:min(560px,55vw)!important;
+    min-width:280px!important;
+    height:40px!important;
+  }
+  .dashboard-shell .topbar-profile{
+    padding-left:16px!important;
+  }
+}
