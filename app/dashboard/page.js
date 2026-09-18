@@ -2,6 +2,7 @@
 
 import './dashboard-clean.css'
 import '../tialo-ui-v2.css'
+import '../tialo-command-center.css'
 import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
 
