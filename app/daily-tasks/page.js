@@ -82,7 +82,7 @@ export default function DailyTasksPage() {
         <a className="side-link" href="/ai-tutor"><span>◈</span> AI Tutor</a>
         <a className="side-link" href="/mock-exams"><span>□</span> Mock Exams</a>
         <a className="side-link active" href="/daily-tasks"><span>✓</span> Daily Tasks</a>
-        <a className="side-link" href="#"><span>↗</span> Progress</a>
+        <a className="side-link" href="/progress"><span>↗</span> Progress</a>
       </nav>
     </aside>
     <section className="dashboard-main">

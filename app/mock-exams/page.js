@@ -124,8 +124,8 @@ export default function MockExamsPage() {
           <a className="side-link" href="/subjects"><span>▣</span> Subjects</a>
           <a className="side-link" href="/ai-tutor"><span>◈</span> AI Tutor</a>
           <a className="side-link active" href="/mock-exams"><span>□</span> Mock Exams</a>
-          <a className="side-link" href="#"><span>✓</span> Daily Tasks</a>
-          <a className="side-link" href="#"><span>↗</span> Progress</a>
+          <a className="side-link" href="/daily-tasks"><span>✓</span> Daily Tasks</a>
+          <a className="side-link" href="/progress"><span>↗</span> Progress</a>
         </nav>
       </aside>
 
