@@ -17,3 +17,107 @@
 
 /* PERFORMANCE CALENDAR */
 .performance-calendar{margin-top:16px}.calendar-controls{display:flex;align-items:center;gap:10px;color:#dcecff;font-size:12px}.calendar-nav{width:30px;height:30px;border-radius:8px;border:1px solid rgba(0,245,255,.14);background:rgba(255,255,255,.025);color:#cfe9ff;cursor:pointer;font-size:18px;line-height:1}.calendar-nav:hover{background:rgba(0,245,255,.06);border-color:rgba(0,245,255,.3)}.calendar-weekdays,.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}.calendar-weekdays{margin:4px 0 7px}.calendar-weekdays span{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#536b83;text-align:center;padding:5px}.calendar-cell{min-height:72px;border:1px solid rgba(255,255,255,.055);border-radius:11px;background:rgba(255,255,255,.018);color:#dcecff;padding:8px;text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:4px;cursor:pointer}.calendar-cell:hover{border-color:rgba(0,245,255,.28);background:rgba(0,245,255,.035)}.calendar-cell.selected{border-color:rgba(0,245,255,.55);box-shadow:0 0 0 1px rgba(0,245,255,.1) inset;background:rgba(0,245,255,.055)}.calendar-cell.empty{visibility:hidden;pointer-events:none}.calendar-cell>span{font-size:10px;color:#8499ad}.calendar-cell>b{font-size:15px;color:#f3f9ff}.calendar-cell small{font-size:8px;color:#6f88a3}.calendar-cell i{font-size:8px;color:#a8b8c8;font-style:normal}.calendar-detail{margin-top:14px;padding:15px;border-radius:12px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.06)}.calendar-detail>div:first-child{display:flex;justify-content:space-between;align-items:center;gap:10px}.calendar-clear{border:0;background:transparent;color:#718ba3;font-size:10px;cursor:pointer}.calendar-results{display:grid;gap:8px;margin-top:12px}.calendar-results>div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,.05)}.calendar-results strong{font-size:10px}.calendar-results span{font-size:9px;color:#7189a3;text-align:right}.calendar-detail>p{font-size:10px;margin:12px 0 0}@media(max-width:600px){.calendar-weekdays,.calendar-grid{gap:4px}.calendar-cell{min-height:62px;padding:6px;border-radius:8px}.calendar-cell>b{font-size:12px}.calendar-results>div{display:block}.calendar-results span{display:block;text-align:left;margin-top:3px}.calendar-controls strong{font-size:10px}}
+
+
+/* =========================================================
+   LAYOUT POLISH — preserve TIALO colours, improve hierarchy
+   ========================================================= */
+.dashboard-shell .dashboard-main{max-width:none}
+.dashboard-shell .dashboard-topbar{height:74px!important;padding:0 clamp(20px,3vw,42px)!important;gap:24px}
+.dashboard-shell .topbar-left{min-width:220px;flex:0 0 auto}
+.dashboard-shell .topbar-right{flex:1;justify-content:flex-end;gap:10px}
+.dashboard-shell .dashboard-content{max-width:1440px!important;margin:0 auto!important;padding:42px clamp(24px,3.2vw,48px) 96px!important}
+
+/* Give the page a deliberate vertical rhythm instead of making every section compete. */
+.dashboard-shell .welcome-card{min-height:340px!important;padding:52px clamp(34px,4vw,58px)!important;border-radius:24px!important}
+.dashboard-shell .dashboard-section{margin-top:64px!important}
+.dashboard-shell .dashboard-section-tight{margin-top:46px!important}
+.dashboard-shell .analytics-section{margin-top:62px!important}
+.dashboard-shell .section-heading{margin-bottom:22px!important}
+.dashboard-shell .section-heading h2{font-size:27px!important;line-height:1.15!important}
+.dashboard-shell .section-heading p{margin-top:6px!important;line-height:1.55!important}
+
+/* Consistent card geometry makes the dashboard feel like one product. */
+.dashboard-shell .stat-grid.redesigned-stats,
+.dashboard-shell .subject-grid.redesigned-subjects,
+.dashboard-shell .tool-grid.redesigned-tools{align-items:stretch}
+.dashboard-shell .stat-card{min-height:164px!important;padding:22px!important}
+.dashboard-shell .subject-card{min-height:178px!important}
+.dashboard-shell .tool-card{min-height:104px!important}
+.dashboard-shell .stat-card,
+.dashboard-shell .subject-card,
+.dashboard-shell .tool-card,
+.dashboard-shell .analytics-card{box-shadow:0 14px 38px rgba(0,0,0,.18)!important}
+.dashboard-shell .stat-card:hover,
+.dashboard-shell .subject-card:hover,
+.dashboard-shell .tool-card:hover{transform:translateY(-3px)!important}
+
+/* Keep text from creating uneven card heights. */
+.dashboard-shell .stat-card span,
+.dashboard-shell .stat-card small,
+.dashboard-shell .subject-card p,
+.dashboard-shell .tool-card p{line-height:1.45}
+.dashboard-shell .tool-card h3{line-height:1.25}
+.dashboard-shell .subject-card h3{line-height:1.2}
+
+/* The activity area should read as one analytics block. */
+.dashboard-shell .analytics-grid{grid-template-columns:minmax(0,1.5fr) minmax(280px,.85fr);gap:18px}
+.dashboard-shell .analytics-card{min-width:0}
+.dashboard-shell .performance-calendar{margin-top:18px!important}
+
+/* Reduce visual noise in the navigation while keeping the neon identity. */
+.dashboard-shell .sidebar{padding-top:26px}
+.dashboard-shell .sidebar-nav{gap:4px!important}
+.dashboard-shell .side-link{height:44px}
+.dashboard-shell .sidebar-quote{margin-top:24px}
+
+/* Make the search area usable without swallowing the profile controls. */
+.dashboard-shell .topbar-search{width:min(380px,32vw);min-width:220px}
+.dashboard-shell .topbar-profile{min-width:0}
+.dashboard-shell .topbar-profile>div:last-child{min-width:0}
+
+/* Avoid accidental horizontal overflow from long names or controls. */
+.dashboard-shell .dashboard-content,
+.dashboard-shell .dashboard-main,
+.dashboard-shell .topbar-right{min-width:0}
+.dashboard-shell .topbar-profile span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Desktop-to-tablet transition: preserve structure before collapsing. */
+@media(max-width:1150px){
+  .dashboard-shell .dashboard-content{padding-left:28px!important;padding-right:28px!important}
+  .dashboard-shell .topbar-search{width:240px;min-width:180px}
+  .dashboard-shell .analytics-grid{grid-template-columns:1fr}
+  .dashboard-shell .performance-calendar{margin-top:16px!important}
+}
+@media(max-width:850px){
+  .dashboard-shell .dashboard-topbar{height:68px!important}
+  .dashboard-shell .topbar-left{display:flex!important;min-width:36px}
+  .dashboard-shell .topbar-title,
+  .dashboard-shell .topbar-left>.muted,
+  .dashboard-shell .topbar-dot{display:none}
+  .dashboard-shell .mobile-menu-button{display:grid!important;place-items:center}
+  .dashboard-shell .topbar-right{gap:8px}
+  .dashboard-shell .dashboard-content{padding:28px 20px 72px!important}
+  .dashboard-shell .welcome-card{padding:38px 30px!important}
+  .dashboard-shell .dashboard-section{margin-top:54px!important}
+}
+@media(max-width:600px){
+  .dashboard-shell .dashboard-content{padding:22px 14px 60px!important}
+  .dashboard-shell .welcome-card{min-height:300px!important;padding:30px 22px!important;border-radius:19px!important}
+  .dashboard-shell .welcome-copy h1{font-size:40px!important}
+  .dashboard-shell .section-heading{gap:12px}
+  .dashboard-shell .section-heading h2{font-size:23px!important}
+  .dashboard-shell .section-heading p{font-size:11px}
+  .dashboard-shell .stat-card{min-height:145px!important;padding:17px!important}
+  .dashboard-shell .subject-card{min-height:165px!important}
+  .dashboard-shell .tool-card{min-height:94px!important}
+  .dashboard-shell .analytics-grid{gap:12px}
+  .dashboard-shell .analytics-card{border-radius:15px}
+}
+@media(max-width:480px){
+  .dashboard-shell .dashboard-content{padding-left:12px!important;padding-right:12px!important}
+  .dashboard-shell .welcome-copy h1{font-size:36px!important}
+  .dashboard-shell .welcome-copy p{font-size:13px!important}
+  .dashboard-shell .welcome-actions{display:grid}
+  .dashboard-shell .welcome-actions .btn{width:100%;text-align:center}
+}
