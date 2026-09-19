@@ -16,7 +16,7 @@ export default function WorkspaceHeader({title,subtitle='',active=''}) {
     <header className="dashboard-topbar workspace-mobile-header">
       <button className="workspace-menu" onClick={()=>setOpen(true)} aria-label="Open workspace menu">☰</button>
       <div className="workspace-title"><span className="topbar-title">{title}</span><span className="topbar-dot">●</span><span className="muted">{subtitle}</span></div>
-      <a className="workspace-avatar-link" href="/dashboard" aria-label="Dashboard">Dashboard</a>
+      <a className="workspace-avatar" href="/dashboard" aria-label="Dashboard">T</a>
     </header>
     {open&&<>
       <div className="workspace-drawer-backdrop" onClick={()=>setOpen(false)}/>
