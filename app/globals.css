@@ -223,3 +223,6 @@ input,textarea,select{border-color:var(--line)!important;background:#fff!importa
   padding:0 8px 10px!important;
   margin:0!important;
 }
+
+.chat-copy{margin-top:10px;border:1px solid #dfe4de;background:#fff;color:#6b756d;border-radius:8px;padding:5px 9px;font-size:9px;font-weight:800;cursor:pointer}
+.chat-copy:hover{background:#f3f6f1;color:#31402f}
