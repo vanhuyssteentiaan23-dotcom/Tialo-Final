@@ -166,7 +166,7 @@ input,textarea,select{border-color:var(--line)!important;background:#fff!importa
 .workspace-mobile-header{display:flex!important}
 .workspace-menu{display:none;border:0;background:transparent;color:#111;font-size:22px;line-height:1;padding:6px 8px;cursor:pointer}
 .workspace-title{display:flex;align-items:center;min-width:0}
-.workspace-avatar-link{border:1px solid #dfe4de;background:#fff;border-radius:12px;padding:10px 17px;font-size:11px;font-weight:900;color:#111;text-decoration:none}
+.workspace-avatar{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#e3eadf;border:1px solid #d2dbce;color:#31402f;text-decoration:none;font-size:11px;font-weight:900}
 .workspace-drawer-backdrop{position:fixed;inset:0;background:rgba(8,12,9,.32);backdrop-filter:blur(2px);z-index:80}
 .workspace-drawer{position:fixed;left:0;top:0;bottom:0;width:265px;background:#0d110e;color:#eef2ed;z-index:81;padding:24px 18px;box-shadow:18px 0 55px rgba(0,0,0,.2)}
 .workspace-drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:55px}
@@ -184,5 +184,5 @@ input,textarea,select{border-color:var(--line)!important;background:#fff!importa
   .workspace-mobile-header{height:68px!important;padding:0 15px!important}
   .workspace-title .topbar-dot{margin:0 7px}
   .workspace-title .muted{display:none}
-  .workspace-avatar-link{padding:10px 14px}
+  .workspace-avatar{width:32px;height:32px}
 }
