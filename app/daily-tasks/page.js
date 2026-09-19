@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
+import WorkspaceHeader from '../components/WorkspaceHeader'
 
 function todayLocal() {
   const now = new Date();
@@ -86,7 +87,7 @@ export default function DailyTasksPage() {
       </nav>
     </aside>
     <section className="dashboard-main">
-      <header className="dashboard-topbar"><div><span className="topbar-title">Daily Tasks</span><span className="topbar-dot">●</span><span className="muted">Your study plan</span></div><a className="btn secondary" href="/dashboard">Dashboard</a></header>
+      <WorkspaceHeader title="Daily Tasks" subtitle="Your study plan" active="/daily-tasks"/>
       <div className="dashboard-content">
         <div className="dashboard-hero"><div><div className="eyebrow">TIALO DAILY PLAN</div><h1>Make today count.</h1><p>Get a focused study plan built around your own subject material.</p></div><div className="hero-badge"><span>●</span> {completed}/{tasks.length} complete</div></div>
         {error && <div className="notice" style={{ marginTop: 24 }}>{error}</div>}
