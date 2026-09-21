@@ -1,4 +1,4 @@
-'use client'
+'use client'\nimport './summaries.css'\n'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getSupabaseBrowserClient } from '../../lib/supabase'
