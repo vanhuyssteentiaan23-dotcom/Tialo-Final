@@ -78,19 +78,22 @@ export async function POST(request) {
 
     await ensurePdfJs()
     const pdf = await getDocumentProxy(new Uint8Array(await file.arrayBuffer()))
-    const result = await extractText(pdf, { mergePages: true })
-    const extractedText = cleanText(result.text || '')
+    const result = await extractText(pdf, { mergePages: false })
+    const rawPages = Array.isArray(result.text) ? result.text : [result.text || '']
+    const pageText = rawPages.map((text, index) => ({ page: index + 1, text: cleanText(text || '') })).filter(item => item.text)
+    const extractedText = cleanText(pageText.map(item => item.text).join('\n\n'))
     if (!extractedText) throw new Error('No selectable text was found in this PDF. A scanned/image-only PDF will need OCR.')
 
     const { error: updateError } = await supabase.from('materials').update({
       extracted_text: extractedText,
+      page_text: pageText,
       extracted_at: new Date().toISOString(),
       processing_status: 'ready',
       processing_error: null,
     }).eq('id', material.id).eq('user_id', user.id)
     if (updateError) throw new Error(updateError.message)
 
-    return NextResponse.json({ ok: true, materialId: material.id, characters: extractedText.length, pages: result.totalPages })
+    return NextResponse.json({ ok: true, materialId: material.id, characters: extractedText.length, pages: result.totalPages || pageText.length })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Material extraction failed.'
     await supabase.from('materials').update({ processing_status: 'failed', processing_error: message }).eq('id', material.id).eq('user_id', user.id)
