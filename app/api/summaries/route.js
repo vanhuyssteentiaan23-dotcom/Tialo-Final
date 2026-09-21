@@ -32,7 +32,7 @@ export async function POST(request) {
   if (authError || !user) return NextResponse.json({ error: 'Your session is invalid or expired. Please log in again.' }, { status: 401 })
 
   const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'Add OPENAI_API_KEY to the Vercel environment variables before generating summaries.' }, { status: 503 })
+  if (!apiKey) return NextResponse.json({ error: 'TIALO is missing its AI connection. Add OPENAI_API_KEY to the Vercel production environment.' }, { status: 503 })
 
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid request.' }, { status: 400 }) }
@@ -41,8 +41,13 @@ export async function POST(request) {
   const materialIds = Array.isArray(body?.materialIds) ? body.materialIds.filter(Boolean).slice(0, 8) : []
   const chapterRequest = typeof body?.chapterRequest === 'string' ? body.chapterRequest.trim() : ''
   const extraInstruction = typeof body?.instruction === 'string' ? body.instruction.trim() : ''
-  if (!subjectId || !materialIds.length || !chapterRequest) {
-    return NextResponse.json({ error: 'Choose a subject, at least one document, and the chapters or sections to summarise.' }, { status: 400 })
+  const rubricImage = typeof body?.rubricImage === 'string' && body.rubricImage.startsWith('data:image/') ? body.rubricImage : ''
+
+  if (!subjectId || !materialIds.length || (!chapterRequest && !rubricImage)) {
+    return NextResponse.json({ error: 'Choose a subject, at least one document, then tell TIALO what to summarise or upload a picture of the rubric.' }, { status: 400 })
+  }
+  if (rubricImage.length > 3_000_000) {
+    return NextResponse.json({ error: 'That rubric image is too large. Please upload a clearer photo under 2 MB.' }, { status: 400 })
   }
 
   const [{ data: subject }, { data: materials, error: materialError }] = await Promise.all([
@@ -63,11 +68,14 @@ export async function POST(request) {
   const prompt = `Create a student-friendly study summary from ONLY the supplied documents.
 
 SUBJECT: ${subject.name}
-REQUESTED CHAPTERS/SECTIONS: ${chapterRequest}
+WHAT THE STUDENT NEEDS SUMMARISED: ${chapterRequest || 'Use the uploaded rubric to determine exactly what the student needs to study.'}
 EXTRA INSTRUCTION: ${extraInstruction || 'Make it clear, concise and useful for studying.'}
 
+RUBRIC:
+The student may have uploaded a picture of a teacher rubric. If a rubric image is attached, read it carefully and use it as the study scope. Treat the rubric as a guide to what must be covered, not as a source of factual content. If the rubric lists chapters, topics, concepts, definitions, diagrams or learning outcomes, make sure the summary addresses those items using the selected study documents.
+
 CRITICAL VISUAL RULE:
-Every summary section must identify the original document page(s) that are directly relevant to the concepts in that section. These page numbers will be rendered into the final study PDF as the original source pages, so NEVER choose a page merely because it is nearby. Choose a page only when its text clearly supports the section. If no page directly supports a section, use an empty sourcePages array. Do not invent page numbers.
+Every summary section must identify the original document page(s) that are directly relevant to the concepts in that section. These page numbers will later be used to connect the summary back to the source material, so NEVER choose a page merely because it is nearby. Choose a page only when its text clearly supports the section. If no page directly supports a section, use an empty sourcePages array. Do not invent page numbers.
 
 Return JSON only in this exact shape:
 {
@@ -89,18 +97,24 @@ Use the supplied material wording and facts. Do not add outside facts. Keep sour
 SUPPLIED MATERIAL:
 ${source}`
 
+  const content = [{ type: 'input_text', text: prompt }]
+  if (rubricImage) content.push({ type: 'input_image', image_url: rubricImage })
+
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: process.env.OPENAI_SUMMARY_MODEL || process.env.OPENAI_TUTOR_MODEL || 'gpt-5.6-luna',
       instructions: 'You are TIALO Summaries. Return valid JSON only. Accuracy and source-page relevance are more important than length.',
-      input: prompt,
+      input: [{ role: 'user', content }],
     }),
   })
 
   const result = await response.json().catch(() => ({}))
-  if (!response.ok) return NextResponse.json({ error: result?.error?.message || 'TIALO could not create the summary right now.' }, { status: 502 })
+  if (!response.ok) {
+    console.error('Summary AI error:', result)
+    return NextResponse.json({ error: result?.error?.message || 'TIALO could not create the summary right now. Please try again.' }, { status: 502 })
+  }
 
   let summary
   try { summary = cleanJson(result.output_text || '') } catch (error) {
@@ -110,7 +124,9 @@ ${source}`
 
   const allowed = new Set(materials.map(m => m.id))
   for (const section of Array.isArray(summary.sections) ? summary.sections : []) {
-    section.sourcePages = (Array.isArray(section.sourcePages) ? section.sourcePages : []).filter(ref => allowed.has(ref?.materialId) && Number.isInteger(Number(ref?.page)) && Number(ref.page) > 0).map(ref => ({ materialId: ref.materialId, page: Number(ref.page) }))
+    section.sourcePages = (Array.isArray(section.sourcePages) ? section.sourcePages : [])
+      .filter(ref => allowed.has(ref?.materialId) && Number.isInteger(Number(ref?.page)) && Number(ref.page) > 0)
+      .map(ref => ({ materialId: ref.materialId, page: Number(ref.page) }))
   }
 
   const title = String(summary.title || `${subject.name} summary`).slice(0, 180)
@@ -119,7 +135,7 @@ ${source}`
     subject_id: subject.id,
     title,
     material_ids: materials.map(m => m.id),
-    chapter_request: chapterRequest,
+    chapter_request: chapterRequest || 'Based on uploaded rubric',
     summary_json: summary,
   }).select('id,title,created_at').single()
 
