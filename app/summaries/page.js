@@ -106,14 +106,39 @@ export default function SummariesPage(){
  }
 
  async function downloadPdf(){
-  if(!documentRef.current||!summary)return
-  setNotice('Preparing your PDF…')
+  if(!summary)return
+  setNotice('Preparing your PDF…');setError('')
   try{
-   const mod=await import('jspdf-html2canvas')
-   const html2PDF=mod.default||mod
-   await html2PDF(documentRef.current,{jsPDF:{format:'a4',orientation:'portrait',unit:'pt'},imageType:'image/jpeg',imageQuality:.96,output:`${summary.title||'TIALO-summary'}.pdf`,html2canvas:{scale:1.5,useCORS:true,scrollX:0,scrollY:-window.scrollY}})
-   setNotice('PDF saved. You can print it from the same study document.')
-  }catch(e){setError('PDF download failed in this browser. Use Print / Save PDF instead.')}
+   const { jsPDF } = await import('jspdf')
+   const pdf=new jsPDF({format:'a4',unit:'pt'})
+   const margin=42, width=pdf.internal.pageSize.getWidth()-margin*2, pageHeight=pdf.internal.pageSize.getHeight()
+   let y=52
+   const addText=(text,size=11,bold=false,gap=18)=>{
+    pdf.setFont('helvetica',bold?'bold':'normal');pdf.setFontSize(size)
+    const lines=pdf.splitTextToSize(cleanText(text),width)
+    for(const line of lines){if(y>pageHeight-55){pdf.addPage();y=52}pdf.text(line,margin,y);y+=size+5}
+    y+=gap
+   }
+   pdf.setFont('helvetica','bold');pdf.setFontSize(24);addText(summary.title,24,true,12)
+   addText(summary.subjectName||'TIALO Study Summary',10,false,18)
+   if(summary.overview){addText('Overview',16,true,5);addText(summary.overview,11,false,14)}
+   for(const section of summary.sections||[]){
+    if(y>pageHeight-100){pdf.addPage();y=52}
+    addText(section.heading,16,true,5);addText(section.summary,11,false,8)
+    for(const point of section.keyPoints||[])addText('• '+point,10,false,3)
+    for(const ref of section.sourcePages||[]){
+      const img=pageImages[`${ref.materialId}:${ref.page}`]
+      if(!img)continue
+      const props=pdf.getImageProperties(img);const w=width;const h=w*props.height/props.width
+      if(y+h+35>pageHeight-45){pdf.addPage();y=52}
+      pdf.setFont('helvetica','bold');pdf.setFontSize(8);pdf.text(`Original source page ${ref.page}`,margin,y);y+=12
+      pdf.addImage(img,'JPEG',margin,y,w,Math.min(h,pageHeight-80-y));y+=Math.min(h,pageHeight-80-y)+18
+    }
+   }
+   if(summary.importantTerms?.length){if(y>pageHeight-100){pdf.addPage();y=52}addText('Important terms',16,true,7);for(const t of summary.importantTerms)addText(`${t.term}: ${t.meaning}`,10,false,5)}
+   pdf.save(`${(summary.title||'TIALO-summary').replace(/[^a-z0-9]+/gi,'-')}.pdf`)
+   setNotice('PDF saved.')
+  }catch(e){console.error(e);setError('PDF download failed in this browser. Use Print / Save as PDF instead.')}
  }
 
  function printSummary(){window.print()}
