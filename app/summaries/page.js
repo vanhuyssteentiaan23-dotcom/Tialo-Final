@@ -65,8 +65,13 @@ export default function Summaries(){
   setBusy(true);setError('');setNotice('')
   try{
    const s=getSupabaseBrowserClient()
-   const {data:{session}}=await s.auth.refreshSession()
-   if(!session)throw new Error('Please log in again.')
+   if(!s)throw new Error('TIALO could not connect to your account. Please refresh the page.')
+   let {data:{session}}=await s.auth.getSession()
+   if(!session?.access_token){
+    const refreshed=await s.auth.refreshSession()
+    session=refreshed.data?.session||null
+   }
+   if(!session?.access_token)throw new Error('Your login session has expired. Please refresh the page and log in again.')
    const res=await fetch('/api/summaries',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({subjectId,materialIds:selected,chapterRequest:request,instruction,rubricImage:rubricPreview})})
    const data=await res.json().catch(()=>({}))
    if(!res.ok)throw new Error(data.error||'Could not create the summary.')
