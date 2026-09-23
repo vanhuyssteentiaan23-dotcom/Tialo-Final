@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { definePDFJSModule, getDocumentProxy, renderPageAsImage } from 'unpdf'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -34,49 +33,6 @@ function sourceFromMaterial(material) {
       .join('\n\n')
   }
   return String(material.extracted_text || '').trim()
-}
-
-async function renderSourcePage(supabase, material, pageNumber, summaryId, userId) {
-  if (material.mime_type !== 'application/pdf' || !material.storage_path) return null
-  try {
-    const { data: file, error: downloadError } = await supabase.storage
-      .from('study-materials')
-      .download(material.storage_path)
-    if (downloadError || !file) throw new Error(downloadError?.message || 'Could not download source PDF.')
-
-    await definePDFJSModule(() => import('pdfjs-dist'))
-    const pdfBytes = new Uint8Array(await file.arrayBuffer())
-    const image = await renderPageAsImage(pdfBytes, pageNumber, {
-      canvasImport: () => import('@napi-rs/canvas'),
-      width: 900,
-      toDataURL: true,
-    })
-
-    const path = `${userId}/summary-pages/${summaryId}/${material.id}-page-${pageNumber}.png`
-    const base64 = String(image).replace(/^data:image\/png;base64,/, '')
-    const { error: uploadError } = await supabase.storage
-      .from('study-materials')
-      .upload(path, Buffer.from(base64, 'base64'), {
-        contentType: 'image/png',
-        upsert: true,
-        cacheControl: '31536000',
-      })
-    if (uploadError) throw new Error(uploadError.message)
-
-    const { data: signed, error: signedError } = await supabase.storage
-      .from('study-materials')
-      .createSignedUrl(path, 60 * 60 * 24 * 7)
-    if (signedError || !signed?.signedUrl) throw new Error(signedError?.message || 'Could not create image URL.')
-
-    return { materialId: material.id, page: pageNumber, storagePath: path, url: signed.signedUrl }
-  } catch (error) {
-    console.error('TIALO source image failed:', {
-      materialId: material.id,
-      page: pageNumber,
-      error: error?.message || String(error),
-    })
-    return null
-  }
 }
 
 function parseJson(text) {
@@ -310,35 +266,20 @@ export async function POST(request) {
 
     if (saveError) throw new Error(saveError.message)
 
-    const pageKeys = new Set()
-    const sourceImages = []
-    for (const section of summary.sections) {
-      const references = Array.isArray(section.sourcePages) ? section.sourcePages : []
-      for (const reference of references) {
-        const key = `${reference.materialId}:${Number(reference.page)}`
-        if (pageKeys.has(key)) continue
-        pageKeys.add(key)
-        const material = selectedMaterials.find(item => item.id === reference.materialId)
-        if (!material) continue
-        const image = await renderSourcePage(
-          supabase,
-          material,
-          Number(reference.page),
-          saved.id,
-          authData.user.id,
-        )
-        if (image) sourceImages.push(image)
-      }
-    }
-
-    summary.sourceImages = sourceImages
-    const { error: imageSaveError } = await supabase
-      .from('summaries')
-      .update({ summary_json: summary })
-      .eq('id', saved.id)
-      .eq('user_id', authData.user.id)
-    if (imageSaveError) console.error('TIALO summary image metadata save failed:', imageSaveError.message)
-
+    return NextResponse.json({
+      summary: {
+        ...summary,
+        id: saved.id,
+        title: saved.title,
+        createdAt: saved.created_at,
+        subjectName: subject.name,
+      },
+      materials: selectedMaterials.map(material => ({
+        id: material.id,
+        title: material.title || material.file_name || 'Study document',
+        mimeType: material.mime_type,
+      })),
+    })
     return NextResponse.json({
       summary: {
         ...summary,
