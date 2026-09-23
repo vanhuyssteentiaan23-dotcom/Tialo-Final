@@ -276,3 +276,13 @@ input,textarea,select{border-color:var(--line)!important;background:#fff!importa
  .summaries-page .summary-materials,.summaries-page .summary-rubric-grid{grid-template-columns:1fr}
  .summaries-page .summary-hero h1{font-size:42px}
 }
+
+.summaries-page .summary-source-images{margin-top:18px;padding-top:14px;border-top:1px solid #e4e8e2}
+.summaries-page .summary-source-label{font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#667269;margin-bottom:10px}
+.summaries-page .summary-source-image{margin:0 0 14px;padding:8px;border:1px solid #dfe5dd;border-radius:12px;background:#f7f9f6}
+.summaries-page .summary-source-image img{display:block;width:100%;max-height:520px;object-fit:contain;border-radius:7px;background:#fff}
+.summaries-page .summary-source-image figcaption{font-size:9px;color:#7a847c;margin:7px 2px 1px}
+@media print{
+ .summaries-page .summary-source-image{break-inside:avoid}
+ .summaries-page .summary-source-image img{max-height:none}
+}
