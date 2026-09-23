@@ -143,12 +143,12 @@ ${sourceText}`
       if (match) parts.push({ inline_data: { mime_type: match[1], data: match[2] } })
     }
 
-    const model = process.env.GEMINI_SUMMARY_MODEL || 'gemini-2.5-flash-lite'
+    const model = process.env.GEMINI_SUMMARY_MODEL || 'gemini-3.5-flash-lite'
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(geminiKey)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey },
         body: JSON.stringify({
           contents: [{ role: 'user', parts }],
           generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
