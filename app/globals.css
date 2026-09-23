@@ -288,3 +288,9 @@ input,textarea,select{border-color:var(--line)!important;background:#fff!importa
 }
 
 .summaries-page .summary-source-loading{padding:28px 14px;text-align:center;border:1px dashed #d8dfd5;border-radius:10px;color:#7a847c;font-size:10px;background:#fafcf9}
+
+/* Saved summaries: readable text on the light workspace */
+.summaries-page .saved-summary{color:#111827;background:#fff;border-color:#dce3da}
+.summaries-page .saved-summary b{color:#111827}
+.summaries-page .saved-summary small{color:#5f6b63}
+.summaries-page .saved-summary:hover{border-color:#b9cdb4;background:#fbfdfb}
