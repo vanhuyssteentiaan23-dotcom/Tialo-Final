@@ -27,6 +27,9 @@ function getServerSupabase(request) {
   })
 }
 
+const LANGUAGE_NAMES={en:'English',af:'Afrikaans',zu:'isiZulu',xh:'isiXhosa',st:'Sesotho',tn:'Setswana',nso:'Sepedi',ts:'XiTsonga',ss:'siSwati',de:'German',fr:'French',es:'Spanish',pt:'Portuguese'}
+function outputLanguage(profile){return LANGUAGE_NAMES[profile?.language]||'English'}
+
 const STOP_WORDS = new Set('the a an and or but is are was were be been being to of in on for from with without what why how when where which who does do did can could should would will this that these those it its as at by about into than then them they their you your i me my we our explain please give tell'.split(' '))
 
 function termsFromQuestion(question) {
@@ -81,6 +84,8 @@ export async function POST(request) {
   if (!question) return NextResponse.json({ error: 'Please enter a question.' }, { status: 400 })
   if (!subjectId) return NextResponse.json({ error: 'Please choose a subject.' }, { status: 400 })
 
+  const { data: profile } = await supabase.from('profiles').select('language').eq('id', user.id).maybeSingle()
+
   const { data: materials, error: materialError } = await supabase
     .from('materials')
     .select('id,title,file_name,extracted_text,processing_status')
@@ -98,12 +103,13 @@ export async function POST(request) {
   const messages = history.filter(item => item && (item.role === 'user' || item.role === 'assistant') && typeof item.content === 'string').map(item => ({ role: item.role, content: item.content }))
   messages.push({ role: 'user', content: question })
 
+  const language = outputLanguage(profile)
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: process.env.OPENAI_TUTOR_MODEL || 'gpt-5.6-luna',
-      instructions: `You are TIALO AI Tutor. Teach the student clearly and step by step. You MUST answer using only the supplied study-material sources. Do not use outside knowledge to fill gaps. If the sources do not support the answer, say so clearly. Do not invent facts, definitions, examples, page numbers, or citations. Prefer simple explanations, then a short example only when the source supports it. If the student asks for an exam-style explanation, keep it aligned to the supplied material.\n\nSUPPLIED STUDY MATERIAL:\n${context}`,
+      instructions: `You are TIALO AI Tutor. Answer the student entirely in ${language}. Keep scientific terms, formulas and proper nouns accurate.  Teach the student clearly and step by step. You MUST answer using only the supplied study-material sources. Do not use outside knowledge to fill gaps. If the sources do not support the answer, say so clearly. Do not invent facts, definitions, examples, page numbers, or citations. Prefer simple explanations, then a short example only when the source supports it. If the student asks for an exam-style explanation, keep it aligned to the supplied material.\n\nSUPPLIED STUDY MATERIAL:\n${context}`,
       input: messages,
     }),
   })
