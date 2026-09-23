@@ -280,20 +280,6 @@ export async function POST(request) {
         mimeType: material.mime_type,
       })),
     })
-    return NextResponse.json({
-      summary: {
-        ...summary,
-        id: saved.id,
-        title: saved.title,
-        createdAt: saved.created_at,
-        subjectName: subject.name,
-      },
-      materials: selectedMaterials.map(material => ({
-        id: material.id,
-        title: material.title || material.file_name || 'Study document',
-        mimeType: material.mime_type,
-      })),
-    })
   } catch (error) {
     console.error('TIALO summary creation failed:', error)
     return NextResponse.json({
