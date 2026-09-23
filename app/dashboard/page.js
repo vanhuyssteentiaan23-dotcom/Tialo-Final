@@ -2,7 +2,7 @@
 import {useEffect,useMemo,useState} from 'react'
 import {getSupabaseBrowserClient} from '../../lib/supabase'
 
-const nav=[['Overview','/dashboard'],['Subjects','/subjects'],['Summaries','/summaries'],['AI Tutor','/ai-tutor'],['Mock Exams','/mock-exams'],['Daily Tasks','/daily-tasks'],['Progress','/progress']]
+const nav=[['Overview','/dashboard'],['Subjects','/subjects'],['Summaries','/summaries'],['AI Tutor','/ai-tutor'],['Mock Exams','/mock-exams'],['Daily Tasks','/daily-tasks'],['Progress','/progress'],['Settings','/settings']]
 const day=v=>new Date(v).toISOString().slice(0,10)
 const age=dob=>{if(!dob)return null;const d=new Date(dob+'T00:00:00'),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))a--;return a}
 
