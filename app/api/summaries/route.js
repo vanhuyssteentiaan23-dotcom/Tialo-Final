@@ -47,11 +47,10 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Your session is invalid or expired. Please log in again.' }, { status: 401 })
   }
 
-  const openAiKey = process.env.OPENAI_API_KEY
   const geminiKey = process.env.GEMINI_API_KEY
 
-  if (!openAiKey && !geminiKey) {
-    return NextResponse.json({ error: 'TIALO needs an AI provider key. Use the free Gemini API key in Vercel as GEMINI_API_KEY — no OpenAI credits are required.' }, { status: 503 })
+  if (!geminiKey) {
+    return NextResponse.json({ error: 'TIALO needs an AI provider key. Use the free Gemini API key in Vercel as GEMINI_API_KEY. TIALO will not call OpenAI for summaries.' }, { status: 503 })
   }
 
   let summary
@@ -87,30 +86,6 @@ export async function POST(request) {
       summary = cleanJson(text)
     } catch (error) {
       console.error('Gemini summary JSON parse error:', error, result)
-      return NextResponse.json({ error: 'TIALO received an unusable summary response. Please try again.' }, { status: 502 })
-    }
-  } else {
-    const content = [{ type: 'input_text', text: prompt }]
-    if (rubricImage) content.push({ type: 'input_image', image_url: rubricImage })
-
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openAiKey}` },
-      body: JSON.stringify({
-        model: process.env.OPENAI_SUMMARY_MODEL || process.env.OPENAI_TUTOR_MODEL || 'gpt-5.6-luna',
-        instructions: 'You are TIALO Summaries. Return valid JSON only. Accuracy and source-page relevance are more important than length.',
-        input: [{ role: 'user', content }],
-      }),
-    })
-
-    const result = await response.json().catch(() => ({}))
-    if (!response.ok) {
-      console.error('OpenAI summary error:', result)
-      return NextResponse.json({ error: result?.error?.message || 'TIALO could not create the summary right now. Please try again.' }, { status: 502 })
-    }
-
-    try { summary = cleanJson(result.output_text || '') } catch (error) {
-      console.error('OpenAI summary JSON parse error:', error, result)
       return NextResponse.json({ error: 'TIALO received an unusable summary response. Please try again.' }, { status: 502 })
     }
   }
