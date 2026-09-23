@@ -70,8 +70,8 @@ async function generateTasks({ supabase, user, subjectId, taskDate }) {
   if (!materials?.length) return NextResponse.json({ error: 'This subject has no processed study material yet. Upload and read your material first.' }, { status: 400 })
 
   const context = materials.slice(0, 4).map(m => `${m.title || m.file_name || 'Study material'}\n${(m.extracted_text || '').slice(0, 12000)}`).join('\n\n')
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'The Daily Tasks AI is not connected yet. Add OPENAI_API_KEY to Vercel.' }, { status: 503 })
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) return NextResponse.json({ error: 'The Daily Tasks AI is not connected yet. Add GEMINI_API_KEY to Vercel.' }, { status: 503 })
 
   const schema = {
     type: 'object',
@@ -98,19 +98,18 @@ async function generateTasks({ supabase, user, subjectId, taskDate }) {
   }
 
   const language = outputLanguage(profile)
-  const response = await fetch('https://api.openai.com/v1/responses', {
+  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'}:generateContent', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
-      model: process.env.OPENAI_TUTOR_MODEL || 'gpt-5.6-luna',
-      instructions: `You are TIALO's study planner. Write every task title and description entirely in ${language}. Keep scientific terms, formulas and proper nouns accurate.  Create exactly 4 realistic study tasks for ${subject.name} for ${taskDate}. Use ONLY the supplied study material to choose topics. Do not invent topics or facts. Make the tasks useful for a Grade 12 student and vary them across review, active recall, practice and exam preparation when supported by the material. Return only the requested structured data.\n\nSUPPLIED STUDY MATERIAL:\n${context}`,
-      input: `Create today's four study tasks for ${subject.name}.`,
-      text: { format: { type: 'json_schema', name: 'daily_study_plan', strict: true, schema } },
+      systemInstruction:{parts:[{text:`You are TIALO's study planner. Write every task title and description entirely in ${language}. Use ONLY the supplied study material. Create exactly 4 useful study tasks for ${subject.name}. Do not invent topics or facts.\n\nSUPPLIED STUDY MATERIAL:\n${context}`}]},
+      contents:[{role:'user',parts:[{text:`Create today's four study tasks for ${subject.name}.`}]}],
+      generationConfig:{temperature:.2,responseMimeType:'application/json',responseSchema:{"type":"object","properties":{"tasks":{"type":"array","items":{"type":"object","properties":{"title":{"type":"string"},"description":{"type":"string"},"estimated_minutes":{"type":"integer"},"priority":{"type":"string","enum":["high","medium","low"]}},"required":["title","description","estimated_minutes","priority"]}}},"required":["tasks"]}
     }),
   })
   const result = await response.json().catch(() => ({}))
   if (!response.ok) {
-    console.error('OpenAI Daily Tasks error:', result)
+    console.error('Gemini Daily Tasks error:', result)
     return NextResponse.json({ error: result?.error?.message || 'Could not generate study tasks.' }, { status: 502 })
   }
   const data = parseJson(result)
