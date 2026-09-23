@@ -4,8 +4,19 @@ import { createClient } from '@supabase/supabase-js'
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
+function normalizeSupabaseUrl(rawUrl) {
+  if (!rawUrl) return null
+  try {
+    const parsed = new URL(rawUrl.trim())
+    if (!parsed.hostname.endsWith('.supabase.co')) return null
+    return `${parsed.protocol}//${parsed.host}`
+  } catch {
+    return null
+  }
+}
+
 function supabaseForRequest(request) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
   const auth = request.headers.get('authorization') || ''
   const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
