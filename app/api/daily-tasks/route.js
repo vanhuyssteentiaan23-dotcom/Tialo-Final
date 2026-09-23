@@ -106,7 +106,7 @@ async function generateTasks({ supabase, user, subjectId, taskDate }) {
     body: JSON.stringify({
       systemInstruction:{parts:[{text:`You are TIALO's study planner. Write every task title and description entirely in ${language}. Use ONLY the supplied study material. Create exactly 4 useful study tasks for ${subject.name}. Do not invent topics or facts.\n\nSUPPLIED STUDY MATERIAL:\n${context}`}]},
       contents:[{role:'user',parts:[{text:`Create today's four study tasks for ${subject.name}.`}]}],
-      generationConfig:{temperature:.2,responseMimeType:'application/json',responseSchema:{"type":"object","properties":{"tasks":{"type":"array","items":{"type":"object","properties":{"title":{"type":"string"},"description":{"type":"string"},"estimated_minutes":{"type":"integer"},"priority":{"type":"string","enum":["high","medium","low"]}},"required":["title","description","estimated_minutes","priority"]}}},"required":["tasks"]}
+      generationConfig:{temperature:.2,responseMimeType:'application/json',responseSchema:schema}
     }),
   })
   const result = await response.json().catch(() => ({}))
