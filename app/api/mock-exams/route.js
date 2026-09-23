@@ -108,8 +108,8 @@ async function generateExam({ supabase, user, subjectId, count }) {
   const context = buildMaterialContext(materials)
   if (!context) return NextResponse.json({ error: 'I could not find enough extracted text to create an exam.' }, { status: 400 })
 
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'The Mock Exam system is not connected yet. Add OPENAI_API_KEY to Vercel.' }, { status: 503 })
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) return NextResponse.json({ error: 'The Mock Exam system is not connected yet. Add GEMINI_API_KEY to Vercel.' }, { status: 503 })
 
   const schema = {
     type: 'object', additionalProperties: false,
@@ -130,20 +130,18 @@ async function generateExam({ supabase, user, subjectId, count }) {
   }
 
   const language = outputLanguage(profile)
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'}:generateContent', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
-      model: process.env.OPENAI_TUTOR_MODEL || 'gpt-5.6-luna',
-      instructions: `You are TIALO Mock Exam Generator for ${subject.name}. Write the exam title, questions, options and explanations entirely in ${language}. Keep scientific terms, formulas and proper nouns accurate.  Create exactly ${count} Grade 12 multiple-choice questions using ONLY the supplied study-material sources. Every correct answer must be directly supported by the sources. Do not use outside knowledge. Do not invent facts, terminology, examples, page numbers, or citations. Each question must have exactly four distinct answer options. correct_answer must exactly match one of the four options. Make questions academically useful and varied in difficulty. The explanation must be supported by the same sources. Return only the requested structured data.\n\nSUPPLIED STUDY MATERIAL:\n${context}`,
-      input: `Generate a ${count}-question mock exam for ${subject.name}.`,
-      max_output_tokens: count * 350 + 1000,
-      text: { format: { type: 'json_schema', name: 'mock_exam', strict: true, schema } },
+      systemInstruction:{parts:[{text:`You are TIALO Mock Exam Generator for ${subject.name}. Write the title, questions, options and explanations entirely in ${language}. Use ONLY the supplied study material. Do not invent facts. Create exactly ${count} multiple-choice questions, each with four options, and correct_answer must exactly match an option.\n\nSUPPLIED STUDY MATERIAL:\n${context}`}]},
+      contents:[{role:'user',parts:[{text:`Generate a ${count}-question mock exam for ${subject.name}.`}]}],
+      generationConfig:{temperature:.2,responseMimeType:'application/json',responseSchema:{"type":"object","properties":{"title":{"type":"string"},"questions":{"type":"array","items":{"type":"object","properties":{"prompt":{"type":"string"},"options":{"type":"array","items":{"type":"string"}},"correct_answer":{"type":"string"},"explanation":{"type":"string"}},"required":["prompt","options","correct_answer","explanation"]}}},"required":["title","questions"]}
     }),
   })
 
   const result = await response.json().catch(() => ({}))
   if (!response.ok) {
-    console.error('OpenAI Mock Exam error:', result)
+    console.error('Gemini Mock Exam error:', result)
     return NextResponse.json({ error: result?.error?.message || 'The mock exam could not be generated right now.' }, { status: response.status === 429 ? 429 : 502 })
   }
 
