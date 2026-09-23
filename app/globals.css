@@ -294,3 +294,16 @@ input,textarea,select{border-color:var(--line)!important;background:#fff!importa
 .summaries-page .saved-summary b{color:#111827}
 .summaries-page .saved-summary small{color:#5f6b63}
 .summaries-page .saved-summary:hover{border-color:#b9cdb4;background:#fbfdfb}
+
+
+/* ===== AI TUTOR MARKDOWN ===== */
+.tutor-content{font-size:14px;color:#30362f;line-height:1.72}
+.tutor-content strong{font-weight:800;color:#161b17}
+.tutor-content em{font-style:italic}
+.tutor-content code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;background:#f0f3ee;border:1px solid #e0e5de;border-radius:5px;padding:2px 5px;color:#39433b}
+.tutor-md-paragraph{margin:0 0 9px}
+.tutor-md-paragraph:last-child{margin-bottom:0}
+.tutor-md-heading{font-size:15px;line-height:1.35;margin:14px 0 8px;color:#182018;font-weight:850}
+.tutor-md-list{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start;margin:5px 0;padding-left:2px}
+.tutor-md-list>span{font-weight:800;color:#6aa05a;min-width:18px}
+.tutor-md-spacer{height:5px}
