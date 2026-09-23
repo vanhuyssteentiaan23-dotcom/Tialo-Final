@@ -316,3 +316,15 @@ input,textarea,select{border-color:var(--line)!important;background:#fff!importa
 .chat-message .tutor-content p:last-child{margin-bottom:0}
 .chat-message .tutor-content h4{margin:15px 0 8px;font-size:15px;line-height:1.4;color:#182018;font-weight:850}
 .chat-message .tutor-content code{font-size:.9em}
+
+
+/* AI Tutor study image results */
+.tutor-images{margin-top:16px;padding-top:14px;border-top:1px solid #e7ebe5}
+.tutor-images-title{font-size:10px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;color:#5f695f;margin-bottom:10px}
+.tutor-images-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tutor-image-card{display:block;overflow:hidden;border:1px solid #dfe4de;border-radius:12px;background:#fff;text-decoration:none;color:#202620;transition:transform .15s ease,box-shadow .15s ease}
+.tutor-image-card:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(18,27,18,.1)}
+.tutor-image-card img{display:block;width:100%;height:150px;object-fit:cover;background:#f2f4f1}
+.tutor-image-card span{display:block;padding:8px 9px;font-size:10px;line-height:1.35;font-weight:700}
+.tutor-images-source{margin-top:8px;font-size:9px;color:#8a938d}
+@media(max-width:650px){.tutor-images-grid{grid-template-columns:1fr}.tutor-image-card img{height:180px}}
