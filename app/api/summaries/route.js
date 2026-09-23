@@ -28,8 +28,13 @@ export async function POST(request) {
   const supabase = supabaseForRequest(request)
   if (!supabase) return NextResponse.json({ error: 'Authentication is required.' }, { status: 401 })
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) return NextResponse.json({ error: 'Your session is invalid or expired. Please log in again.' }, { status: 401 })
+  const authHeader = request.headers.get('authorization') || ''
+  const accessToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken)
+  if (authError || !user) {
+    console.error('Summary auth failed:', authError?.message || 'No user returned')
+    return NextResponse.json({ error: 'Your session is invalid or expired. Please log in again.' }, { status: 401 })
+  }
 
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'TIALO is missing its AI connection. Add OPENAI_API_KEY to the Vercel production environment.' }, { status: 503 })
