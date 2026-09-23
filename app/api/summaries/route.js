@@ -58,7 +58,7 @@ export async function POST(request) {
   if (geminiKey) {
     const parts = [{ text: prompt }]
     if (rubricImage) {
-      const match = rubricImage.match(/^data:(image\\/[^;]+);base64,(.+)$/)
+      const match = rubricImage.match(/^data:(image\/[^;]+);base64,(.+)$/)
       if (match) parts.push({ inline_data: { mime_type: match[1], data: match[2] } })
     }
 
