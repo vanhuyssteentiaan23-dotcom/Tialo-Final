@@ -132,7 +132,7 @@ async function generateExam({ supabase, user, subjectId, count }) {
   }
 
   const language = outputLanguage(profile)
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'}:generateContent', {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'}:generateContent`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
       systemInstruction:{parts:[{text:`You are TIALO Mock Exam Generator for ${subject.name}. Write the title, questions, options and explanations entirely in ${language}. Use ONLY the supplied study material. Do not invent facts. Create exactly ${count} multiple-choice questions, each with four options, and correct_answer must exactly match an option.\n\nSUPPLIED STUDY MATERIAL:\n${context}`}]},
