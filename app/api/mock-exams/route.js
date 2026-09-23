@@ -137,7 +137,7 @@ async function generateExam({ supabase, user, subjectId, count }) {
     body: JSON.stringify({
       systemInstruction:{parts:[{text:`You are TIALO Mock Exam Generator for ${subject.name}. Write the title, questions, options and explanations entirely in ${language}. Use ONLY the supplied study material. Do not invent facts. Create exactly ${count} multiple-choice questions, each with four options, and correct_answer must exactly match an option.\n\nSUPPLIED STUDY MATERIAL:\n${context}`}]},
       contents:[{role:'user',parts:[{text:`Generate a ${count}-question mock exam for ${subject.name}.`}]}],
-      generationConfig:{temperature:.2,responseMimeType:'application/json',responseSchema:{"type":"object","properties":{"title":{"type":"string"},"questions":{"type":"array","items":{"type":"object","properties":{"prompt":{"type":"string"},"options":{"type":"array","items":{"type":"string"}},"correct_answer":{"type":"string"},"explanation":{"type":"string"}},"required":["prompt","options","correct_answer","explanation"]}}},"required":["title","questions"]}
+      generationConfig:{temperature:.2,responseMimeType:'application/json',responseSchema:schema}
     }),
   })
 
