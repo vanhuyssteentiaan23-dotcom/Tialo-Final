@@ -74,8 +74,18 @@ export default function Summaries(){
     session=refreshed.data?.session||null
    }
    if(!session?.access_token)throw new Error('Your login session has expired. Please refresh the page and log in again.')
-   const res=await fetch('/api/summaries',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({subjectId,materialIds:selected,chapterRequest:request,instruction,rubricImage:rubricPreview})})
-   const data=await res.json().catch(()=>({}))
+   const payload={subjectId,materialIds:selected,chapterRequest:request,instruction,rubricImage:rubricPreview}
+   let res=await fetch('/api/summaries',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},body:JSON.stringify(payload)})
+   let data=await res.json().catch(()=>({}))
+   if(res.status===401){
+    const refreshed=await s.auth.refreshSession()
+    const freshToken=refreshed.data?.session?.access_token
+    if(freshToken){
+     setNotice('Refreshing your secure session…')
+     res=await fetch('/api/summaries',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${freshToken}`},body:JSON.stringify(payload)})
+     data=await res.json().catch(()=>({}))
+    }
+   }
    if(!res.ok)throw new Error(data.error||'Could not create the summary.')
    const subject=subjects.find(x=>x.id===subjectId)
    setSummary({...data.summary,subjectName:subject?.name||'Subject'});setNotice('Summary created and saved.');await load()
