@@ -23,10 +23,20 @@ function SourcePageImage({material,page}){
    if(!material?.storage_path||material.mime_type!=='application/pdf'){setState('Source page image unavailable.');return}
    try{
     const s=getSupabaseBrowserClient()
-    const {data,error}=await s.storage.from('study-materials').download(material.storage_path)
-    if(error||!data)throw new Error(error?.message||'Could not load source PDF.')
+    if(!s)throw new Error('Could not connect to your account.')
+    let {data:{session}}=await s.auth.getSession()
+    if(!session?.access_token){
+     const refreshed=await s.auth.refreshSession()
+     session=refreshed.data?.session||null
+    }
+    if(!session?.access_token)throw new Error('Your login session has expired. Please refresh the page.')
+    const response=await fetch('/api/materials/source?materialId='+encodeURIComponent(material.id),{
+     headers:{Authorization:'Bearer '+session.access_token}
+    })
+    if(!response.ok)throw new Error('Source PDF could not be loaded ('+response.status+').')
+    const pdfBlob=await response.blob()
     const pdfjs=await getBrowserPdfJs()
-    const pdf=await pdfjs.getDocument({data:new Uint8Array(await data.arrayBuffer())}).promise
+    const pdf=await pdfjs.getDocument({data:new Uint8Array(await pdfBlob.arrayBuffer())}).promise
     const pdfPage=await pdf.getPage(Number(page))
     const base=pdfPage.getViewport({scale:1})
     const scale=Math.min(1.5,900/base.width)
