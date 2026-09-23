@@ -69,6 +69,7 @@ export async function POST(request) {
       : []
     const chapterRequest = String(body.chapterRequest || '').trim()
     const studyStyle = String(body.instruction || '').trim()
+    const language = String(body.language || 'en').trim().toLowerCase()
     const rubricImage = typeof body.rubricImage === 'string' ? body.rubricImage : ''
 
     if (!subjectId || materialIds.length === 0 || (!chapterRequest && !rubricImage)) {
@@ -84,7 +85,7 @@ export async function POST(request) {
       }, { status: 503 })
     }
 
-    const [{ data: subject, error: subjectError }, { data: materials, error: materialsError }] = await Promise.all([
+    const [{ data: subject, error: subjectError }, { data: materials, error: materialsError }, { data: profile }] = await Promise.all([
       supabase
         .from('subjects')
         .select('id,name')
@@ -97,6 +98,7 @@ export async function POST(request) {
         .eq('user_id', authData.user.id)
         .eq('subject_id', subjectId)
         .in('id', materialIds),
+      supabase.from('profiles').select('language').eq('id', authData.user.id).maybeSingle(),
     ])
 
     if (subjectError) throw new Error(subjectError.message)
@@ -111,6 +113,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No selected study documents were found.' }, { status: 400 })
     }
 
+    const selectedLanguage = profile?.language || language || 'en'
+    const languageNames = { en:'English', af:'Afrikaans', zu:'isiZulu', xh:'isiXhosa', st:'Sesotho', tn:'Setswana', nso:'Sepedi', ts:'XiTsonga', ss:'siSwati', de:'German', fr:'French', es:'Spanish', pt:'Portuguese' }
+    const outputLanguage = languageNames[selectedLanguage] || 'English'
+
     const documents = selectedMaterials.map(material => {
       const name = material.title || material.file_name || 'Study document'
       return [
@@ -124,6 +130,7 @@ export async function POST(request) {
       'You are TIALO, an academic study assistant for Grade 12 students.',
       '',
       'Your task is to create a study summary from the student\'s selected documents.',
+      `Write the entire summary in ${outputLanguage}. Keep scientific names, formulas, symbols, and source references accurate. Do not translate a term if doing so would make the meaning scientifically incorrect.`,
       'Use ONLY information contained in the supplied documents and the teacher rubric image.',
       'Never invent facts, examples, page numbers, definitions, or references.',
       '',
