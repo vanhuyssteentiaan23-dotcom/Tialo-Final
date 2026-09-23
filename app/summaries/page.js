@@ -75,14 +75,14 @@ export default function Summaries(){
    }
    if(!session?.access_token)throw new Error('Your login session has expired. Please refresh the page and log in again.')
    const payload={subjectId,materialIds:selected,chapterRequest:request,instruction,rubricImage:rubricPreview}
-   let res=await fetch('/api/summaries',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},body:JSON.stringify(payload)})
+   let res=await fetch('/api/summaries/create',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},body:JSON.stringify(payload)})
    let responseText=await res.text();let data={};try{data=JSON.parse(responseText)}catch{}
    if(res.status===401){
     const refreshed=await s.auth.refreshSession()
     const freshToken=refreshed.data?.session?.access_token
     if(freshToken){
      setNotice('Refreshing your secure session…')
-     res=await fetch('/api/summaries',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${freshToken}`},body:JSON.stringify(payload)})
+     res=await fetch('/api/summaries/create',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${freshToken}`},body:JSON.stringify(payload)})
      responseText=await res.text();try{data=JSON.parse(responseText)}catch{data={}}
     }
    }
