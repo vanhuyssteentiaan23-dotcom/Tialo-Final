@@ -67,6 +67,8 @@ async function authenticate(request) {
 }
 
 function extractModelText(result) {
+  const geminiText = result?.candidates?.[0]?.content?.parts?.map(item => item.text || '').join('').trim()
+  if (geminiText) return geminiText
   if (typeof result?.output_text === 'string' && result.output_text.trim()) return result.output_text.trim()
   const pieces = []
   for (const item of result?.output || []) {
