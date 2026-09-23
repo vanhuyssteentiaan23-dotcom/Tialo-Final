@@ -57,7 +57,8 @@ export default function Summaries(){
   img.src=dataUrl
  }
 
- async function createSummary(){
+ async function createSummary(event){
+  event?.preventDefault()
   if(!subjectId||!selected.length||(!request.trim()&&!rubricPreview)){
    setError('Choose a subject, select at least one document, then type what you need summarised or upload a rubric photo.')
    return
@@ -84,7 +85,6 @@ export default function Summaries(){
  function print(){window.print()}
 
  if(loading)return <main className="new-loading"><div className="new-logo">TIA<span>LO</span></div><span>Opening Summaries…</span></main>
- const canCreate=Boolean(subjectId&&selected.length&&(request.trim()||rubricPreview))
  return <main className="tialo-new-shell summaries-page">
   <aside className="new-sidebar print-hide"><div className="new-sidebar-top"><a className="new-logo" href="/dashboard">TIA<span>LO</span></a></div><div className="new-nav-label">Workspace</div><nav>{nav.map(([label,href])=><a className={href==='/summaries'?'selected':''} href={href} key={href}><span>{label}</span></a>)}</nav></aside>
   <section className="new-main">
@@ -92,7 +92,7 @@ export default function Summaries(){
    <div className="new-content">
     <div className="summary-hero"><div className="new-kicker">TIALO SUMMARIES</div><h1>Turn your notes into a study summary.</h1><p>Tell TIALO exactly what you need to learn — or upload a photo of your teacher’s rubric — and it will build the summary from your selected study material.</p></div>
     {error&&<div className="notice">{error}</div>}{notice&&<div className="notice">{notice}</div>}
-    <section className="summary-builder panel print-hide">
+    <form className="summary-builder panel print-hide" onSubmit={createSummary}>
      <div className="summary-field full"><label>1 · Subject</label><select value={subjectId} onChange={e=>{setSubjectId(e.target.value);setSelected([])}}>{subjects.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></div>
      <div className="summary-field full"><label>2 · Study documents</label><div className="summary-materials">{subjectMaterials.length?subjectMaterials.map(m=><label className={'summary-material '+(selected.includes(m.id)?'selected':'')} key={m.id}><input type="checkbox" checked={selected.includes(m.id)} onChange={()=>toggle(m.id)}/><span><b>{m.title||m.file_name||'Untitled document'}</b><small>{m.processing_status==='ready'?'Ready for summaries':m.processing_status||'Uploaded'}</small></span></label>):<p>No documents uploaded to this subject yet. <a href="/materials">Upload study material</a>.</p>}</div></div>
      <div className="summary-field full"><label>3 · What do you need summarised?</label><textarea className="summary-request" value={request} onChange={e=>setRequest(e.target.value)} placeholder="Example: Summarise photosynthesis, cellular respiration and the diagrams I need to know for my test." rows={5}/></div>
@@ -100,8 +100,8 @@ export default function Summaries(){
       <div><label className="summary-rubric-label">Or upload a picture of your rubric</label><p>Take a clear photo or upload a screenshot. TIALO will read the rubric and use it to decide what the summary must cover.</p><input ref={rubricInput} type="file" accept="image/png,image/jpeg,image/webp" capture="environment" hidden onChange={e=>e.target.files?.[0]&&prepareRubric(e.target.files[0])}/><button type="button" className="rubric-upload" onClick={()=>rubricInput.current?.click()}>＋ Upload rubric photo</button>{rubric&&<div className="rubric-file"><img src={rubricPreview} alt="Rubric preview"/><div><b>{rubric.name}</b><small>Rubric attached to this summary</small></div><button type="button" onClick={()=>{setRubric(null);setRubricPreview('');if(rubricInput.current)rubricInput.current.value=''}}>Remove</button></div>}</div>
       <div><label className="summary-rubric-label">Optional study style</label><textarea value={instruction} onChange={e=>setInstruction(e.target.value)} placeholder="e.g. Keep it simple, focus on definitions, include exam-style facts…" rows={5}/></div>
      </div>
-     <button type="button" className="new-primary summary-create" disabled={busy||!canCreate} onClick={createSummary}>{busy?'Creating your study summary…':'Create summary →'}</button>
-    </section>
+     <button type="submit" className="new-primary summary-create" disabled={busy}>{busy?'Creating your study summary…':'Create summary →'}</button>
+    </form>
     {summary&&<article className="summary-document">
       <div className="summary-doc-head"><div className="new-kicker">STUDY SUMMARY</div><h2>{summary.title}</h2><p>{summary.subjectName}</p></div>
       {summary.overview&&<section><h3>Overview</h3><p>{summary.overview}</p></section>}
