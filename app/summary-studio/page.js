@@ -123,7 +123,7 @@ export default function Summaries(){
     session=refreshed.data?.session||null
    }
    if(!session?.access_token)throw new Error('Your login session has expired. Please refresh the page and log in again.')
-   const payload={subjectId,materialIds:selected,chapterRequest:request,instruction,rubricImage:rubricPreview}
+   const payload={subjectId,materialIds:selected,chapterRequest:request,instruction,rubricImage:rubricPreview,language:localStorage.getItem('tialo-language')||'en'}
    let res=await fetch('/api/summaries/create',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},body:JSON.stringify(payload)})
    let responseText=await res.text();let data={};try{data=JSON.parse(responseText)}catch{}
    if(res.status===401){
