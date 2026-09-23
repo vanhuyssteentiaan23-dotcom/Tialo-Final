@@ -60,6 +60,7 @@ function parseJson(result) {
 }
 
 async function generateTasks({ supabase, user, subjectId, taskDate }) {
+  const { data: profile } = await supabase.from('profiles').select('language').eq('id', user.id).maybeSingle()
   const { data: subject, error: subjectError } = await supabase.from('subjects').select('id,name').eq('id', subjectId).eq('user_id', user.id).maybeSingle()
   if (subjectError) return NextResponse.json({ error: subjectError.message }, { status: 400 })
   if (!subject) return NextResponse.json({ error: 'Subject not found.' }, { status: 404 })
@@ -96,12 +97,13 @@ async function generateTasks({ supabase, user, subjectId, taskDate }) {
     required: ['tasks'],
   }
 
+  const language = outputLanguage(profile)
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: process.env.OPENAI_TUTOR_MODEL || 'gpt-5.6-luna',
-      instructions: `You are TIALO's study planner. Create exactly 4 realistic study tasks for ${subject.name} for ${taskDate}. Use ONLY the supplied study material to choose topics. Do not invent topics or facts. Make the tasks useful for a Grade 12 student and vary them across review, active recall, practice and exam preparation when supported by the material. Return only the requested structured data.\n\nSUPPLIED STUDY MATERIAL:\n${context}`,
+      instructions: `You are TIALO's study planner. Write every task title and description entirely in ${language}. Keep scientific terms, formulas and proper nouns accurate.  Create exactly 4 realistic study tasks for ${subject.name} for ${taskDate}. Use ONLY the supplied study material to choose topics. Do not invent topics or facts. Make the tasks useful for a Grade 12 student and vary them across review, active recall, practice and exam preparation when supported by the material. Return only the requested structured data.\n\nSUPPLIED STUDY MATERIAL:\n${context}`,
       input: `Create today's four study tasks for ${subject.name}.`,
       text: { format: { type: 'json_schema', name: 'daily_study_plan', strict: true, schema } },
     }),
