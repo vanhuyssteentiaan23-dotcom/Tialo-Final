@@ -100,7 +100,7 @@ export async function POST(request) {
       return `=== MATERIAL: ${title} | MATERIAL ID: ${material.id} ===\n${materialSource(material) || '[No extracted text available]'}`
     }).join('\n\n')
 
-    const prompt = `You are TIALO's study-summary engine.
+    const summaryPrompt = `You are TIALO's study-summary engine.
 
 Create a clear Grade 12 study summary using ONLY the supplied study documents. Do not invent facts and do not use outside knowledge.
 
@@ -137,7 +137,7 @@ Keep the summary useful for studying: explain important ideas in simple language
 SUPPLIED STUDY DOCUMENTS:
 ${sourceText}`
 
-    const parts = [{ text: prompt }]
+    const parts = [{ text: summaryPrompt }]
     if (rubricImage) {
       const match = rubricImage.match(/^data:(image\/[^;]+);base64,(.+)$/)
       if (match) parts.push({ inline_data: { mime_type: match[1], data: match[2] } })
