@@ -22,6 +22,9 @@ function getServerSupabase(request) {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${token}` } } })
 }
 
+const LANGUAGE_NAMES={en:'English',af:'Afrikaans',zu:'isiZulu',xh:'isiXhosa',st:'Sesotho',tn:'Setswana',nso:'Sepedi',ts:'XiTsonga',ss:'siSwati',de:'German',fr:'French',es:'Spanish',pt:'Portuguese'}
+function outputLanguage(profile){return LANGUAGE_NAMES[profile?.language]||'English'}
+
 const STOP_WORDS = new Set('the a an and or but is are was were be been being to of in on for from with without what why how when where which who does do did can could should would will this that these those it its as at by about into than then them they their you your i me my we our explain please give tell'.split(' '))
 
 function termsFromQuestion(question) {
@@ -93,6 +96,7 @@ function parseExamData(result) {
 }
 
 async function generateExam({ supabase, user, subjectId, count }) {
+  const { data: profile } = await supabase.from('profiles').select('language').eq('id', user.id).maybeSingle()
   const { data: subject, error: subjectError } = await supabase.from('subjects').select('id,name').eq('id', subjectId).eq('user_id', user.id).maybeSingle()
   if (subjectError) return NextResponse.json({ error: subjectError.message }, { status: 400 })
   if (!subject) return NextResponse.json({ error: 'Subject not found.' }, { status: 404 })
@@ -125,11 +129,12 @@ async function generateExam({ supabase, user, subjectId, count }) {
     required: ['title', 'questions'],
   }
 
+  const language = outputLanguage(profile)
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: process.env.OPENAI_TUTOR_MODEL || 'gpt-5.6-luna',
-      instructions: `You are TIALO Mock Exam Generator for ${subject.name}. Create exactly ${count} Grade 12 multiple-choice questions using ONLY the supplied study-material sources. Every correct answer must be directly supported by the sources. Do not use outside knowledge. Do not invent facts, terminology, examples, page numbers, or citations. Each question must have exactly four distinct answer options. correct_answer must exactly match one of the four options. Make questions academically useful and varied in difficulty. The explanation must be supported by the same sources. Return only the requested structured data.\n\nSUPPLIED STUDY MATERIAL:\n${context}`,
+      instructions: `You are TIALO Mock Exam Generator for ${subject.name}. Write the exam title, questions, options and explanations entirely in ${language}. Keep scientific terms, formulas and proper nouns accurate.  Create exactly ${count} Grade 12 multiple-choice questions using ONLY the supplied study-material sources. Every correct answer must be directly supported by the sources. Do not use outside knowledge. Do not invent facts, terminology, examples, page numbers, or citations. Each question must have exactly four distinct answer options. correct_answer must exactly match one of the four options. Make questions academically useful and varied in difficulty. The explanation must be supported by the same sources. Return only the requested structured data.\n\nSUPPLIED STUDY MATERIAL:\n${context}`,
       input: `Generate a ${count}-question mock exam for ${subject.name}.`,
       max_output_tokens: count * 350 + 1000,
       text: { format: { type: 'json_schema', name: 'mock_exam', strict: true, schema } },
