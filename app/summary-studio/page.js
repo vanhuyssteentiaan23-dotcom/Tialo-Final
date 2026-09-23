@@ -6,6 +6,45 @@ import {getSupabaseBrowserClient} from '../../lib/supabase'
 const nav=[['Overview','/dashboard'],['Subjects','/subjects'],['Summaries','/summaries'],['AI Tutor','/ai-tutor'],['Mock Exams','/mock-exams'],['Daily Tasks','/daily-tasks'],['Progress','/progress']]
 const IMAGE_TYPES=['image/png','image/jpeg','image/webp']
 
+let pdfjsPromise
+async function getBrowserPdfJs(){
+ if(!pdfjsPromise)pdfjsPromise=import('pdfjs-dist/legacy/build/pdf.mjs')
+ const pdfjs=await pdfjsPromise
+ pdfjs.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.worker.min.mjs'
+ return pdfjs
+}
+
+function SourcePageImage({material,page}){
+ const [image,setImage]=useState('')
+ const [state,setState]=useState('Loading source page…')
+ useEffect(()=>{
+  let cancelled=false
+  async function render(){
+   if(!material?.storage_path||material.mime_type!=='application/pdf'){setState('Source page image unavailable.');return}
+   try{
+    const s=getSupabaseBrowserClient()
+    const {data,error}=await s.storage.from('study-materials').download(material.storage_path)
+    if(error||!data)throw new Error(error?.message||'Could not load source PDF.')
+    const pdfjs=await getBrowserPdfJs()
+    const pdf=await pdfjs.getDocument({data:new Uint8Array(await data.arrayBuffer())}).promise
+    const pdfPage=await pdf.getPage(Number(page))
+    const base=pdfPage.getViewport({scale:1})
+    const scale=Math.min(1.5,900/base.width)
+    const viewport=pdfPage.getViewport({scale})
+    const canvas=document.createElement('canvas')
+    canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height)
+    const ctx=canvas.getContext('2d',{alpha:false})
+    await pdfPage.render({canvasContext:ctx,viewport}).promise
+    if(!cancelled){setImage(canvas.toDataURL('image/jpeg',.82));setState('')}
+    await pdf.destroy()
+   }catch(e){if(!cancelled)setState(e?.message||'Could not render this source page.')}
+  }
+  render()
+  return()=>{cancelled=true}
+ },[material?.id,material?.storage_path,page])
+ return image?<figure className="summary-source-image"><img src={image} alt={`Relevant source page ${page}`} loading="lazy"/><figcaption>Relevant source page {page}</figcaption></figure>:<div className="summary-source-loading">{state}</div>
+}
+
 export default function Summaries(){
  const [subjects,setSubjects]=useState([]),[materials,setMaterials]=useState([]),[saved,setSaved]=useState([])
  const [subjectId,setSubjectId]=useState(''),[selected,setSelected]=useState([]),[request,setRequest]=useState(''),[instruction,setInstruction]=useState('')
@@ -14,27 +53,16 @@ export default function Summaries(){
  const rubricInput=useRef(null)
  const subjectMaterials=useMemo(()=>materials.filter(m=>m.subject_id===subjectId),[materials,subjectId])
 
- async function hydrateSourceImages(summaryJson,supabase){
-  const sourceImages=Array.isArray(summaryJson?.sourceImages)?summaryJson.sourceImages:[]
-  const paths=sourceImages.map(x=>x?.storagePath).filter(Boolean)
-  if(!paths.length)return summaryJson
-  const {data,error}=await supabase.storage.from('study-materials').createSignedUrls(paths,60*60*24*7)
-  if(error||!Array.isArray(data))return summaryJson
-  const byPath=new Map(data.map(x=>[x.path,x.signedUrl]))
-  return {...summaryJson,sourceImages:sourceImages.map(x=>({...x,url:byPath.get(x.storagePath)||x.url||''})).filter(x=>x.url)}
- }
-
  async function load(){
   const s=getSupabaseBrowserClient();if(!s){location.href='/login';return}
   const {data:{user}}=await s.auth.getUser();if(!user){location.href='/login';return}
   const [a,b,c]=await Promise.all([
    s.from('subjects').select('id,name').eq('user_id',user.id).order('created_at'),
-   s.from('materials').select('id,subject_id,title,file_name,mime_type,processing_status').eq('user_id',user.id).order('uploaded_at',{ascending:false}),
+   s.from('materials').select('id,subject_id,title,file_name,mime_type,storage_path,processing_status').eq('user_id',user.id).order('uploaded_at',{ascending:false}),
    s.from('summaries').select('id,title,subject_id,chapter_request,summary_json,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(20)
   ])
   if(a.error||b.error||c.error)setError(a.error?.message||b.error?.message||c.error?.message||'Could not load your study library.')
-  const hydratedSaved=await Promise.all((c.data||[]).map(async item=>({...item,summary_json:await hydrateSourceImages(item.summary_json,s)})))
-  setSubjects(a.data||[]);setMaterials(b.data||[]);setSaved(hydratedSaved)
+  setSubjects(a.data||[]);setMaterials(b.data||[]);setSaved(c.data||[])
   if(!subjectId&&a.data?.[0])setSubjectId(a.data[0].id)
   setLoading(false)
  }
@@ -103,7 +131,7 @@ export default function Summaries(){
   }catch(e){setError(e.message||'Could not create the summary.')}finally{setBusy(false)}
  }
 
- async function openSaved(item){const subject=subjects.find(x=>x.id===item.subject_id);const s=getSupabaseBrowserClient();const json=s?await hydrateSourceImages(item.summary_json,s):item.summary_json;setSubjectId(item.subject_id);setSummary({...json,id:item.id,title:item.title,subjectName:subject?.name||'Subject'});setRequest(item.chapter_request||'')}
+ function openSaved(item){const subject=subjects.find(x=>x.id===item.subject_id);setSubjectId(item.subject_id);setSummary({...item.summary_json,id:item.id,title:item.title,subjectName:subject?.name||'Subject'});setRequest(item.chapter_request||'')}
  function print(){window.print()}
 
  if(loading)return <main className="new-loading"><div className="new-logo">TIA<span>LO</span></div><span>Opening Summaries…</span></main>
@@ -128,8 +156,8 @@ export default function Summaries(){
       <div className="summary-doc-head"><div className="new-kicker">STUDY SUMMARY</div><h2>{summary.title}</h2><p>{summary.subjectName}</p></div>
       {summary.overview&&<section><h3>Overview</h3><p>{summary.overview}</p></section>}
       {(summary.sections||[]).map((s,i)=>{
-       const images=(summary.sourceImages||[]).filter(image=>(s.sourcePages||[]).some(ref=>ref.materialId===image.materialId&&Number(ref.page)===Number(image.page)))
-       return <section key={i}><h3>{i+1}. {s.heading}</h3><p>{s.summary}</p>{s.keyPoints?.length?<ul>{s.keyPoints.map((p,j)=><li key={j}>{p}</li>)}</ul>:null}{images.length>0&&<div className="summary-source-images"><div className="summary-source-label">Relevant source diagrams / pages</div>{images.map((image,j)=><figure className="summary-source-image" key={image.storagePath||j}><img src={image.url} alt={`Relevant source page ${image.page}`} loading="lazy"/><figcaption>Source page {image.page}</figcaption></figure>)}</div>}</section>
+       const refs=(s.sourcePages||[]).filter((ref,j,arr)=>arr.findIndex(x=>x.materialId===ref.materialId&&Number(x.page)===Number(ref.page))===j)
+       return <section key={i}><h3>{i+1}. {s.heading}</h3><p>{s.summary}</p>{s.keyPoints?.length?<ul>{s.keyPoints.map((p,j)=><li key={j}>{p}</li>)}</ul>:null}{refs.length>0&&<div className="summary-source-images"><div className="summary-source-label">Relevant source diagrams / pages</div>{refs.map((ref,j)=>{const material=materials.find(m=>m.id===ref.materialId);return <SourcePageImage key={`${ref.materialId}-${ref.page}-${j}`} material={material} page={ref.page}/>})}</div>}</section>
       })}
       {summary.importantTerms?.length?<section><h3>Important terms</h3>{summary.importantTerms.map((t,i)=><p key={i}><b>{t.term}:</b> {t.meaning}</p>)}</section>:null}
       <footer>Generated by TIALO · Source-linked study summary</footer>
