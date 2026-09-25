@@ -16,6 +16,13 @@ async function findStudyImages(query,fallbackQuery='',count=4){
     return Object.values(j?.query?.pages||{}).map(p=>({title:String(p.title||'').replace(/^File:/,''),url:p.imageinfo?.[0]?.thumburl||p.imageinfo?.[0]?.url||'',source:'Wikimedia Commons'})).filter(x=>x.url).slice(0,count);
   }catch(e){console.error('Study image search failed:',e);return []}
 }
+const KNOWN_STUDY_IMAGES=[
+ {terms:['rna','ribonucleic'],images:[
+  {title:'RNA structure — primary, secondary and tertiary structure',url:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/RNA_structure_%28full%29.png/500px-RNA_structure_%28full%29.png',source:'Wikimedia Commons'},
+  {title:'RNA chemical structure and 5′ to 3′ direction',url:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Ribonucleic_acid_chemical_structure.svg/500px-Ribonucleic_acid_chemical_structure.svg.png',source:'Wikimedia Commons'}
+ ]}
+]
+function knownStudyImages(query,count){const q=String(query||'').toLowerCase();const match=KNOWN_STUDY_IMAGES.find(x=>x.terms.some(t=>q.includes(t)));return match?match.images.slice(0,count):[]}
 function requestedImageCount(q){const m=String(q||'').match(/\b(\d+)\s+(?:images?|pictures?|photos?|diagrams?)\b/i);return Math.min(Math.max(m?Number(m[1]):4,1),6)}
 function wantsImages(q){return /\b(?:images?|pictures?|photos?|diagrams?)\b/i.test(String(q||''))}
 const STOP_WORDS=new Set('the a an and or but is are was were be been being to of in on for from with without what why how when where which who does do did can could should would will this that these those it its as at by about into than then them they their you your i me my we our explain please give tell'.split(' '))
@@ -32,7 +39,7 @@ export async function POST(request){
  const {data:materials,error:me}=await supabase.from('materials').select('id,title,file_name,extracted_text,processing_status').eq('user_id',user.id).eq('subject_id',subjectId).eq('processing_status','ready').not('extracted_text','is',null)
  if(me)return NextResponse.json({error:me.message},{status:400});if(!materials?.length)return NextResponse.json({error:'This subject has no processed study material yet. Upload and read a PDF first.'},{status:400})
  const source=context(materials,question);if(!source)return NextResponse.json({answer:'I could not find enough relevant information in your uploaded material to answer that confidently.'})
- const previousUser=history.slice().reverse().find(x=>x?.role==='user'&&typeof x.content==='string')?.content||'';const imageResults=wantsImages(question)?await findStudyImages(question,previousUser,requestedImageCount(question)):[]
+ const previousUser=history.slice().reverse().find(x=>x?.role==='user'&&typeof x.content==='string')?.content||'';const imageCount=requestedImageCount(question);let imageResults=wantsImages(question)?knownStudyImages(question+' '+previousUser,imageCount):[];if(wantsImages(question)&&imageResults.length<imageCount){const searched=await findStudyImages(question,previousUser,imageCount);for(const img of searched){if(!imageResults.some(x=>x.url===img.url))imageResults.push(img);if(imageResults.length>=imageCount)break}}
  const language=LANGUAGE_NAMES[profile?.language]||'English'
  const contents=history.filter(x=>x&&(x.role==='user'||x.role==='assistant')&&typeof x.content==='string').map(x=>({role:x.role==='assistant'?'model':'user',parts:[{text:x.content}]}));contents.push({role:'user',parts:[{text:question}]})
  const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL||'gemini-3.5-flash-lite'}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},body:JSON.stringify({systemInstruction:{parts:[{text:`You are TIALO AI Tutor. Answer entirely in ${language}. Use ONLY the supplied study material. Do not invent facts. Teach clearly and step by step.\n\nSUPPLIED STUDY MATERIAL:\n${source}`}]},contents,generationConfig:{temperature:.2}})})
