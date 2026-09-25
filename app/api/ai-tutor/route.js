@@ -25,7 +25,7 @@ const KNOWN_STUDY_IMAGES=[
   {title:'RNA translation / protein synthesis diagram',url:'https://commons.wikimedia.org/wiki/Special:FilePath/Protein_synthesis.svg?width=900',source:'Wikimedia Commons'}
  ]}
 ]
-function knownStudyImages(query,count){const q=String(query||'').toLowerCase();const match=KNOWN_STUDY_IMAGES.find(x=>x.terms.some(t=>new RegExp('\\\\b'+t+'\\\\b','i').test(q)));return match?match.images.slice(0,count):[]}
+function knownStudyImages(query,count){const q=String(query||'').toLowerCase();const tokens=new Set(q.split(/[^a-z0-9]+/).filter(Boolean));const match=KNOWN_STUDY_IMAGES.find(x=>x.terms.some(t=>tokens.has(t)));return match?match.images.slice(0,count):[]}
 function requestedImageCount(q){const m=String(q||'').match(/\b(\d+)\s+(?:images?|pictures?|photos?|diagrams?)\b/i);return Math.min(Math.max(m?Number(m[1]):4,1),6)}
 function wantsImages(q){return /\b(?:images?|pictures?|photos?|diagrams?)\b/i.test(String(q||''))}
 const STOP_WORDS=new Set('the a an and or but is are was were be been being to of in on for from with without what why how when where which who does do did can could should would will this that these those it its as at by about into than then them they their you your i me my we our explain please give tell'.split(' '))
