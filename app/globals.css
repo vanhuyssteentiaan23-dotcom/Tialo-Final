@@ -328,3 +328,12 @@ input,textarea,select{border-color:var(--line)!important;background:#fff!importa
 .tutor-image-card span{display:block;padding:8px 9px;font-size:10px;line-height:1.35;font-weight:700}
 .tutor-images-source{margin-top:8px;font-size:9px;color:#8a938d}
 @media(max-width:650px){.tutor-images-grid{grid-template-columns:1fr}.tutor-image-card img{height:180px}}
+
+
+/* AI Tutor source-material pages */
+.tutor-source-pages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tutor-source-page{margin:0;border:1px solid #dfe4de;border-radius:12px;overflow:hidden;background:#fff}
+.tutor-source-page img{display:block;width:100%;height:230px;object-fit:contain;background:#f4f5f2}
+.tutor-source-page figcaption{padding:8px 9px;font-size:10px;line-height:1.35;font-weight:700;color:#3e473f}
+.tutor-source-loading{border:1px solid #e1e6e0;border-radius:12px;padding:18px;font-size:11px;color:#7a847b;background:#fafbfa}
+@media(max-width:650px){.tutor-source-pages{grid-template-columns:1fr}.tutor-source-page img{height:280px}}
