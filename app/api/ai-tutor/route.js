@@ -7,7 +7,7 @@ function getServerSupabase(request){const url=normalizeSupabaseUrl(process.env.N
 const LANGUAGE_NAMES={en:'English',af:'Afrikaans',zu:'isiZulu',xh:'isiXhosa',st:'Sesotho',tn:'Setswana',nso:'Sepedi',ts:'XiTsonga',ss:'siSwati',de:'German',fr:'French',es:'Spanish',pt:'Portuguese'}
 
 async function findStudyImages(query,fallbackQuery='',count=4){
-  const clean=(q)=>String(q||'').toLowerCase().replace(/[^a-z0-9\\s-]/g,' ').replace(/\\b(give|show|me|some|images?|pictures?|photos?|diagrams?|diagram|photo|please|can|you|find|display|send|provide|want|need|no|i|two|one|three|four|five|of|for)\\b/g,' ').replace(/\\d+/g,' ').replace(/\\s+/g,' ').trim();
+  const clean=(q)=>String(q||'').toLowerCase().replace(/[^a-z0-9\s-]/g,' ').replace(/\b(give|show|me|some|images?|pictures?|photos?|diagrams?|diagram|photo|please|can|you|find|display|send|provide|want|need|no|i|two|one|three|four|five|of|for)\b/g,' ').replace(/\\d+/g,' ').replace(/\s+/g,' ').trim();
   const search=clean(query)||clean(fallbackQuery)||'RNA structure';
   const url='https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch='+encodeURIComponent(search)+'&gsrnamespace=6&gsrlimit='+Math.max(count,4)+'&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=900&format=json&origin=*';
   try{
@@ -16,8 +16,8 @@ async function findStudyImages(query,fallbackQuery='',count=4){
     return Object.values(j?.query?.pages||{}).map(p=>({title:String(p.title||'').replace(/^File:/,''),url:p.imageinfo?.[0]?.thumburl||p.imageinfo?.[0]?.url||'',source:'Wikimedia Commons'})).filter(x=>x.url).slice(0,count);
   }catch(e){console.error('Study image search failed:',e);return []}
 }
-function requestedImageCount(q){const m=String(q||'').match(/\\b(\\d+)\\s+(?:images?|pictures?|photos?|diagrams?)\\b/i);return Math.min(Math.max(m?Number(m[1]):4,1),6)}
-function wantsImages(q){return /\\b(?:images?|pictures?|photos?|diagrams?)\\b/i.test(String(q||''))}
+function requestedImageCount(q){const m=String(q||'').match(/\b(\\d+)\s+(?:images?|pictures?|photos?|diagrams?)\b/i);return Math.min(Math.max(m?Number(m[1]):4,1),6)}
+function wantsImages(q){return /\b(?:images?|pictures?|photos?|diagrams?)\b/i.test(String(q||''))}
 const STOP_WORDS=new Set('the a an and or but is are was were be been being to of in on for from with without what why how when where which who does do did can could should would will this that these those it its as at by about into than then them they their you your i me my we our explain please give tell'.split(' '))
 function terms(q){return[...new Set((q.toLowerCase().match(/[a-z0-9]+/g)||[]).filter(x=>x.length>2&&!STOP_WORDS.has(x)))]}
 function context(materials,q){const ts=terms(q),out=[];for(const m of materials){const text=m.extracted_text||'';const low=text.toLowerCase();for(let start=0;start<text.length;start+=6100){const chunk=text.slice(start,start+7000),cl=low.slice(start,start+chunk.length);let score=0;for(const t of ts){const n=cl.split(t).length-1;score+=Math.min(n,8)}if(score)out.push({score,text:chunk,title:m.title||m.file_name||'Study material'})}}out.sort((a,b)=>b.score-a.score);return out.slice(0,8).map((x,i)=>`SOURCE ${i+1} — ${x.title}\n${x.text}`).join('\n\n')}
