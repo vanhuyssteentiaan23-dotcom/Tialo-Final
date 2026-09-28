@@ -293,31 +293,37 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
 
   // Gemini JSON mode is used instead of a nested responseSchema.
   const language = outputLanguage(profile)
+  const topics = parseRequestedTopics(scope, subject.name)
+  const topicContext = buildTopicContext(materials, topics)
   const difficultyText = difficulty === 'mixed' ? 'a balanced mix of easy, medium and hard' : difficulty
-  const scopeText = scope ? `Cover ALL of these requested chapters/topics where the supplied material supports them: ${scope}. Spread questions across the requested topics instead of concentrating on only the first topic.` : 'Cover the most important examinable material from the supplied sources.'
+  const scopeText = scope ? `Cover ALL of these requested chapters/topics where the supplied material supports them: ${topics.join(', ')}. Every question must belong to one of these requested topics.` : 'Cover the most important examinable material from the supplied sources.'
   const revisionText = revisionContext ? `Create fresh questions that target the student’s mistakes below. Do not simply repeat the old questions.\nMISTAKES:\n${revisionContext}` : ''
   const graphDataLikely = /\d+(?:\.\d+)?\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(context) || /\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|increase|decrease)\b/i.test(context)
   const graphRequirement = graphDataLikely ? 'The supplied material contains quantitative/comparison signals, so MUST include at least 1 graph question and at least 1 of those graphs MUST be a LINE graph. For 10+ questions include both a line graph and a bar graph.' : 'Include a LINE graph when the supplied material contains suitable quantitative/comparison data.'
 
   // Keep generation fast and resilient. Current Gemini 3 models are the supported production models.
   // If capacity is unavailable, the local-material fallback below creates a usable exam instead of failing the student.
-  const modelCandidates = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash-lite']
+  const configuredModel = process.env.GEMINI_MOCK_MODEL || process.env.GEMINI_TUTOR_MODEL || 'gemini-3.8-flash'
+  const modelCandidates = [...new Set([configuredModel, 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash'])]
   const visualCandidateText = visualCandidates.length ? visualCandidates.map((v,i)=>'VISUAL CANDIDATE '+(i+1)+': material_id='+v.materialId+', page='+v.page+', title='+v.title+'\n'+v.excerpt).join('\n\n') : 'No labelled source-page sketch candidates were detected.'
   const baseInstruction = `You are TIALO Mock Exam Generator for ${subject.name}. Write all student-facing text in ${language}. Use ONLY the supplied study material for factual content. Never invent subject facts or claim invented measurements came from the source.
 
-Create exactly ${count} questions. Question mix is mandatory: for exams of 5 or more questions include at least 1 short-answer question and at least 1 graph-reading question. Use multiple choice for most remaining questions. Multiple-choice questions must have exactly four options. Short-answer questions must have no options and must include a concise model_answer plus grading_rubric describing the key points needed for full marks.
+Create exactly ${count} real exam questions. Do NOT write generic filler such as "Which statement is supported by the supplied study material?" Every question must test a specific concept, structure, process, relationship, calculation, comparison, or graph interpretation from the requested topic. Multiple-choice questions must have exactly four concise answer choices; never paste a source paragraph into an option or use the source paragraph itself as the correct answer. Short-answer questions must ask something specific (for example Explain, State two, Describe, Compare, Calculate, or What would happen if) and include a concise model_answer plus a marking rubric containing the actual points required.
 
-Every question is worth 1–10 marks. Use lower marks for simple recall and higher marks for explanations, comparisons, processes or multi-step reasoning. Do not make every question worth 1 mark.
+Every question is worth 1–10 marks. Use varied marks: simple recall 1–2, application/interpretation 3–5, and multi-step explanation/analysis 6–10. Do not make every question worth 1 mark.
 
 GRAPH REQUIREMENT: Every exam must contain at least one graph-based question, and the graph MUST be about one of the requested chapters/topics. If the supplied material contains numerical/table data relevant to that topic, use those exact source values and set source_type to "source". If relevant source data does not exist, create an explicitly titled "Illustrative practice graph" tied directly to the requested topic, set source_type to "illustrative", and make clear that the numbers are an illustrative index for practice, NOT measurements from the source. The prompt must ask the student to read, compare, calculate from, or interpret the displayed graph. Never use a graph merely as decoration. Use chart_type "line" for at least one graph question in every exam. Use chart_type "bar" for an additional graph question when appropriate, especially in exams of 10+ questions. Every graph must have at least 3 labels and matching numeric values. For non-graph questions use chart_type "none" with empty labels and values.
 
 SKETCH / DIAGRAM REQUIREMENT: When VISUAL CANDIDATES are available, include at least one question that displays a relevant source-page sketch/diagram. Set visual_data.type to source_page and use the exact material_id and page from a VISUAL CANDIDATE. The question must explicitly tell the student to study the sketch/diagram and ask a question that can be answered from that sketch plus the supplied study material. Do not use an unrelated page. If no relevant visual candidate exists, set visual_data.type to none.
 
-If multiple chapters/topics are requested, distribute questions across ALL requested topics where the material supports them; do not concentrate on only the first topic. Label every question with its topic/chapter. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}
+If multiple chapters/topics are requested, distribute questions across ALL requested topics as evenly as the supplied material allows; do not concentrate on only the first topic. The topic field MUST be one of: ${topics.join(', ')}. A question about RNA must not be labelled DNA, and a question about a reproductive topic must not be labelled RNA. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}
 ${graphRequirement}
 
 VISUAL CANDIDATES (use these exact IDs/pages when adding a sketch question):
 ${visualCandidateText}
+
+TOPIC-SPECIFIC SOURCE EXCERPTS:
+${topicContext}
 
 SUPPLIED STUDY MATERIAL:
 ${context}`
@@ -337,7 +343,7 @@ ${context}`
           body:JSON.stringify({
             systemInstruction:{parts:[{text:baseInstruction + (extraInstruction ? '\\n\\nMANDATORY REPAIR: ' + extraInstruction : '')}]},
             contents:[{role:'user',parts:[{text:userInstruction}]}],
-            generationConfig:{responseMimeType:'application/json',maxOutputTokens:12000,thinkingConfig:{thinkingLevel:'low'}}
+            generationConfig:{responseMimeType:'application/json',maxOutputTokens:12000,thinkingConfig:{thinkingLevel:'medium'}}
           }),
         })
         const result = await response.json().catch(()=>({}))
@@ -380,14 +386,15 @@ ${context}`
   let examData = parseJsonText(extractModelText(result))
   let questions = Array.isArray(examData?.questions) ? examData.questions.slice(0,count).map(normalizeQuestion) : []
 
+  const qualityIssues = questionQualityIssues(questions, topics, count)
   const hasGraph = questions.some(q => q.chart_data.chart_type !== 'none' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length && graphMatchesScope(q, scope))
   const hasLineGraph = questions.some(q => q.chart_data.chart_type === 'line' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length && graphMatchesScope(q, scope))
   const hasBarGraph = questions.some(q => q.chart_data.chart_type === 'bar' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length && graphMatchesScope(q, scope))
   const hasVisualQuestion = questions.some(q => q.visual_data.type === 'source_page' && visualCandidates.some(v=>v.materialId===q.visual_data.material_id && v.page===q.visual_data.page))
   const hasShortAnswer = questions.some(q => q.question_type === 'short_answer')
-  if (questions.length === count && (!hasGraph || !hasLineGraph || (count >= 10 && !hasBarGraph) || (count >= 5 && !hasShortAnswer) || (visualCandidates.length && !hasVisualQuestion))) {
-    const missing = [!hasGraph ? 'at least one graph question about the requested topic(s)' : '', !hasLineGraph ? 'at least one LINE graph question' : '', (count >= 10 && !hasBarGraph) ? 'at least one BAR graph question' : '', (count >= 5 && !hasShortAnswer) ? 'at least one short-answer question' : '', (visualCandidates.length && !hasVisualQuestion) ? 'at least one relevant source-page sketch/diagram question using a listed VISUAL CANDIDATE' : ''].filter(Boolean).join(' and ')
-    ({response, result, modelName} = await requestGeneration(`The previous output did not satisfy the exam requirements. You MUST include ${missing}. The graph must match the requested topic(s) and must not switch to an unrelated chapter. If relevant source data is unavailable, use an explicitly titled "Illustrative practice graph" tied to the requested topic and set source_type to "illustrative".`))
+  if (questions.length === count && (qualityIssues.length || !hasGraph || !hasLineGraph || (count >= 10 && !hasBarGraph) || (count >= 5 && !hasShortAnswer) || (visualCandidates.length && !hasVisualQuestion))) {
+    const missing = [...qualityIssues.slice(0,5), !hasGraph ? 'at least one graph question about the requested topic(s)' : '', !hasLineGraph ? 'at least one LINE graph question' : '', (count >= 10 && !hasBarGraph) ? 'at least one BAR graph question' : '', (count >= 5 && !hasShortAnswer) ? 'at least one short-answer question' : '', (visualCandidates.length && !hasVisualQuestion) ? 'at least one relevant source-page sketch/diagram question using a listed VISUAL CANDIDATE' : ''].filter(Boolean).join(' and ')
+    ({response, result, modelName} = await requestGeneration(`The previous output failed these checks: ${missing}. Regenerate the ENTIRE exam from scratch. Do not reuse generic "supported by the supplied material" wording. Do not paste source paragraphs into answer choices. Every topic must be one of ${topics.join(', ')}. Keep each question specific to its topic. If graph source data is unavailable, use an explicitly illustrative graph tied to the requested topic and ask only about the displayed graph values/trends.`))
     if (response.ok) {
       examData = parseJsonText(extractModelText(result))
       questions = Array.isArray(examData?.questions) ? examData.questions.slice(0,count).map(normalizeQuestion) : []
@@ -397,6 +404,12 @@ ${context}`
   if (!response.ok) {
     console.error('Gemini Mock Exam repair error:', result)
     return NextResponse.json({ error: result?.error?.message || 'The mock exam could not be generated right now.' }, { status: response.status === 429 ? 429 : 502 })
+  }
+
+  const finalQualityIssues = questionQualityIssues(questions, topics, count)
+  if (finalQualityIssues.length) {
+    console.error('Mock exam quality validation failed:', finalQualityIssues)
+    return NextResponse.json({ error:'The generated exam did not meet the requested question quality. Please try again.' }, { status:502 })
   }
 
   if (!examData || !Array.isArray(examData.questions)) {
