@@ -17,10 +17,9 @@ export default function Dashboard(){
  const chart=useMemo(()=>exams.slice().reverse().slice(-7),[exams])
  async function signOut(){const s=getSupabaseBrowserClient();await s?.auth.signOut();location.href='/'}
  if(loading)return <main className="new-loading"><div className="new-logo">TIA<span>LO</span></div><span>Opening your workspace…</span></main>
- return <main className="tialo-new-shell">
-  <aside className={'new-sidebar '+(mobile?'open':'')}><div className="new-sidebar-top"><a className="new-logo" href="/dashboard">TIA<span>LO</span></a><button onClick={()=>setMobile(false)}>×</button></div><div className="new-nav-label">Workspace</div><nav>{nav.map(([label,icon,href])=><a className={href==='/dashboard'?'selected':''} href={href} key={href}><span className="new-nav-icon">{icon}</span><span>{label}</span>{href==='/daily-tasks'&&pending.length>0?<b>{pending.length}</b>:null}</a>)}</nav><div className="new-sidebar-bottom"><a className="new-settings-link" href="/settings">⚙ Settings</a><div className="new-user"><div>{first[0]?.toUpperCase()}</div><span>{first}</span></div><button onClick={signOut}>Sign out</button></div></aside>
-  {mobile&&<div className="new-backdrop" onClick={()=>setMobile(false)}/>}
-  <section className="new-main">
+ return <main className="dashboard-shell tialo-workspace">
+  <aside className="sidebar"><a className="brand" href="/dashboard">TIA<span>LO</span></a><div className="sidebar-label">Workspace</div><nav className="sidebar-nav">{nav.map(([label,icon,href])=><a className={'side-link '+(href==='/dashboard'?'active':'')} href={href} key={href}><span>{icon}</span>{label}{href==='/daily-tasks'&&pending.length>0?<b>{pending.length}</b>:null}</a>)}</nav><div className="sidebar-bottom"><a className="side-settings" href="/settings">⚙ Settings</a><div className="new-user"><div>{first[0]?.toUpperCase()}</div><span>{first}</span></div><button onClick={signOut}>Sign out</button></div></aside>
+  <section className="dashboard-main">
    <header className="new-header"><button className="new-menu" onClick={()=>setMobile(true)}>☰</button><div><strong>Overview</strong><span> / {new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</span></div><div className="new-header-user">{first}<div>{first[0]?.toUpperCase()}</div></div></header>
    <div className="new-content">
     <section className="welcome-row"><div><div className="new-kicker">GOOD MORNING, {first.toUpperCase()}</div><h1>What are you<br/><i>working on?</i></h1><p>Pick one thing. TIALO will help you make progress without the noise.</p></div><a className="new-primary" href="/ai-tutor">Ask TIALO <span>↗</span></a></section>
