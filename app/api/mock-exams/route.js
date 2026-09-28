@@ -181,7 +181,7 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
         items:{
           type:'object',
           properties:{
-            question_type:{type:'string',enum:['multiple_choice','short_answer']},
+            question_type:{type:'string',enum:['multiple_choice','short_answer'],description:'Question format. Include at least one short_answer question.'},
             prompt:{type:'string'},
             options:{type:'array',items:{type:'string'}},
             correct_answer:{type:'string'},
@@ -191,7 +191,7 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
             topic:{type:'string'},
             marks:{type:'integer'},
             chart_data:{
-              type:'object',
+              type:'object',description:'Graph data. Use bar or line for at least one graph question in every exam; use none only for non-graph questions.',
               properties:{
                 chart_type:{type:'string',enum:['none','bar','line']},
                 title:{type:'string'},
@@ -217,37 +217,61 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
   const graphDataLikely = /\d+(?:\.\d+)?\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(context) || /\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|increase|decrease)\b/i.test(context)
   const graphRequirement = graphDataLikely ? 'The supplied material contains quantitative/comparison signals, so MUST include at least 1 graph-based question and up to 3 when appropriate.' : 'Include graph-based questions when the supplied material contains suitable quantitative/comparison data.'
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'}:generateContent`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
-    body:JSON.stringify({
-      systemInstruction:{parts:[{text:`You are TIALO Mock Exam Generator for ${subject.name}. Write all student-facing text in ${language}. Use ONLY the supplied study material. Never invent facts, numbers, measurements, labels, trends or graph data.
+  const modelName = process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'
+  const baseInstruction = `You are TIALO Mock Exam Generator for ${subject.name}. Write all student-facing text in ${language}. Use ONLY the supplied study material for factual content. Never invent subject facts or claim invented measurements came from the source.
 
-Create exactly ${count} questions. Mix question types: approximately 65–80% multiple choice and 20–35% short answer. If multiple chapters/topics are requested, distribute questions across them. Multiple-choice questions must have exactly four options. Short-answer questions must have no options and must include a concise model_answer plus grading_rubric describing the key points needed for full marks.
+Create exactly ${count} questions. Question mix is mandatory: for exams of 5 or more questions include at least 1 short-answer question and at least 1 graph-reading question. Use multiple choice for most remaining questions. Multiple-choice questions must have exactly four options. Short-answer questions must have no options and must include a concise model_answer plus grading_rubric describing the key points needed for full marks.
 
-Every question is worth 1–10 marks. Use lower marks for simple recall and higher marks for explanations, comparisons, processes or multi-step reasoning. The marks determine the student's score; do not make every question worth 1 mark.
+Every question is worth 1–10 marks. Use lower marks for simple recall and higher marks for explanations, comparisons, processes or multi-step reasoning. Do not make every question worth 1 mark.
 
-Graphs: when quantitative/comparison signals are present, graph questions are required. ${graphRequirement} Prioritize finding graph/table/data values in the supplied sources. For a graph-based question, chart_data.chart_type must be bar or line, chart_data.labels and chart_data.values must come directly from the supplied material, and the prompt must require the student to read or interpret the displayed graph. Do NOT create a graph from invented numbers. If the material has no suitable quantitative/comparison data, use chart_type "none" for all questions. Keep graph labels concise and use the same units as the source when available.
+GRAPH REQUIREMENT: Every exam must contain at least one graph-based question. If the supplied material contains numerical/table data, use those exact source values in chart_data. If the supplied material does not contain suitable numerical data, create an explicitly labelled "Illustrative practice graph" whose trend represents a relationship or process stated in the supplied material. In that fallback case, the numbers are an illustrative index for practice, NOT measurements from the source. The prompt must ask the student to read, compare, calculate from, or interpret the displayed graph. Never use a graph merely as decoration. Use chart_type "bar" or "line", at least 3 labels and matching numeric values. For non-graph questions use chart_type "none" with empty labels and values.
 
-For non-graph questions use chart_type "none" and empty labels/values. The graph itself must contain enough information to answer the graph-based question. Explanations should be useful for later review. Label every question with a concise topic/chapter. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}
+If multiple chapters/topics are requested, distribute questions across ALL requested topics where the material supports them; do not concentrate on only the first topic. Label every question with its topic/chapter. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}
 
 SUPPLIED STUDY MATERIAL:
-${context}`}]},
-      contents:[{role:'user',parts:[{text:`Generate a ${count}-question ${difficultyText} mock exam for ${subject.name} with varied marks, short-answer questions, and material-grounded graph questions where the source supports them.`}]}],
-      generationConfig:{temperature:.2,responseMimeType:'application/json',responseSchema:schema}
-    }),
-  })
+${context}`
+  const userInstruction = `Generate a ${count}-question ${difficultyText} mock exam for ${subject.name}. Include varied 1–10 mark questions, at least one short-answer question, and at least one graph-reading question with a visible chart_data graph.`
 
-  const result = await response.json().catch(()=>({}))
+  async function requestGeneration(extraInstruction='') {
+    return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
+      body:JSON.stringify({
+        systemInstruction:{parts:[{text:baseInstruction + (extraInstruction ? '\\n\\nMANDATORY REPAIR: ' + extraInstruction : '')}]},
+        contents:[{role:'user',parts:[{text:userInstruction}]}],
+        generationConfig:{temperature:.15,responseMimeType:'application/json',responseSchema:schema}
+      }),
+    })
+  }
+
+  let response = await requestGeneration()
+  let result = await response.json().catch(()=>({}))
   if (!response.ok) {
     console.error('Gemini Mock Exam error:', result)
     return NextResponse.json({ error: result?.error?.message || 'The mock exam could not be generated right now.' }, { status: response.status === 429 ? 429 : 502 })
   }
 
-  const examData = parseJsonText(extractModelText(result))
-  if (!examData || !Array.isArray(examData.questions)) return NextResponse.json({ error:'The AI returned an invalid exam format. Please try again.' }, { status:502 })
+  let examData = parseJsonText(extractModelText(result))
+  let questions = Array.isArray(examData?.questions) ? examData.questions.slice(0,count).map(normalizeQuestion) : []
 
-  const questions = examData.questions.slice(0,count).map(normalizeQuestion)
+  const hasGraph = questions.some(q => q.chart_data.chart_type !== 'none' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length)
+  const hasShortAnswer = questions.some(q => q.question_type === 'short_answer')
+  if (questions.length === count && (!hasGraph || (count >= 5 && !hasShortAnswer))) {
+    const missing = [!hasGraph ? 'at least one real graph question with chart_type bar or line and at least 3 labels/values' : '', (count >= 5 && !hasShortAnswer) ? 'at least one short-answer question' : ''].filter(Boolean).join(' and ')
+    response = await requestGeneration(`The previous output did not satisfy the exam requirements. You MUST include ${missing}. Do not return chart_type "none" for the graph question. If source data is unavailable, use an explicitly titled "Illustrative practice graph" based on a relationship described in the material, and make the question test interpretation of that displayed graph.`)
+    result = await response.json().catch(()=>({}))
+    if (response.ok) {
+      examData = parseJsonText(extractModelText(result))
+      questions = Array.isArray(examData?.questions) ? examData.questions.slice(0,count).map(normalizeQuestion) : []
+    }
+  }
+
+  if (!response.ok) {
+    console.error('Gemini Mock Exam repair error:', result)
+    return NextResponse.json({ error: result?.error?.message || 'The mock exam could not be generated right now.' }, { status: response.status === 429 ? 429 : 502 })
+  }
+
+  if (!examData || !Array.isArray(examData.questions)) return NextResponse.json({ error:'The AI returned an invalid exam format. Please try again.' }, { status:502 })
   if (questions.length !== count) return NextResponse.json({ error:'The AI did not generate the required number of questions. Please try again.' }, { status:502 })
 
   for (const question of questions) {
@@ -257,6 +281,11 @@ ${context}`}]},
     if (question.question_type === 'short_answer' && !question.grading_rubric) return NextResponse.json({ error:'The generated short-answer marking guide was invalid. Please try again.' }, { status:502 })
     if (question.chart_data.chart_type !== 'none' && question.chart_data.labels.length !== question.chart_data.values.length) return NextResponse.json({ error:'The generated graph data was invalid. Please try again.' }, { status:502 })
   }
+
+  const graphCount = questions.filter(q => q.chart_data.chart_type !== 'none' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length).length
+  const shortAnswerCount = questions.filter(q => q.question_type === 'short_answer').length
+  if (graphCount < 1) return NextResponse.json({ error:'The generated exam did not include a valid graph question. Please try again.' }, { status:502 })
+  if (count >= 5 && shortAnswerCount < 1) return NextResponse.json({ error:'The generated exam did not include a short-answer question. Please try again.' }, { status:502 })
 
   const totalMarks = questions.reduce((sum,q)=>sum+q.marks,0)
   const { data: exam, error: examError } = await supabase.from('exam_attempts').insert({
