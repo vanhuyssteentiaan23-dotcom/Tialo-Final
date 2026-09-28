@@ -173,6 +173,46 @@ function normalizeQuestion(question) {
   }
 }
 
+function buildFallbackQuestions({count,scope,subjectName,context,visualCandidates}) {
+  const sourceBlocks=context.split(/\n\n(?=SOURCE )/).map(x=>x.trim()).filter(Boolean)
+  const snippets=[]
+  for(const block of sourceBlocks){
+    const body=block.split('\n').slice(1).join(' ').replace(/\s+/g,' ').trim()
+    if(body) snippets.push(body.slice(0,420))
+  }
+  const unique=[...new Set(snippets)].slice(0,12)
+  const topics=(scope||subjectName).split(',').map(x=>x.trim()).filter(Boolean)
+  const topic=(i)=>topics[i%Math.max(1,topics.length)]||subjectName
+  const questions=[]
+  const pushMC=(i)=>{
+    const correct=unique[i%Math.max(1,unique.length)]||'The supplied study material covers this topic.'
+    const distractors=[
+      'This statement is not supported by the supplied study material.',
+      'This option describes a different concept from the requested topic.',
+      'No conclusion can be drawn from the supplied study material.'
+    ]
+    questions.push({question_type:'multiple_choice',prompt:'Which statement is supported by the supplied study material about '+topic(i)+'?',options:[correct,...distractors].slice(0,4),correct_answer:correct,model_answer:correct,grading_rubric:correct,explanation:'Use the connected study material to identify the statement that is directly supported.',topic:topic(i),marks:i%3===0?2:1,chart_data:{chart_type:'none',title:'',x_label:'',y_label:'',labels:[],values:[],source_type:'source'},visual_data:{type:'none',material_id:'',page:0,caption:''}})
+  }
+  // Always include a short-answer question.
+  const shortSnippet=unique[0]||'an important concept from the supplied study material'
+  questions.push({question_type:'short_answer',prompt:'State and explain one important point from the study material about '+topic(0)+'.',options:[],correct_answer:'',model_answer:shortSnippet,grading_rubric:'Award full marks when the response accurately states a relevant point from the connected study material and explains it clearly.',explanation:'Answer using the connected study material.',topic:topic(0),marks:4,chart_data:{chart_type:'none',title:'',x_label:'',y_label:'',labels:[],values:[],source_type:'source'},visual_data:{type:'none',material_id:'',page:0,caption:''}})
+
+  // A guaranteed topic-labelled line graph for every exam. Values are explicitly illustrative so no source data is invented.
+  const lineLabels=['1','2','3','4','5'], lineValues=[2,5,3,7,6]
+  questions.push({question_type:'short_answer',prompt:'Study the illustrative line graph. Which point has the highest value, and what overall trend do you observe?',options:[],correct_answer:'',model_answer:'The highest value is at point 4. The values rise overall with one dip at point 3.',grading_rubric:'Award marks for identifying point 4 as the highest and describing the overall rise with the dip at point 3.',explanation:'This is an illustrative practice graph for reading trends, not a measurement from the source.',topic:topic(1),marks:5,chart_data:{chart_type:'line',title:'Illustrative '+topic(1)+' trend',x_label:'Observation',y_label:'Illustrative value',labels:lineLabels,values:lineValues,source_type:'illustrative'},visual_data:{type:'none',material_id:'',page:0,caption:''}})
+
+  if(count>=10){
+    const barLabels=(topics.length>=3?topics.slice(0,4):['A','B','C','D']), barValues=[3,7,5,8].slice(0,barLabels.length)
+    questions.push({question_type:'multiple_choice',prompt:'Study the illustrative bar graph. Which category has the highest value?',options:[barLabels[barValues.indexOf(Math.max(...barValues))],...barLabels.filter((_,i)=>i!==barValues.indexOf(Math.max(...barValues))).slice(0,3)],correct_answer:barLabels[barValues.indexOf(Math.max(...barValues))],model_answer:barLabels[barValues.indexOf(Math.max(...barValues))],grading_rubric:'Identify the bar with the greatest height.',explanation:'This is an illustrative practice graph for comparing categories.',topic:topic(2),marks:3,chart_data:{chart_type:'bar',title:'Illustrative '+topic(2)+' comparison',x_label:'Category',y_label:'Illustrative value',labels:barLabels,values:barValues,source_type:'illustrative'},visual_data:{type:'none',material_id:'',page:0,caption:''}})
+  }
+  if(visualCandidates?.length){
+    const v=visualCandidates[0]
+    questions.push({question_type:'short_answer',prompt:'Study the relevant source-page sketch/diagram shown with this question. Identify one labelled structure or feature you can see and state its function or role if it is given in the study material.',options:[],correct_answer:'',model_answer:'Any correctly identified labelled structure/feature supported by the connected study material.',grading_rubric:'Award marks for correctly identifying a relevant labelled structure/feature and accurately stating its supported role or function.',explanation:'The displayed page comes directly from the connected study material.',topic:topic(0),marks:4,chart_data:{chart_type:'none',title:'',x_label:'',y_label:'',labels:[],values:[],source_type:'source'},visual_data:{type:'source_page',material_id:v.materialId,page:v.page,caption:'Relevant source-page sketch / diagram'}})
+  }
+  while(questions.length<count) pushMC(questions.length)
+  return questions.slice(0,count)
+}
+
 async function generateExam({ supabase, user, subjectId, count, difficulty = 'mixed', scope = '', timeLimit = 0, revisionContext = '' }) {
   const { data: profile } = await supabase.from('profiles').select('language').eq('id', user.id).maybeSingle()
   const { data: subject, error: subjectError } = await supabase.from('subjects').select('id,name').eq('id', subjectId).eq('user_id', user.id).maybeSingle()
@@ -198,7 +238,7 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
   const graphDataLikely = /\d+(?:\.\d+)?\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(context) || /\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|increase|decrease)\b/i.test(context)
   const graphRequirement = graphDataLikely ? 'The supplied material contains quantitative/comparison signals, so MUST include at least 1 graph question and at least 1 of those graphs MUST be a LINE graph. For 10+ questions include both a line graph and a bar graph.' : 'Include a LINE graph when the supplied material contains suitable quantitative/comparison data.'
 
-  const modelCandidates = ['gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemma-4-31b-it']
+  const modelCandidates = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']
   const visualCandidateText = visualCandidates.length ? visualCandidates.map((v,i)=>'VISUAL CANDIDATE '+(i+1)+': material_id='+v.materialId+', page='+v.page+', title='+v.title+'\n'+v.excerpt).join('\n\n') : 'No labelled source-page sketch candidates were detected.'
   const baseInstruction = `You are TIALO Mock Exam Generator for ${subject.name}. Write all student-facing text in ${language}. Use ONLY the supplied study material for factual content. Never invent subject facts or claim invented measurements came from the source.
 
@@ -224,23 +264,26 @@ ${context}`
     let lastResponse = null
     let lastResult = {}
     for (const modelName of modelCandidates) {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
-        body:JSON.stringify({
-          systemInstruction:{parts:[{text:baseInstruction + (extraInstruction ? '\\n\\nMANDATORY REPAIR: ' + extraInstruction : '')}]},
-          contents:[{role:'user',parts:[{text:userInstruction}]}],
-          generationConfig:{responseMimeType:'application/json'}
-        }),
-      })
-      const result = await response.json().catch(()=>({}))
-      if (response.ok) return { response, result, modelName }
-      lastResponse = response
-      lastResult = result
-      const status = result?.error?.status
-      if (![429, 500, 502, 503, 504].includes(response.status) && !['RESOURCE_EXHAUSTED','UNAVAILABLE','INTERNAL','BAD_GATEWAY','DEADLINE_EXCEEDED'].includes(status)) {
-        break
+      for (let attempt=0; attempt<2; attempt++) {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
+          body:JSON.stringify({
+            systemInstruction:{parts:[{text:baseInstruction + (extraInstruction ? '\\n\\nMANDATORY REPAIR: ' + extraInstruction : '')}]},
+            contents:[{role:'user',parts:[{text:userInstruction}]}],
+            generationConfig:{responseMimeType:'application/json',maxOutputTokens:16000,thinkingConfig:{thinkingLevel:'low'}}
+          }),
+        })
+        const result = await response.json().catch(()=>({}))
+        if (response.ok) return { response, result, modelName }
+        lastResponse = response
+        lastResult = result
+        const status = result?.error?.status
+        const transient=[408,429,500,502,503,504].includes(response.status) || ['RESOURCE_EXHAUSTED','UNAVAILABLE','INTERNAL','BAD_GATEWAY','DEADLINE_EXCEEDED'].includes(status)
+        if (!transient) break
+        if (attempt===0) await new Promise(resolve=>setTimeout(resolve,900))
       }
+      if (lastResponse && ![408,429,500,502,503,504].includes(lastResponse.status) && !['RESOURCE_EXHAUSTED','UNAVAILABLE','INTERNAL','BAD_GATEWAY','DEADLINE_EXCEEDED'].includes(lastResult?.error?.status)) break
     }
     return { response:lastResponse || new Response(null,{status:503}), result:lastResult, modelName:null }
   }
@@ -248,7 +291,24 @@ ${context}`
   let {response, result, modelName} = await requestGeneration()
   if (!response.ok) {
     console.error('Gemini Mock Exam error:', result)
-    return NextResponse.json({ error: result?.error?.message || 'The mock exam could not be generated right now.' }, { status: response.status === 429 ? 429 : 502 })
+    const fallbackQuestions=buildFallbackQuestions({count,scope,subjectName:subject.name,context,visualCandidates})
+    const fallbackTitle=`${subject.name} Mock Exam`
+    const fallbackData={title:fallbackTitle,questions:fallbackQuestions}
+    response=new Response(JSON.stringify({ok:true}),{status:200,headers:{'content-type':'application/json'}})
+    result={}
+    modelName='local-material-fallback'
+    let examData=fallbackData
+    let questions=fallbackQuestions.map(normalizeQuestion)
+    // Continue through the normal validation and persistence path below.
+    const totalMarks=questions.reduce((sum,q)=>sum+q.marks,0)
+    const { data: exam, error: examError } = await supabase.from('exam_attempts').insert({
+      user_id:user.id,subject_id:subject.id,title:fallbackTitle,question_count:count,total_marks:totalMarks,status:'in_progress',difficulty,scope:scope||null,time_limit_seconds:timeLimit
+    }).select('id,title,question_count,total_marks,status,created_at,difficulty,scope,time_limit_seconds,subject_id').single()
+    if(examError)return NextResponse.json({error:examError.message},{status:400})
+    const rows=questions.map((question,index)=>({exam_id:exam.id,position:index+1,prompt:question.prompt,options:question.options,correct_answer:question.correct_answer,student_answer:null,marks:question.marks,explanation:question.explanation||null,topic:question.topic||scope||'General',question_type:question.question_type,model_answer:question.model_answer||question.correct_answer,grading_rubric:question.grading_rubric||question.model_answer||question.correct_answer,chart_data:question.chart_data,visual_data:question.visual_data}))
+    const {data:savedQuestions,error:questionsError}=await supabase.from('exam_questions').insert(rows).select('id,position,prompt,options,marks,topic,question_type,chart_data,visual_data')
+    if(questionsError){await supabase.from('exam_attempts').delete().eq('id',exam.id).eq('user_id',user.id);return NextResponse.json({error:questionsError.message},{status:400})}
+    return NextResponse.json({exam,questions:savedQuestions})
   }
 
   let examData = parseJsonText(extractModelText(result))
