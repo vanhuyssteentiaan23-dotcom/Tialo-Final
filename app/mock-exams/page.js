@@ -2,7 +2,7 @@
 import {useEffect,useMemo,useState} from 'react'
 import {getSupabaseBrowserClient} from '../../lib/supabase'
 import WorkspaceHeader from '../components/WorkspaceHeader'
-const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress'],['Settings','⚙','/settings']]
+const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress']]
 export default function MockExamsPage(){
  const [subjects,setSubjects]=useState([]),[subjectId,setSubjectId]=useState(''),[count,setCount]=useState(10),[exam,setExam]=useState(null),[questions,setQuestions]=useState([]),[answers,setAnswers]=useState({}),[review,setReview]=useState(null),[history,setHistory]=useState([]),[loading,setLoading]=useState(true),[working,setWorking]=useState(false),[error,setError]=useState('')
  const selected=useMemo(()=>subjects.find(x=>x.id===subjectId),[subjects,subjectId])
