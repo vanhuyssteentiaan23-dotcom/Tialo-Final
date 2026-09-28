@@ -85,8 +85,9 @@ export default function DailyTasksPage() {
         <a className="side-link" href="/mock-exams"><span>□</span> Mock Exams</a>
         <a className="side-link active" href="/daily-tasks"><span>✓</span> Daily Tasks</a>
         <a className="side-link" href="/progress"><span>↗</span> Progress</a>
-        <a className="side-link" href="/settings"><span>⚙</span> Settings</a>
+
       </nav>
+      <div className="sidebar-bottom"><a className="side-settings" href="/settings">⚙ Settings</a></div>
     </aside>
     <section className="dashboard-main">
       <WorkspaceHeader title="Daily Tasks" subtitle="Your study plan" active="/daily-tasks"/>
