@@ -37,27 +37,45 @@ function termsFromQuestion(question) {
 function buildMaterialContext(materials, question = '') {
   const terms = termsFromQuestion(question)
   const candidates = []
+
   for (const material of materials) {
-    const text = material.extracted_text || ''
+    const text = String(material.extracted_text || '').trim()
     if (!text) continue
+
     const lower = text.toLowerCase()
     const chunkSize = 4500
     const overlap = 500
+
     for (let start = 0; start < text.length; start += chunkSize - overlap) {
       const chunk = text.slice(start, start + chunkSize)
       const chunkLower = lower.slice(start, start + chunk.length)
       let score = terms.length ? 0 : 1
+
       for (const term of terms) {
         const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-        const matches = chunkLower.match(new RegExp(`\\\\b${safe}\\\\b`, 'g'))
+        const matches = chunkLower.match(new RegExp('\\\\b' + safe + '\\\\b', 'g'))
         if (matches) score += Math.min(matches.length, 8)
       }
-      if (score > 0) candidates.push({ score, text: chunk, title: material.title || material.file_name || 'Study material' })
+
+      candidates.push({
+        score,
+        text: chunk,
+        title: material.title || material.file_name || 'Study material'
+      })
       if (candidates.length > 80) break
     }
   }
+
   candidates.sort((a, b) => b.score - a.score)
-  return candidates.slice(0, 6).map((item, index) => `SOURCE ${index + 1} — ${item.title}\n${item.text}`).join('\n\n')
+
+  // Prefer topic matches. If the requested topic is not found, fall back
+  // to the strongest source chunks instead of claiming the material is empty.
+  const matched = terms.length ? candidates.filter(item => item.score > 0) : candidates
+  const selected = (matched.length ? matched : candidates).slice(0, 6)
+
+  return selected
+    .map((item, index) => `SOURCE ${index + 1} — ${item.title}\n${item.text}`)
+    .join('\n\n')
 }
 
 async function authenticate(request) {
