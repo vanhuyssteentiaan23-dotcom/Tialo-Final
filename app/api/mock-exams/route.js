@@ -265,7 +265,7 @@ ${context}`
       body:JSON.stringify({
         systemInstruction:{parts:[{text:baseInstruction + (extraInstruction ? '\\n\\nMANDATORY REPAIR: ' + extraInstruction : '')}]},
         contents:[{role:'user',parts:[{text:userInstruction}]}],
-        generationConfig:{temperature:.15,responseMimeType:'application/json',responseSchema:schema}
+        generationConfig:{temperature:.15,responseMimeType:'application/json'}
       }),
     })
   }
