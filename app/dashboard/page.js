@@ -7,7 +7,7 @@ const day=v=>new Date(v).toISOString().slice(0,10)
 const age=dob=>{if(!dob)return null;const d=new Date(dob+'T00:00:00'),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))a--;return a}
 
 export default function Dashboard(){
- const [user,setUser]=useState(null),[profile,setProfile]=useState(null),[subjects,setSubjects]=useState([]),[exams,setExams]=useState([]),[materials,setMaterials]=useState([]),[tasks,setTasks]=useState([]),[loading,setLoading]=useState(true),[mobile,setMobile]=useState(false),[error,setError]=useState(''),[avatarBusy,setAvatarBusy]=useState(false),[avatarNotice,setAvatarNotice]=useState('')
+ const [user,setUser]=useState(null),[profile,setProfile]=useState(null),[subjects,setSubjects]=useState([]),[exams,setExams]=useState([]),[materials,setMaterials]=useState([]),[tasks,setTasks]=useState([]),[loading,setLoading]=useState(true),[mobile,setMobile]=useState(false),[error,setError]=useState(''),[avatarBusy,setAvatarBusy]=useState(false),[avatarNotice,setAvatarNotice]=useState(''),[avatarMenuOpen,setAvatarMenuOpen]=useState(false),[avatarViewOpen,setAvatarViewOpen]=useState(false)
  const avatarInput=useRef(null)
 
  useEffect(()=>{async function load(){const s=getSupabaseBrowserClient();if(!s){location.href='/login';return}const {data:{user:u}}=await s.auth.getUser();if(!u){location.href='/login';return}const {data:p}=await s.from('profiles').select('full_name,date_of_birth,role,avatar_url').eq('id',u.id).maybeSingle();if(!p?.full_name||!p?.date_of_birth||!p?.role){location.href='/onboarding';return}if(p.role==='parent'&&age(p.date_of_birth)>=18){location.href='/parent';return}if(p.role==='student'&&age(p.date_of_birth)<16){const {data:l}=await s.from('parent_child').select('id').eq('child_id',u.id).eq('status','active').limit(1).maybeSingle();if(!l){location.href='/parent-link';return}}
@@ -19,7 +19,9 @@ export default function Dashboard(){
  const streak=useMemo(()=>{const days=new Set(done.map(t=>t.completed_at?day(t.completed_at):t.task_date));let n=0,d=new Date();while(days.has(day(d))){n++;d.setDate(d.getDate()-1)}return n},[done])
  const chart=useMemo(()=>exams.slice().reverse().slice(-7),[exams])
 
- function openAvatarPicker(){setAvatarNotice('');avatarInput.current?.click()}
+ function openAvatarPicker(){setAvatarMenuOpen(false);setAvatarNotice('');avatarInput.current?.click()}
+ function handleAvatarClick(){if(profile?.avatar_url)setAvatarMenuOpen(true);else openAvatarPicker()}
+ function viewAvatar(){setAvatarMenuOpen(false);setAvatarViewOpen(true)}
  async function handleAvatarChange(e){
   const file=e.target.files?.[0]
   e.target.value=''
@@ -57,11 +59,19 @@ export default function Dashboard(){
    .sidebar-profile-name{font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
    .sidebar-profile-button{display:flex;align-items:center;gap:10px;border:0;background:transparent;color:inherit;padding:0;cursor:pointer;text-align:left;min-width:0}
    .sidebar-profile-button:hover .sidebar-profile-name{text-decoration:underline}
+   .avatar-action-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:80;display:flex;align-items:center;justify-content:center;padding:20px}
+   .avatar-action-card{width:min(360px,100%);background:#fff;color:#101512;border:1px solid #dfe7df;border-radius:18px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.28)}
+   .avatar-action-card h3{margin:0 0 6px;font-size:18px}.avatar-action-card p{margin:0 0 16px;color:#66736a;font-size:12px}
+   .avatar-action-preview{width:84px;height:84px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 18px;border:3px solid #eaf2ea}
+   .avatar-action-buttons{display:grid;gap:9px}.avatar-action-buttons button{border:1px solid #d9e3d9;border-radius:10px;padding:11px 13px;background:#fff;color:#101512;font-weight:800;cursor:pointer}.avatar-action-buttons button.primary{background:#101512;color:#fff;border-color:#101512}.avatar-action-close{margin-top:10px;width:100%;border:0;background:transparent;color:#69756d;padding:8px;cursor:pointer;font-size:11px}
+   .avatar-view-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:90;display:flex;align-items:center;justify-content:center;padding:28px}
+   .avatar-view-image{max-width:min(80vw,720px);max-height:80vh;width:auto;height:auto;object-fit:contain;border-radius:16px;box-shadow:0 25px 80px rgba(0,0,0,.45);background:#fff}
+   .avatar-view-close{position:fixed;right:24px;top:20px;width:38px;height:38px;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(0,0,0,.4);color:#fff;font-size:22px;cursor:pointer}
   `}</style>
   <input ref={avatarInput} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} hidden/>
-  <aside className="sidebar"><a className="brand" href="/dashboard">TIA<span>LO</span></a><div className="sidebar-label">Workspace</div><nav className="sidebar-nav">{nav.map(([label,icon,href])=><a className={'side-link '+(href==='/dashboard'?'active':'')} href={href} key={href}><span>{icon}</span>{label}{href==='/daily-tasks'&&pending.length>0?<b>{pending.length}</b>:null}</a>)}</nav><div className="sidebar-bottom"><div className="sidebar-profile"><button type="button" className="sidebar-profile-button" onClick={openAvatarPicker} title="Change profile photo" aria-label="Change profile photo"><span className="avatar-picker sidebar-avatar">{profile?.avatar_url?<img className="avatar-image" src={profile.avatar_url} alt="Profile" />:<span className="avatar-fallback">{first[0]?.toUpperCase()}</span>}<span className="avatar-camera">+</span></span><span className="sidebar-profile-name">{first}</span></button></div><button className="side-signout" onClick={signOut}>Sign out</button></div></aside>
+  <aside className="sidebar"><a className="brand" href="/dashboard">TIA<span>LO</span></a><div className="sidebar-label">Workspace</div><nav className="sidebar-nav">{nav.map(([label,icon,href])=><a className={'side-link '+(href==='/dashboard'?'active':'')} href={href} key={href}><span>{icon}</span>{label}{href==='/daily-tasks'&&pending.length>0?<b>{pending.length}</b>:null}</a>)}</nav><div className="sidebar-bottom"><div className="sidebar-profile"><button type="button" className="sidebar-profile-button" onClick={handleAvatarClick} title={profile?.avatar_url?"View or change profile photo":"Add profile photo"} aria-label={profile?.avatar_url?"View or change profile photo":"Add profile photo"}><span className="avatar-picker sidebar-avatar">{profile?.avatar_url?<img className="avatar-image" src={profile.avatar_url} alt="Profile" />:<span className="avatar-fallback">{first[0]?.toUpperCase()}</span>}<span className="avatar-camera">+</span></span><span className="sidebar-profile-name">{first}</span></button></div><button className="side-signout" onClick={signOut}>Sign out</button></div></aside>
   <section className="dashboard-main">
-   <header className="new-header"><button className="new-menu" onClick={()=>setMobile(true)}>☰</button><div><strong>Overview</strong><span> / {new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</span></div><div className="new-header-user">{first}<button type="button" className="avatar-picker new-header-avatar" onClick={openAvatarPicker} title="Change profile photo" aria-label="Change profile photo">{profile?.avatar_url?<img className="avatar-image" src={profile.avatar_url} alt="Profile" />:<span className="avatar-fallback">{first[0]?.toUpperCase()}</span>}<span className="avatar-camera">+</span></button></div></header>
+   <header className="new-header"><button className="new-menu" onClick={()=>setMobile(true)}>☰</button><div><strong>Overview</strong><span> / {new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</span></div><div className="new-header-user">{first}<button type="button" className="avatar-picker new-header-avatar" onClick={handleAvatarClick} title={profile?.avatar_url?"View or change profile photo":"Add profile photo"} aria-label={profile?.avatar_url?"View or change profile photo":"Add profile photo"}>{profile?.avatar_url?<img className="avatar-image" src={profile.avatar_url} alt="Profile" />:<span className="avatar-fallback">{first[0]?.toUpperCase()}</span>}<span className="avatar-camera">+</span></button></div></header>
    <div className="new-content">
     <section className="welcome-row"><div><div className="new-kicker">GOOD MORNING, {first.toUpperCase()}</div><h1>What are you<br/><i>working on?</i></h1><p>Pick one thing. TIALO will help you make progress without the noise.</p></div><a className="new-primary" href="/ai-tutor">Ask TIALO <span>↗</span></a></section>
     {error&&<div className="new-notice">{error}</div>}
@@ -78,5 +88,21 @@ export default function Dashboard(){
    </div>
   </section>
   {avatarNotice&&<div className="avatar-status" role="status">{avatarNotice}</div>}
+  {avatarMenuOpen&&profile?.avatar_url&&<div className="avatar-action-backdrop" onMouseDown={()=>setAvatarMenuOpen(false)}>
+    <div className="avatar-action-card" onMouseDown={e=>e.stopPropagation()}>
+      <img className="avatar-action-preview" src={profile.avatar_url} alt="Your profile photo" />
+      <h3>Profile photo</h3>
+      <p>What would you like to do with your current photo?</p>
+      <div className="avatar-action-buttons">
+        <button type="button" className="primary" onClick={viewAvatar}>View image</button>
+        <button type="button" onClick={openAvatarPicker}>Upload new photo</button>
+      </div>
+      <button type="button" className="avatar-action-close" onClick={()=>setAvatarMenuOpen(false)}>Cancel</button>
+    </div>
+  </div>}
+  {avatarViewOpen&&profile?.avatar_url&&<div className="avatar-view-backdrop" onMouseDown={()=>setAvatarViewOpen(false)}>
+    <button type="button" className="avatar-view-close" onClick={()=>setAvatarViewOpen(false)} aria-label="Close image">×</button>
+    <img className="avatar-view-image" src={profile.avatar_url} alt="Your profile photo" onMouseDown={e=>e.stopPropagation()} />
+  </div>}
  </main>
 }
