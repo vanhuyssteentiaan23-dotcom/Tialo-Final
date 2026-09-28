@@ -240,7 +240,9 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
   const graphDataLikely = /\d+(?:\.\d+)?\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(context) || /\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|increase|decrease)\b/i.test(context)
   const graphRequirement = graphDataLikely ? 'The supplied material contains quantitative/comparison signals, so MUST include at least 1 graph question and at least 1 of those graphs MUST be a LINE graph. For 10+ questions include both a line graph and a bar graph.' : 'Include a LINE graph when the supplied material contains suitable quantitative/comparison data.'
 
-  const modelCandidates = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']
+  // Keep generation fast and resilient. Current Gemini 3 models are the supported production models.
+  // If capacity is unavailable, the local-material fallback below creates a usable exam instead of failing the student.
+  const modelCandidates = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash-lite']
   const visualCandidateText = visualCandidates.length ? visualCandidates.map((v,i)=>'VISUAL CANDIDATE '+(i+1)+': material_id='+v.materialId+', page='+v.page+', title='+v.title+'\n'+v.excerpt).join('\n\n') : 'No labelled source-page sketch candidates were detected.'
   const baseInstruction = `You are TIALO Mock Exam Generator for ${subject.name}. Write all student-facing text in ${language}. Use ONLY the supplied study material for factual content. Never invent subject facts or claim invented measurements came from the source.
 
@@ -266,26 +268,29 @@ ${context}`
     let lastResponse = null
     let lastResult = {}
     for (const modelName of modelCandidates) {
-      for (let attempt=0; attempt<2; attempt++) {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 9000)
+      try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
           method:'POST',
           headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
+          signal:controller.signal,
           body:JSON.stringify({
             systemInstruction:{parts:[{text:baseInstruction + (extraInstruction ? '\\n\\nMANDATORY REPAIR: ' + extraInstruction : '')}]},
             contents:[{role:'user',parts:[{text:userInstruction}]}],
-            generationConfig:{responseMimeType:'application/json',maxOutputTokens:16000,thinkingConfig:{thinkingLevel:'low'}}
+            generationConfig:{responseMimeType:'application/json',maxOutputTokens:12000,thinkingConfig:{thinkingLevel:'low'}}
           }),
         })
         const result = await response.json().catch(()=>({}))
         if (response.ok) return { response, result, modelName }
         lastResponse = response
         lastResult = result
-        const status = result?.error?.status
-        const transient=[408,429,500,502,503,504].includes(response.status) || ['RESOURCE_EXHAUSTED','UNAVAILABLE','INTERNAL','BAD_GATEWAY','DEADLINE_EXCEEDED'].includes(status)
-        if (!transient) break
-        if (attempt===0) await new Promise(resolve=>setTimeout(resolve,900))
+      } catch (error) {
+        lastResponse = new Response(null,{status:503})
+        lastResult = {error:{message:error?.name==='AbortError'?'Gemini generation timed out.':String(error?.message||error),status:'UNAVAILABLE'}}
+      } finally {
+        clearTimeout(timeout)
       }
-      if (lastResponse && ![408,429,500,502,503,504].includes(lastResponse.status) && !['RESOURCE_EXHAUSTED','UNAVAILABLE','INTERNAL','BAD_GATEWAY','DEADLINE_EXCEEDED'].includes(lastResult?.error?.status)) break
     }
     return { response:lastResponse || new Response(null,{status:503}), result:lastResult, modelName:null }
   }
@@ -397,32 +402,38 @@ ${context}`
   return NextResponse.json({ exam, questions:savedQuestions })
 }
 
-async function gradeShortAnswers({apiKey,language,items}) {
-  if (!items.length) return new Map()
-  // Gemini JSON mode is used here too; returned grades are validated below.
-  const prompt = items.map(item =>
-    `QUESTION ${item.position} (${item.marks} marks)\nQuestion: ${item.prompt}\nStudent answer: ${item.student_answer || 'No answer'}\nModel answer: ${item.model_answer}\nMarking rubric: ${item.grading_rubric}`
-  ).join('\n\n')
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
-    body:JSON.stringify({
-      systemInstruction:{parts:[{text:`You are a strict but fair school examiner. Grade short answers in ${language} using ONLY the supplied model answers and marking rubrics. Award an integer from 0 up to the question's mark value. Give partial marks when the answer contains some correct rubric points. Do not award marks for invented or irrelevant claims. Return one grade per question position.`}]},
-      contents:[{role:'user',parts:[{text:prompt}]}],
-      generationConfig:{responseMimeType:'application/json'}
-    }),
-  })
-  const result=await response.json().catch(()=>({}))
-  if (!response.ok) throw new Error(result?.error?.message || 'Short-answer grading failed.')
-  const parsed=parseJsonText(extractModelText(result))
-  const map=new Map()
-  for (const grade of parsed?.grades || []) {
-    const source=items.find(item=>Number(item.position)===Number(grade.position))
-    if (!source) continue
-    const awarded=Math.min(source.marks,Math.max(0,Math.round(Number(grade.awarded_marks)||0)))
-    map.set(source.position,{awarded_marks:awarded,feedback:String(grade.feedback||'').trim()})
+function gradeShortAnswersLocally(items) {
+  const stop = new Set('the a an and or but is are was were be been being to of in on for from with without what why how when where which who does do did can could should would will this that these those it its as at by about into than then them they their you your i me my we our explain state describe name give tell one two three four five six'.split(' '))
+  const words = text => [...new Set((String(text||'').toLowerCase().match(/[a-z0-9]+/g)||[]).filter(w=>w.length>2 && !stop.has(w)))]
+  const grade = item => {
+    const answer = String(item.student_answer||'').trim()
+    const marks = Math.max(1, Number(item.marks)||1)
+    if (!answer) return {awarded_marks:0,feedback:'No answer was provided.'}
+
+    const reference = String(item.model_answer||'')+' '+String(item.grading_rubric||'')
+    const refWords = words(reference)
+    const answerWords = new Set(words(answer))
+    const overlap = refWords.filter(w=>answerWords.has(w)).length
+    const coverage = refWords.length ? overlap/refWords.length : 0
+    const phrase = String(item.model_answer||'').trim().toLowerCase()
+    const answerLower = answer.toLowerCase()
+    const phraseMatch = phrase.length >= 18 && answerLower.includes(phrase.slice(0, Math.min(80, phrase.length))) ? 1 : 0
+    const conceptScore = Math.max(coverage, phraseMatch)
+    let awarded
+    if (conceptScore >= 0.75) awarded = marks
+    else if (conceptScore >= 0.55) awarded = Math.max(1, Math.ceil(marks*0.75))
+    else if (conceptScore >= 0.35) awarded = Math.max(1, Math.ceil(marks*0.5))
+    else if (conceptScore >= 0.15) awarded = Math.max(0, Math.floor(marks*0.25))
+    else awarded = 0
+
+    const feedback = awarded===marks
+      ? 'Your answer covers the main points required by the marking guide.'
+      : awarded>0
+        ? `You included some of the required points. Add the key concepts from the model answer/marking guide for full marks.`
+        : 'Your answer does not contain enough of the key points in the marking guide. Review the model answer and try again.'
+    return {awarded_marks:awarded,feedback}
   }
-  return map
+  return new Map(items.map(item=>[item.position,grade(item)]))
 }
 
 async function submitExam({supabase,user,examId,answers}) {
@@ -436,13 +447,12 @@ async function submitExam({supabase,user,examId,answers}) {
   if (questionError) return NextResponse.json({error:questionError.message},{status:400})
 
   const answerMap=new Map(answers.map(item=>[Number(item.position),typeof item.answer==='string'?item.answer.slice(0,5000):'']))
-  const apiKey=process.env.GEMINI_API_KEY
   const shortItems=(questions||[]).filter(q=>q.question_type==='short_answer').map(q=>({...q,student_answer:answerMap.get(q.position)||''})).filter(q=>q.student_answer.trim())
+  // Short answers are graded locally against the saved model answer + marking rubric.
+  // This keeps submission reliable even when Gemini is busy or unavailable.
   let shortGrades=new Map()
   if (!timedOut && shortItems.length) {
-    if (!apiKey) return NextResponse.json({error:'The short-answer grader is not connected yet. Add GEMINI_API_KEY to Vercel.'},{status:503})
-    try { shortGrades=await gradeShortAnswers({apiKey,language:outputLanguage((await supabase.from('profiles').select('language').eq('id',user.id).maybeSingle()).data),items:shortItems}) }
-    catch (error) { console.error('Short-answer grading error:',error); return NextResponse.json({error:'The short answers could not be graded right now. Please submit again.'},{status:502}) }
+    shortGrades=gradeShortAnswersLocally(shortItems)
   }
 
   let score=0
