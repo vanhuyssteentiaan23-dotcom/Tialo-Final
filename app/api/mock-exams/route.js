@@ -219,5 +219,5 @@ export async function POST(request) {
   const scope = typeof body?.scope === 'string' ? body.scope.trim().slice(0, 200) : ''
   const timeLimit = Math.min(Math.max(Number(body?.timeLimit) || 0, 0), 10800)
   if (!subjectId) return NextResponse.json({ error: 'Please choose a subject.' }, { status: 400 })
-  return generateExam({ supabase, user, subjectId, count })
+  return generateExam({ supabase, user, subjectId, count, difficulty, scope, timeLimit })
 }
