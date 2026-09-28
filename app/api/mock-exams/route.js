@@ -114,11 +114,11 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
   if (!apiKey) return NextResponse.json({ error: 'The Mock Exam system is not connected yet. Add GEMINI_API_KEY to Vercel.' }, { status: 503 })
 
   const schema = {
-    type: 'object', additionalProperties: false,
+    type: 'object',
     properties: {
       title: { type: 'string' },
       questions: { type: 'array', minItems: count, maxItems: count, items: {
-        type: 'object', additionalProperties: false,
+        type: 'object',
         properties: {
           prompt: { type: 'string' },
           options: { type: 'array', minItems: 4, maxItems: 4, items: { type: 'string' } },
