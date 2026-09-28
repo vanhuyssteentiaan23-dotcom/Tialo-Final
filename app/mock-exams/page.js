@@ -30,7 +30,7 @@ function ExamGraph({chart}) {
    <text x={left+plotW/2} y={height-8} textAnchor="middle" className="graph-axis-label">{chart.x_label}</text>
    <text x="15" y={top+plotH/2} transform={'rotate(-90 15 '+(top+plotH/2)+')'} textAnchor="middle" className="graph-axis-label">{chart.y_label}</text>
   </svg>
-  <div className="graph-source">Graph generated only from the connected study material.</div>
+  <div className="graph-source">{chart.source_type==='illustrative' || /^illustrative\b/i.test(String(chart.title||'')) ? 'Illustrative practice graph based on the requested topic.' : 'Graph values taken from the connected study material.'}</div>
  </div>
 }
 
