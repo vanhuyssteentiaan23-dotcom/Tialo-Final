@@ -268,7 +268,7 @@ ${context}`
       body:JSON.stringify({
         systemInstruction:{parts:[{text:baseInstruction + (extraInstruction ? '\\n\\nMANDATORY REPAIR: ' + extraInstruction : '')}]},
         contents:[{role:'user',parts:[{text:userInstruction}]}],
-        generationConfig:{temperature:.15,responseMimeType:'application/json'}
+        generationConfig:{temperature:.15,responseMimeType:'application/json',responseSchema:schema}
       }),
     })
   }
@@ -303,7 +303,10 @@ ${context}`
     return NextResponse.json({ error: result?.error?.message || 'The mock exam could not be generated right now.' }, { status: response.status === 429 ? 429 : 502 })
   }
 
-  if (!examData || !Array.isArray(examData.questions)) return NextResponse.json({ error:'The AI returned an invalid exam format. Please try again.' }, { status:502 })
+  if (!examData || !Array.isArray(examData.questions)) {
+    console.error('Mock exam invalid JSON payload:', JSON.stringify({ hasCandidates:Array.isArray(result?.candidates), finishReason:result?.candidates?.[0]?.finishReason, promptFeedback:result?.promptFeedback, raw:extractModelText(result)?.slice(0,1000) }))
+    return NextResponse.json({ error:'The AI returned an invalid exam format. Please try again.' }, { status:502 })
+  }
   if (questions.length !== count) return NextResponse.json({ error:'The AI did not generate the required number of questions. Please try again.' }, { status:502 })
 
   for (const question of questions) {
