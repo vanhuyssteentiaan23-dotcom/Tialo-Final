@@ -2,7 +2,7 @@
 import {useEffect,useMemo,useState} from 'react'
 import {getSupabaseBrowserClient} from '../../lib/supabase'
 import WorkspaceHeader from '../components/WorkspaceHeader'
-const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress'],['Settings','⚙','/settings']]
+const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress']]
 function localDay(){const d=new Date(),o=d.getTimezoneOffset()*60000;return new Date(d.getTime()-o).toISOString().slice(0,10)}
 function fmt(v){return v?new Date(v).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):'—'}
 export default function ProgressPage(){
