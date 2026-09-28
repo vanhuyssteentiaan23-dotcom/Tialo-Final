@@ -40,6 +40,38 @@ function parseRequestedTopics(scope, subjectName) {
   return [...new Set(topics)].slice(0, 8)
 }
 
+function buildTopicContext(materials, topics) {
+  const sections=[]
+  for(const topic of topics){
+    const terms=termsFromQuestion(topic)
+    const candidates=[]
+    for(const material of materials){
+      const pages=Array.isArray(material.page_text)&&material.page_text.length?material.page_text.map(item=>({page:Number(item.page)||1,text:String(item.text||'')})):[{page:1,text:String(material.extracted_text||'')}]
+      for(const pageItem of pages){
+        const text=pageItem.text.trim()
+        if(!text)continue
+        const lower=text.toLowerCase()
+        const chunkSize=2600,overlap=250
+        for(let pos=0;pos<text.length;pos+=chunkSize-overlap){
+          const chunk=text.slice(pos,pos+chunkSize),chunkLower=lower.slice(pos,pos+chunk.length)
+          let score=0,matches=0
+          for(const term of terms){
+            const safe=term.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')
+            const hitCount=(chunkLower.match(new RegExp('\\\\b'+safe+'\\\\b','g'))||[]).length
+            if(hitCount){matches+=hitCount;score+=Math.min(hitCount,8)}
+          }
+          if(matches)candidates.push({score,materialId:material.id,page:pageItem.page,title:material.title||material.file_name||'Study material',text:chunk})
+        }
+      }
+    }
+    candidates.sort((a,b)=>b.score-a.score)
+    const selected=candidates.slice(0,4)
+    sections.push('TOPIC: '+topic+'\\n'+(selected.length?selected.map((item,i)=>'SOURCE '+(i+1)+' — '+item.title+' — PAGE '+item.page+' — MATERIAL '+item.materialId+'\\n'+item.text).join('\\n\\n'):'NO DIRECT SOURCE MATCH WAS FOUND. Do not invent facts for this topic.'))
+  }
+  return sections.join('\\n\\n===== NEXT REQUESTED TOPIC =====\\n\\n')
+}
+
+
 function questionQualityIssues(questions, topics, count) {
   const issues=[]
   const topicWords=topics.flatMap(termsFromQuestion)
