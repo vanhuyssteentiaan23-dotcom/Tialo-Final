@@ -198,7 +198,7 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
   const graphDataLikely = /\d+(?:\.\d+)?\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(context) || /\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|increase|decrease)\b/i.test(context)
   const graphRequirement = graphDataLikely ? 'The supplied material contains quantitative/comparison signals, so MUST include at least 1 graph question and at least 1 of those graphs MUST be a LINE graph. For 10+ questions include both a line graph and a bar graph.' : 'Include a LINE graph when the supplied material contains suitable quantitative/comparison data.'
 
-  const modelName = process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'
+  const modelCandidates = [...new Set([process.env.GEMINI_MOCK_EXAM_MODEL || 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite'])]
   const visualCandidateText = visualCandidates.length ? visualCandidates.map((v,i)=>'VISUAL CANDIDATE '+(i+1)+': material_id='+v.materialId+', page='+v.page+', title='+v.title+'\n'+v.excerpt).join('\n\n') : 'No labelled source-page sketch candidates were detected.'
   const baseInstruction = `You are TIALO Mock Exam Generator for ${subject.name}. Write all student-facing text in ${language}. Use ONLY the supplied study material for factual content. Never invent subject facts or claim invented measurements came from the source.
 
@@ -221,19 +221,31 @@ ${context}`
   const userInstruction = `Generate a ${count}-question ${difficultyText} mock exam for ${subject.name}. Include varied 1–10 mark questions, at least one short-answer question, at least one LINE graph-reading question, and at least one relevant source-page sketch/diagram question when VISUAL CANDIDATES are available.`
 
   async function requestGeneration(extraInstruction='') {
-    return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
-      body:JSON.stringify({
-        systemInstruction:{parts:[{text:baseInstruction + (extraInstruction ? '\\n\\nMANDATORY REPAIR: ' + extraInstruction : '')}]},
-        contents:[{role:'user',parts:[{text:userInstruction}]}],
-        generationConfig:{temperature:.15,responseMimeType:'application/json'}
-      }),
-    })
+    let lastResponse = null
+    let lastResult = {}
+    for (const modelName of modelCandidates) {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
+        body:JSON.stringify({
+          systemInstruction:{parts:[{text:baseInstruction + (extraInstruction ? '\\n\\nMANDATORY REPAIR: ' + extraInstruction : '')}]},
+          contents:[{role:'user',parts:[{text:userInstruction}]}],
+          generationConfig:{responseMimeType:'application/json'}
+        }),
+      })
+      const result = await response.json().catch(()=>({}))
+      if (response.ok) return { response, result, modelName }
+      lastResponse = response
+      lastResult = result
+      const status = result?.error?.status
+      if (![429, 500, 502, 503, 504].includes(response.status) && !['RESOURCE_EXHAUSTED','UNAVAILABLE','INTERNAL','BAD_GATEWAY','DEADLINE_EXCEEDED'].includes(status)) {
+        break
+      }
+    }
+    return { response:lastResponse || new Response(null,{status:503}), result:lastResult, modelName:null }
   }
 
-  let response = await requestGeneration()
-  let result = await response.json().catch(()=>({}))
+  let {response, result, modelName} = await requestGeneration()
   if (!response.ok) {
     console.error('Gemini Mock Exam error:', result)
     return NextResponse.json({ error: result?.error?.message || 'The mock exam could not be generated right now.' }, { status: response.status === 429 ? 429 : 502 })
@@ -249,8 +261,7 @@ ${context}`
   const hasShortAnswer = questions.some(q => q.question_type === 'short_answer')
   if (questions.length === count && (!hasGraph || !hasLineGraph || (count >= 10 && !hasBarGraph) || (count >= 5 && !hasShortAnswer) || (visualCandidates.length && !hasVisualQuestion))) {
     const missing = [!hasGraph ? 'at least one graph question about the requested topic(s)' : '', !hasLineGraph ? 'at least one LINE graph question' : '', (count >= 10 && !hasBarGraph) ? 'at least one BAR graph question' : '', (count >= 5 && !hasShortAnswer) ? 'at least one short-answer question' : '', (visualCandidates.length && !hasVisualQuestion) ? 'at least one relevant source-page sketch/diagram question using a listed VISUAL CANDIDATE' : ''].filter(Boolean).join(' and ')
-    response = await requestGeneration(`The previous output did not satisfy the exam requirements. You MUST include ${missing}. The graph must match the requested topic(s) and must not switch to an unrelated chapter. If relevant source data is unavailable, use an explicitly titled "Illustrative practice graph" tied to the requested topic and set source_type to "illustrative".`)
-    result = await response.json().catch(()=>({}))
+    ({response, result, modelName} = await requestGeneration(`The previous output did not satisfy the exam requirements. You MUST include ${missing}. The graph must match the requested topic(s) and must not switch to an unrelated chapter. If relevant source data is unavailable, use an explicitly titled "Illustrative practice graph" tied to the requested topic and set source_type to "illustrative".`))
     if (response.ok) {
       examData = parseJsonText(extractModelText(result))
       questions = Array.isArray(examData?.questions) ? examData.questions.slice(0,count).map(normalizeQuestion) : []
@@ -330,13 +341,13 @@ async function gradeShortAnswers({apiKey,language,items}) {
   const prompt = items.map(item =>
     `QUESTION ${item.position} (${item.marks} marks)\nQuestion: ${item.prompt}\nStudent answer: ${item.student_answer || 'No answer'}\nModel answer: ${item.model_answer}\nMarking rubric: ${item.grading_rubric}`
   ).join('\n\n')
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'}:generateContent`,{
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MOCK_EXAM_MODEL || 'gemini-3.8-flash'}:generateContent`,{
     method:'POST',
     headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
     body:JSON.stringify({
       systemInstruction:{parts:[{text:`You are a strict but fair school examiner. Grade short answers in ${language} using ONLY the supplied model answers and marking rubrics. Award an integer from 0 up to the question's mark value. Give partial marks when the answer contains some correct rubric points. Do not award marks for invented or irrelevant claims. Return one grade per question position.`}]},
       contents:[{role:'user',parts:[{text:prompt}]}],
-      generationConfig:{temperature:.1,responseMimeType:'application/json'}
+      generationConfig:{responseMimeType:'application/json'}
     }),
   })
   const result=await response.json().catch(()=>({}))
