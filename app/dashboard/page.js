@@ -1,5 +1,5 @@
 'use client'
-import {useEffect,useMemo,useState} from 'react'
+import {useEffect,useMemo,useRef,useState} from 'react'
 import {getSupabaseBrowserClient} from '../../lib/supabase'
 
 const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress'],['Settings','⚙','/settings']]
@@ -7,20 +7,61 @@ const day=v=>new Date(v).toISOString().slice(0,10)
 const age=dob=>{if(!dob)return null;const d=new Date(dob+'T00:00:00'),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))a--;return a}
 
 export default function Dashboard(){
- const [user,setUser]=useState(null),[profile,setProfile]=useState(null),[subjects,setSubjects]=useState([]),[exams,setExams]=useState([]),[materials,setMaterials]=useState([]),[tasks,setTasks]=useState([]),[loading,setLoading]=useState(true),[mobile,setMobile]=useState(false),[error,setError]=useState('')
- useEffect(()=>{async function load(){const s=getSupabaseBrowserClient();if(!s){location.href='/login';return}const {data:{user:u}}=await s.auth.getUser();if(!u){location.href='/login';return}const {data:p}=await s.from('profiles').select('full_name,date_of_birth,role').eq('id',u.id).maybeSingle();if(!p?.full_name||!p?.date_of_birth||!p?.role){location.href='/onboarding';return}if(p.role==='parent'&&age(p.date_of_birth)>=18){location.href='/parent';return}if(p.role==='student'&&age(p.date_of_birth)<16){const {data:l}=await s.from('parent_child').select('id').eq('child_id',u.id).eq('status','active').limit(1).maybeSingle();if(!l){location.href='/parent-link';return}}
+ const [user,setUser]=useState(null),[profile,setProfile]=useState(null),[subjects,setSubjects]=useState([]),[exams,setExams]=useState([]),[materials,setMaterials]=useState([]),[tasks,setTasks]=useState([]),[loading,setLoading]=useState(true),[mobile,setMobile]=useState(false),[error,setError]=useState(''),[avatarBusy,setAvatarBusy]=useState(false),[avatarNotice,setAvatarNotice]=useState('')
+ const avatarInput=useRef(null)
+
+ useEffect(()=>{async function load(){const s=getSupabaseBrowserClient();if(!s){location.href='/login';return}const {data:{user:u}}=await s.auth.getUser();if(!u){location.href='/login';return}const {data:p}=await s.from('profiles').select('full_name,date_of_birth,role,avatar_url').eq('id',u.id).maybeSingle();if(!p?.full_name||!p?.date_of_birth||!p?.role){location.href='/onboarding';return}if(p.role==='parent'&&age(p.date_of_birth)>=18){location.href='/parent';return}if(p.role==='student'&&age(p.date_of_birth)<16){const {data:l}=await s.from('parent_child').select('id').eq('child_id',u.id).eq('status','active').limit(1).maybeSingle();if(!l){location.href='/parent-link';return}}
  const [a,b,c,d]=await Promise.all([s.from('subjects').select('id,name').eq('user_id',u.id).order('created_at',{ascending:true}),s.from('exam_attempts').select('id,title,score,total_marks,completed_at,subjects(name)').eq('user_id',u.id).eq('status','completed').order('completed_at',{ascending:false}).limit(12),s.from('materials').select('id,subject_id').eq('user_id',u.id),s.from('daily_study_tasks').select('id,title,completed,estimated_minutes,task_date,completed_at,subjects(name)').eq('user_id',u.id).order('task_date',{ascending:true})]);setUser(u);setProfile(p);setSubjects(a.data||[]);setExams(b.data||[]);setMaterials(c.data||[]);setTasks(d.data||[]);if(a.error||b.error||c.error||d.error)setError('Some workspace data is still loading.');setLoading(false)}load()},[])
+
  const first=profile?.full_name?.trim().split(/\s+/)[0]||'Student'
  const pending=tasks.filter(t=>!t.completed),done=tasks.filter(t=>t.completed)
  const average=useMemo(()=>{const x=exams.filter(e=>Number(e.total_marks)>0).map(e=>Number(e.score||0)/Number(e.total_marks)*100);return x.length?Math.round(x.reduce((a,b)=>a+b,0)/x.length):null},[exams])
  const streak=useMemo(()=>{const days=new Set(done.map(t=>t.completed_at?day(t.completed_at):t.task_date));let n=0,d=new Date();while(days.has(day(d))){n++;d.setDate(d.getDate()-1)}return n},[done])
  const chart=useMemo(()=>exams.slice().reverse().slice(-7),[exams])
+
+ function openAvatarPicker(){setAvatarNotice('');avatarInput.current?.click()}
+ async function handleAvatarChange(e){
+  const file=e.target.files?.[0]
+  e.target.value=''
+  if(!file)return
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){setAvatarNotice('Please choose a JPG, PNG, or WEBP image.');return}
+  if(file.size>5*1024*1024){setAvatarNotice('Please choose an image smaller than 5 MB.');return}
+  const s=getSupabaseBrowserClient()
+  if(!s||!user)return
+  setAvatarBusy(true);setAvatarNotice('')
+  const path=user.id+'/avatar'
+  const {error:uploadError}=await s.storage.from('avatars').upload(path,file,{upsert:true,contentType:file.type,cacheControl:'3600'})
+  if(uploadError){setAvatarBusy(false);setAvatarNotice('Could not upload your avatar. Please try again.');return}
+  const {data:publicData}=s.storage.from('avatars').getPublicUrl(path)
+  const avatarUrl=(publicData?.publicUrl||'')+'?v='+Date.now()
+  const {error:updateError}=await s.from('profiles').update({avatar_url:avatarUrl}).eq('id',user.id)
+  if(updateError){setAvatarBusy(false);setAvatarNotice('The image uploaded, but your profile could not be updated.');return}
+  setProfile(p=>({...p,avatar_url:avatarUrl}))
+  setAvatarBusy(false)
+  setAvatarNotice('Avatar updated.')
+ }
+
  async function signOut(){const s=getSupabaseBrowserClient();await s?.auth.signOut();location.href='/'}
  if(loading)return <main className="new-loading"><div className="new-logo">TIA<span>LO</span></div><span>Opening your workspace…</span></main>
  return <main className="dashboard-shell tialo-workspace">
-  <aside className="sidebar"><a className="brand" href="/dashboard">TIA<span>LO</span></a><div className="sidebar-label">Workspace</div><nav className="sidebar-nav">{nav.map(([label,icon,href])=><a className={'side-link '+(href==='/dashboard'?'active':'')} href={href} key={href}><span>{icon}</span>{label}{href==='/daily-tasks'&&pending.length>0?<b>{pending.length}</b>:null}</a>)}</nav><div className="sidebar-bottom"><div className="new-user"><div>{first[0]?.toUpperCase()}</div><span>{first}</span></div><button className="side-signout" onClick={signOut}>Sign out</button></div></aside>
+  <style>{`
+   .avatar-picker{position:relative;border:0;padding:0;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+   .avatar-picker:focus-visible{outline:2px solid #63f77b;outline-offset:3px;border-radius:50%}
+   .avatar-image{width:100%;height:100%;display:block;border-radius:50%;object-fit:cover}
+   .avatar-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#65f477;color:#07100a;font-weight:900}
+   .new-header-avatar{width:34px;height:34px;flex:none}
+   .sidebar-avatar{width:32px;height:32px;flex:none}
+   .avatar-camera{position:absolute;right:-2px;bottom:-2px;width:15px;height:15px;border-radius:50%;background:#101512;color:#63f77b;border:2px solid #101512;display:flex;align-items:center;justify-content:center;font-size:8px;line-height:1}
+   .avatar-status{position:fixed;right:24px;bottom:24px;z-index:30;background:#101512;color:#fff;border:1px solid rgba(99,247,123,.35);border-radius:10px;padding:9px 12px;font-size:11px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+   .sidebar-profile{display:flex;align-items:center;gap:10px;min-width:0}
+   .sidebar-profile-name{font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+   .sidebar-profile-button{display:flex;align-items:center;gap:10px;border:0;background:transparent;color:inherit;padding:0;cursor:pointer;text-align:left;min-width:0}
+   .sidebar-profile-button:hover .sidebar-profile-name{text-decoration:underline}
+  `}</style>
+  <input ref={avatarInput} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} hidden/>
+  <aside className="sidebar"><a className="brand" href="/dashboard">TIA<span>LO</span></a><div className="sidebar-label">Workspace</div><nav className="sidebar-nav">{nav.map(([label,icon,href])=><a className={'side-link '+(href==='/dashboard'?'active':'')} href={href} key={href}><span>{icon}</span>{label}{href==='/daily-tasks'&&pending.length>0?<b>{pending.length}</b>:null}</a>)}</nav><div className="sidebar-bottom"><div className="sidebar-profile"><button type="button" className="sidebar-profile-button" onClick={openAvatarPicker} title="Change profile photo" aria-label="Change profile photo"><span className="avatar-picker sidebar-avatar">{profile?.avatar_url?<img className="avatar-image" src={profile.avatar_url} alt="Profile" />:<span className="avatar-fallback">{first[0]?.toUpperCase()}</span>}<span className="avatar-camera">+</span></span><span className="sidebar-profile-name">{first}</span></button></div><button className="side-signout" onClick={signOut}>Sign out</button></div></aside>
   <section className="dashboard-main">
-   <header className="new-header"><button className="new-menu" onClick={()=>setMobile(true)}>☰</button><div><strong>Overview</strong><span> / {new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</span></div><div className="new-header-user">{first}<div>{first[0]?.toUpperCase()}</div></div></header>
+   <header className="new-header"><button className="new-menu" onClick={()=>setMobile(true)}>☰</button><div><strong>Overview</strong><span> / {new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</span></div><div className="new-header-user">{first}<button type="button" className="avatar-picker new-header-avatar" onClick={openAvatarPicker} title="Change profile photo" aria-label="Change profile photo">{profile?.avatar_url?<img className="avatar-image" src={profile.avatar_url} alt="Profile" />:<span className="avatar-fallback">{first[0]?.toUpperCase()}</span>}<span className="avatar-camera">+</span></button></div></header>
    <div className="new-content">
     <section className="welcome-row"><div><div className="new-kicker">GOOD MORNING, {first.toUpperCase()}</div><h1>What are you<br/><i>working on?</i></h1><p>Pick one thing. TIALO will help you make progress without the noise.</p></div><a className="new-primary" href="/ai-tutor">Ask TIALO <span>↗</span></a></section>
     {error&&<div className="new-notice">{error}</div>}
@@ -36,6 +77,6 @@ export default function Dashboard(){
     <section className="tool-strip"><a href="/summary-studio"><b>▤</b><span><strong>Summaries</strong><small>Make a study summary</small></span><i>→</i></a><a href="/ai-tutor"><b>✦</b><span><strong>Ask TIALO</strong><small>Get an explanation</small></span><i>→</i></a><a href="/mock-exams"><b>□</b><span><strong>Mock exam</strong><small>Test what you know</small></span><i>→</i></a><a href="/daily-tasks"><b>✓</b><span><strong>Today's tasks</strong><small>{pending.length} waiting for you</small></span><i>→</i></a></section>
    </div>
   </section>
+  {avatarNotice&&<div className="avatar-status" role="status">{avatarNotice}</div>}
  </main>
 }
-
