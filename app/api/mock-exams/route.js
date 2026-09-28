@@ -37,54 +37,56 @@ function termsFromQuestion(question) {
 function buildMaterialContext(materials, question = '') {
   const terms = termsFromQuestion(question)
   const candidates = []
-
   for (const material of materials) {
-    const text = String(material.extracted_text || '').trim()
-    if (!text) continue
-
-    const lower = text.toLowerCase()
-    const chunkSize = 4500
-    const overlap = 500
-
-    for (let start = 0; start < text.length; start += chunkSize - overlap) {
-      const chunk = text.slice(start, start + chunkSize)
-      const chunkLower = lower.slice(start, start + chunk.length)
-      let score = terms.length ? 0 : 1
-      let topicMatches = 0
-
-      for (const term of terms) {
-        const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-        const matches = chunkLower.match(new RegExp('\\b' + safe + '\\b', 'g'))
-        if (matches) {
-          topicMatches += matches.length
-          score += Math.min(matches.length, 8)
+    const pages = Array.isArray(material.page_text) && material.page_text.length ? material.page_text.map(item => ({ page: Number(item.page) || 1, text: String(item.text || '') })) : [{ page: 1, text: String(material.extracted_text || '') }]
+    for (const pageItem of pages) {
+      const text = pageItem.text.trim()
+      if (!text) continue
+      const lower = text.toLowerCase()
+      const chunkSize = 4200, overlap = 400
+      for (let start = 0; start < text.length; start += chunkSize - overlap) {
+        const chunk = text.slice(start, start + chunkSize)
+        const chunkLower = lower.slice(start, start + chunk.length)
+        let score = terms.length ? 0 : 1, topicMatches = 0
+        for (const term of terms) {
+          const safe = term.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')
+          const matches = chunkLower.match(new RegExp('\\\\b' + safe + '\\\\b', 'g'))
+          if (matches) { topicMatches += matches.length; score += Math.min(matches.length, 10) }
         }
+        const hasQuantitativeSignal = /\\d+(?:\\.\\d+)?\\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(chunk) || /\\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|increase|decrease)\\b/i.test(chunk)
+        const hasVisualSignal = /\\b(?:figure|fig\\.?|diagram|sketch|illustration|illustrated|anatomy|structure|labelled|labeled|cross[- ]?section|schematic|parts)\\b/i.test(chunk)
+        if (hasQuantitativeSignal && (!terms.length || topicMatches > 0)) score += 3
+        if (hasVisualSignal && (!terms.length || topicMatches > 0)) score += 2
+        candidates.push({score, topicMatches, page:pageItem.page, materialId:material.id, text:chunk, title:material.title || material.file_name || 'Study material'})
       }
-
-      const hasQuantitativeSignal = /\d+(?:\.\d+)?\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(chunk) || /\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|percentages|increase|decrease)\b/i.test(chunk)
-      if (hasQuantitativeSignal && (!terms.length || topicMatches > 0)) score += 3
-
-      candidates.push({
-        score,
-        text: chunk,
-        title: material.title || material.file_name || 'Study material'
-      })
-      if (candidates.length > 80) break
     }
   }
-
-  candidates.sort((a, b) => b.score - a.score)
-
-  // Prefer topic matches. If the requested topic is not found, fall back
-  // to the strongest source chunks instead of claiming the material is empty.
-  const matched = terms.length ? candidates.filter(item => item.topicMatches > 0) : candidates
-  const selected = (matched.length ? matched : candidates).slice(0, 12)
-
-  return selected
-    .map((item, index) => `SOURCE ${index + 1} — ${item.title}\n${item.text}`)
-    .join('\n\n')
+  candidates.sort((a,b)=>b.score-a.score)
+  const matched = terms.length ? candidates.filter(item=>item.topicMatches>0) : candidates
+  return (matched.length ? matched : candidates).slice(0,14).map((item,index)=>'SOURCE '+(index+1)+' — '+item.title+' — PAGE '+item.page+' — MATERIAL '+item.materialId+'\n'+item.text).join('\n\n')
 }
 
+function buildVisualCandidates(materials, question = '') {
+  const terms = termsFromQuestion(question), candidates = []
+  for (const material of materials) {
+    for (const item of (Array.isArray(material.page_text) ? material.page_text : [])) {
+      const text = String(item?.text || '').trim(), lower = text.toLowerCase()
+      if (!text) continue
+      let topicMatches = 0
+      for (const term of terms) if (lower.includes(term)) topicMatches += 1
+      const visualMatches = (lower.match(/\\b(?:figure|fig\\.?|diagram|sketch|illustration|illustrated|anatomy|structure|labelled|labeled|cross[- ]?section|schematic|parts)\\b/g)||[]).length
+      if (!visualMatches) continue
+      candidates.push({score:topicMatches*8+visualMatches*2,materialId:material.id,page:Number(item.page)||1,excerpt:text.slice(0,900),title:material.title||material.file_name||'Study material'})
+    }
+  }
+  candidates.sort((a,b)=>b.score-a.score)
+  return candidates.slice(0,8)
+}
+
+function normalizeVisual(visual) {
+  if (!visual || typeof visual !== 'object' || visual.type !== 'source_page') return {type:'none',material_id:'',page:0,caption:''}
+  return {type:'source_page',material_id:String(visual.material_id||''),page:Math.max(1,Math.round(Number(visual.page)||1)),caption:String(visual.caption||'Study the labelled sketch / diagram on this source page.').slice(0,220)}
+}
 function graphMatchesScope(question, scope) {
   if (!scope || !scope.trim()) return true
   const terms = termsFromQuestion(scope)
@@ -167,6 +169,7 @@ function normalizeQuestion(question) {
     topic:String(question?.topic || 'General').trim(),
     marks,
     chart_data:normalizeChart(question?.chart_data),
+    visual_data:normalizeVisual(question?.visual_data),
   }
 }
 
@@ -176,11 +179,12 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
   if (subjectError) return NextResponse.json({ error: subjectError.message }, { status: 400 })
   if (!subject) return NextResponse.json({ error: 'Subject not found.' }, { status: 404 })
 
-  const { data: materials, error: materialError } = await supabase.from('materials').select('id,title,file_name,extracted_text,processing_status').eq('user_id', user.id).eq('subject_id', subjectId).eq('processing_status', 'ready').not('extracted_text', 'is', null)
+  const { data: materials, error: materialError } = await supabase.from('materials').select('id,title,file_name,extracted_text,page_text,processing_status').eq('user_id', user.id).eq('subject_id', subjectId).eq('processing_status', 'ready').not('extracted_text', 'is', null)
   if (materialError) return NextResponse.json({ error: materialError.message }, { status: 400 })
   if (!materials?.length) return NextResponse.json({ error: 'This subject has no processed study material yet. Upload and read your material first.' }, { status: 400 })
 
   const context = buildMaterialContext(materials, scope)
+  const visualCandidates = buildVisualCandidates(materials, scope)
   if (!context) return NextResponse.json({ error: 'I could not find enough extracted text to create an exam.' }, { status: 400 })
 
   const apiKey = process.env.GEMINI_API_KEY
@@ -206,6 +210,7 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
             explanation:{type:'string'},
             topic:{type:'string'},
             marks:{type:'integer'},
+            visual_data:{type:'object',description:'Relevant source-page sketch or diagram. Use none if no visual candidate is suitable.',properties:{type:{type:'string',enum:['none','source_page']},material_id:{type:'string'},page:{type:'integer'},caption:{type:'string'}},required:['type','material_id','page','caption']},
             chart_data:{
               type:'object',description:'Graph data. Use bar or line for at least one graph question in every exam; use none only for non-graph questions.',
               properties:{
@@ -220,7 +225,7 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
               required:['chart_type','source_type','title','x_label','y_label','labels','values'],
             },
           },
-          required:['question_type','prompt','options','correct_answer','model_answer','grading_rubric','explanation','topic','marks','chart_data'],
+          required:['question_type','prompt','options','correct_answer','model_answer','grading_rubric','explanation','topic','marks','chart_data','visual_data'],
         },
       },
     },
@@ -232,23 +237,26 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
   const scopeText = scope ? `Cover ALL of these requested chapters/topics where the supplied material supports them: ${scope}. Spread questions across the requested topics instead of concentrating on only the first topic.` : 'Cover the most important examinable material from the supplied sources.'
   const revisionText = revisionContext ? `Create fresh questions that target the student’s mistakes below. Do not simply repeat the old questions.\nMISTAKES:\n${revisionContext}` : ''
   const graphDataLikely = /\d+(?:\.\d+)?\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(context) || /\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|increase|decrease)\b/i.test(context)
-  const graphRequirement = graphDataLikely ? 'The supplied material contains quantitative/comparison signals, so MUST include at least 1 graph-based question and up to 3 when appropriate.' : 'Include graph-based questions when the supplied material contains suitable quantitative/comparison data.'
+  const graphRequirement = graphDataLikely ? 'The supplied material contains quantitative/comparison signals, so MUST include at least 1 graph question and at least 1 of those graphs MUST be a LINE graph. For 10+ questions include both a line graph and a bar graph.' : 'Include a LINE graph when the supplied material contains suitable quantitative/comparison data.'
 
   const modelName = process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'
+  const visualCandidateText = visualCandidates.length ? visualCandidates.map((v,i)=>'VISUAL CANDIDATE '+(i+1)+': material_id='+v.materialId+', page='+v.page+', title='+v.title+'\n'+v.excerpt).join('\n\n') : 'No labelled source-page sketch candidates were detected.'
   const baseInstruction = `You are TIALO Mock Exam Generator for ${subject.name}. Write all student-facing text in ${language}. Use ONLY the supplied study material for factual content. Never invent subject facts or claim invented measurements came from the source.
 
 Create exactly ${count} questions. Question mix is mandatory: for exams of 5 or more questions include at least 1 short-answer question and at least 1 graph-reading question. Use multiple choice for most remaining questions. Multiple-choice questions must have exactly four options. Short-answer questions must have no options and must include a concise model_answer plus grading_rubric describing the key points needed for full marks.
 
 Every question is worth 1–10 marks. Use lower marks for simple recall and higher marks for explanations, comparisons, processes or multi-step reasoning. Do not make every question worth 1 mark.
 
-GRAPH REQUIREMENT: Every exam must contain at least one graph-based question, and the graph MUST be about one of the requested chapters/topics. If the supplied material contains numerical/table data relevant to that topic, use those exact source values and set source_type to "source". If relevant source data does not exist, create an explicitly titled "Illustrative practice graph" tied directly to the requested topic, set source_type to "illustrative", and make clear that the numbers are an illustrative index for practice, NOT measurements from the source. The prompt must ask the student to read, compare, calculate from, or interpret the displayed graph. Never use a graph merely as decoration. Use chart_type "bar" or "line", at least 3 labels and matching numeric values. For non-graph questions use chart_type "none" with empty labels and values.
+GRAPH REQUIREMENT: Every exam must contain at least one graph-based question, and the graph MUST be about one of the requested chapters/topics. If the supplied material contains numerical/table data relevant to that topic, use those exact source values and set source_type to "source". If relevant source data does not exist, create an explicitly titled "Illustrative practice graph" tied directly to the requested topic, set source_type to "illustrative", and make clear that the numbers are an illustrative index for practice, NOT measurements from the source. The prompt must ask the student to read, compare, calculate from, or interpret the displayed graph. Never use a graph merely as decoration. Use chart_type "line" for at least one graph question in every exam. Use chart_type "bar" for an additional graph question when appropriate, especially in exams of 10+ questions. Every graph must have at least 3 labels and matching numeric values. For non-graph questions use chart_type "none" with empty labels and values.
+
+SKETCH / DIAGRAM REQUIREMENT: When VISUAL CANDIDATES are available, include at least one question that displays a relevant source-page sketch/diagram. Set visual_data.type to source_page and use the exact material_id and page from a VISUAL CANDIDATE. The question must explicitly tell the student to study the sketch/diagram and ask a question that can be answered from that sketch plus the supplied study material. Do not use an unrelated page. If no relevant visual candidate exists, set visual_data.type to none.
 
 If multiple chapters/topics are requested, distribute questions across ALL requested topics where the material supports them; do not concentrate on only the first topic. Label every question with its topic/chapter. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}
 ${graphRequirement}
 
 SUPPLIED STUDY MATERIAL:
 ${context}`
-  const userInstruction = `Generate a ${count}-question ${difficultyText} mock exam for ${subject.name}. Include varied 1–10 mark questions, at least one short-answer question, and at least one graph-reading question with a visible chart_data graph.`
+  const userInstruction = `Generate a ${count}-question ${difficultyText} mock exam for ${subject.name}. Include varied 1–10 mark questions, at least one short-answer question, at least one LINE graph-reading question, and at least one relevant source-page sketch/diagram question when VISUAL CANDIDATES are available.`
 
   async function requestGeneration(extraInstruction='') {
     return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
@@ -273,9 +281,12 @@ ${context}`
   let questions = Array.isArray(examData?.questions) ? examData.questions.slice(0,count).map(normalizeQuestion) : []
 
   const hasGraph = questions.some(q => q.chart_data.chart_type !== 'none' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length && graphMatchesScope(q, scope))
+  const hasLineGraph = questions.some(q => q.chart_data.chart_type === 'line' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length && graphMatchesScope(q, scope))
+  const hasBarGraph = questions.some(q => q.chart_data.chart_type === 'bar' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length && graphMatchesScope(q, scope))
+  const hasVisualQuestion = questions.some(q => q.visual_data.type === 'source_page' && visualCandidates.some(v=>v.materialId===q.visual_data.material_id && v.page===q.visual_data.page))
   const hasShortAnswer = questions.some(q => q.question_type === 'short_answer')
-  if (questions.length === count && (!hasGraph || (count >= 5 && !hasShortAnswer))) {
-    const missing = [!hasGraph ? 'at least one graph question about the requested topic(s), with chart_type bar or line and at least 3 labels/values' : '', (count >= 5 && !hasShortAnswer) ? 'at least one short-answer question' : ''].filter(Boolean).join(' and ')
+  if (questions.length === count && (!hasGraph || !hasLineGraph || (count >= 10 && !hasBarGraph) || (count >= 5 && !hasShortAnswer) || (visualCandidates.length && !hasVisualQuestion))) {
+    const missing = [!hasGraph ? 'at least one graph question about the requested topic(s)' : '', !hasLineGraph ? 'at least one LINE graph question' : '', (count >= 10 && !hasBarGraph) ? 'at least one BAR graph question' : '', (count >= 5 && !hasShortAnswer) ? 'at least one short-answer question' : '', (visualCandidates.length && !hasVisualQuestion) ? 'at least one relevant source-page sketch/diagram question using a listed VISUAL CANDIDATE' : ''].filter(Boolean).join(' and ')
     response = await requestGeneration(`The previous output did not satisfy the exam requirements. You MUST include ${missing}. The graph must match the requested topic(s) and must not switch to an unrelated chapter. If relevant source data is unavailable, use an explicitly titled "Illustrative practice graph" tied to the requested topic and set source_type to "illustrative".`)
     result = await response.json().catch(()=>({}))
     if (response.ok) {
@@ -298,11 +309,16 @@ ${context}`
     if (question.question_type === 'multiple_choice' && !question.options.includes(question.correct_answer)) return NextResponse.json({ error:'The generated multiple-choice answer did not match an option. Please try again.' }, { status:502 })
     if (question.question_type === 'short_answer' && !question.grading_rubric) return NextResponse.json({ error:'The generated short-answer marking guide was invalid. Please try again.' }, { status:502 })
     if (question.chart_data.chart_type !== 'none' && question.chart_data.labels.length !== question.chart_data.values.length) return NextResponse.json({ error:'The generated graph data was invalid. Please try again.' }, { status:502 })
+    if (question.visual_data.type === 'source_page' && !visualCandidates.some(v=>v.materialId===question.visual_data.material_id && v.page===question.visual_data.page)) return NextResponse.json({ error:'The generated sketch reference was invalid. Please try again.' }, { status:502 })
   }
 
   const graphCount = questions.filter(q => q.chart_data.chart_type !== 'none' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length && graphMatchesScope(q, scope)).length
+  const lineGraphCount = questions.filter(q=>q.chart_data.chart_type==='line' && q.chart_data.labels.length>=3 && q.chart_data.labels.length===q.chart_data.values.length && graphMatchesScope(q,scope)).length
+  const barGraphCount = questions.filter(q=>q.chart_data.chart_type==='bar' && q.chart_data.labels.length>=3 && q.chart_data.labels.length===q.chart_data.values.length && graphMatchesScope(q,scope)).length
+  const visualCount = questions.filter(q=>q.visual_data.type==='source_page').length
   const shortAnswerCount = questions.filter(q => q.question_type === 'short_answer').length
-  if (graphCount < 1) return NextResponse.json({ error:'The generated exam did not include a valid graph question. Please try again.' }, { status:502 })
+  if (graphCount < 1 || lineGraphCount < 1 || (count >= 10 && barGraphCount < 1)) return NextResponse.json({ error:'The generated exam did not include the required line/bar graph questions. Please try again.' }, { status:502 })
+  if (visualCandidates.length && visualCount < 1) return NextResponse.json({ error:'The generated exam did not include the required relevant sketch question. Please try again.' }, { status:502 })
   if (count >= 5 && shortAnswerCount < 1) return NextResponse.json({ error:'The generated exam did not include a short-answer question. Please try again.' }, { status:502 })
 
   const totalMarks = questions.reduce((sum,q)=>sum+q.marks,0)
@@ -333,8 +349,9 @@ ${context}`
     model_answer:question.model_answer || question.correct_answer,
     grading_rubric:question.grading_rubric || question.model_answer || question.correct_answer,
     chart_data:question.chart_data,
+    visual_data:question.visual_data,
   }))
-  const { data:savedQuestions, error:questionsError } = await supabase.from('exam_questions').insert(rows).select('id,position,prompt,options,marks,topic,question_type,chart_data')
+  const { data:savedQuestions, error:questionsError } = await supabase.from('exam_questions').insert(rows).select('id,position,prompt,options,marks,topic,question_type,chart_data,visual_data')
   if (questionsError) {
     await supabase.from('exam_attempts').delete().eq('id',exam.id).eq('user_id',user.id)
     return NextResponse.json({ error:questionsError.message }, { status:400 })
@@ -394,7 +411,7 @@ async function submitExam({supabase,user,examId,answers}) {
   if (!exam) return NextResponse.json({error:'Exam not found.'},{status:404})
   if (exam.status==='completed') return NextResponse.json({error:'This exam has already been submitted.'},{status:400})
   const timedOut=exam.time_limit_seconds>0 && (Date.now()-new Date(exam.created_at).getTime())>exam.time_limit_seconds*1000
-  const {data:questions,error:questionError}=await supabase.from('exam_questions').select('id,position,prompt,options,correct_answer,marks,explanation,topic,question_type,model_answer,grading_rubric,chart_data').eq('exam_id',exam.id).order('position',{ascending:true})
+  const {data:questions,error:questionError}=await supabase.from('exam_questions').select('id,position,prompt,options,correct_answer,marks,explanation,topic,question_type,model_answer,grading_rubric,chart_data,visual_data').eq('exam_id',exam.id).order('position',{ascending:true})
   if (questionError) return NextResponse.json({error:questionError.message},{status:400})
 
   const answerMap=new Map(answers.map(item=>[Number(item.position),typeof item.answer==='string'?item.answer.slice(0,5000):'']))
@@ -441,6 +458,7 @@ async function submitExam({supabase,user,examId,answers}) {
       topic:question.topic,
       question_type:question.question_type,
       chart_data:question.chart_data,
+      visual_data:question.visual_data,
       feedback,
     })
   }
