@@ -80,10 +80,12 @@ export default function DailyTasksPage() {
       <nav className="sidebar-nav">
         <a className="side-link" href="/dashboard"><span>⌂</span> Overview</a>
         <a className="side-link" href="/subjects"><span>▣</span> Subjects</a>
+        <a className="side-link" href="/summaries"><span>▤</span> Summaries</a>
         <a className="side-link" href="/ai-tutor"><span>◈</span> AI Tutor</a>
         <a className="side-link" href="/mock-exams"><span>□</span> Mock Exams</a>
         <a className="side-link active" href="/daily-tasks"><span>✓</span> Daily Tasks</a>
         <a className="side-link" href="/progress"><span>↗</span> Progress</a>
+        <a className="side-link" href="/settings"><span>⚙</span> Settings</a>
       </nav>
     </aside>
     <section className="dashboard-main">
