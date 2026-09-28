@@ -19,7 +19,10 @@ function getServerSupabase(request) {
   const authorization = request.headers.get('authorization') || ''
   const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
   if (!url || !key || !token) return null
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${token}` } } })
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  })
 }
 
 const LANGUAGE_NAMES={en:'English',af:'Afrikaans',zu:'isiZulu',xh:'isiXhosa',st:'Sesotho',tn:'Setswana',nso:'Sepedi',ts:'XiTsonga',ss:'siSwati',de:'German',fr:'French',es:'Spanish',pt:'Portuguese'}
@@ -46,7 +49,7 @@ function buildMaterialContext(materials, question = '') {
       let score = terms.length ? 0 : 1
       for (const term of terms) {
         const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-        const matches = chunkLower.match(new RegExp(`\\b${safe}\\b`, 'g'))
+        const matches = chunkLower.match(new RegExp(`\\\\b${safe}\\\\b`, 'g'))
         if (matches) score += Math.min(matches.length, 8)
       }
       if (score > 0) candidates.push({ score, text: chunk, title: material.title || material.file_name || 'Study material' })
@@ -54,8 +57,7 @@ function buildMaterialContext(materials, question = '') {
     }
   }
   candidates.sort((a, b) => b.score - a.score)
-  // Keep the prompt comfortably below the organization's TPM limit even for 20-question exams.
-  return candidates.slice(0, 5).map((item, index) => `SOURCE ${index + 1} — ${item.title}\n${item.text}`).join('\n\n')
+  return candidates.slice(0, 6).map((item, index) => `SOURCE ${index + 1} — ${item.title}\n${item.text}`).join('\n\n')
 }
 
 async function authenticate(request) {
@@ -79,8 +81,7 @@ function extractModelText(result) {
   return pieces.join('\n').trim()
 }
 
-function parseExamData(result) {
-  const raw = extractModelText(result)
+function parseJsonText(raw) {
   if (!raw) return null
   const candidates = [raw]
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)
@@ -89,12 +90,47 @@ function parseExamData(result) {
   const lastBrace = raw.lastIndexOf('}')
   if (firstBrace >= 0 && lastBrace > firstBrace) candidates.push(raw.slice(firstBrace, lastBrace + 1))
   for (const candidate of candidates) {
-    try {
-      const parsed = JSON.parse(candidate)
-      if (parsed && Array.isArray(parsed.questions)) return parsed
-    } catch {}
+    try { return JSON.parse(candidate) } catch {}
   }
   return null
+}
+
+function normalizeChart(chart) {
+  if (!chart || typeof chart !== 'object') return { chart_type:'none', title:'', x_label:'', y_label:'', labels:[], values:[] }
+  const type = ['none','bar','line'].includes(chart.chart_type) ? chart.chart_type : 'none'
+  const labels = Array.isArray(chart.labels) ? chart.labels.map(x=>String(x)).slice(0,12) : []
+  const values = Array.isArray(chart.values) ? chart.values.map(Number).filter(Number.isFinite).slice(0,12) : []
+  if (type === 'none' || labels.length < 2 || labels.length !== values.length) {
+    return { chart_type:'none', title:'', x_label:'', y_label:'', labels:[], values:[] }
+  }
+  return {
+    chart_type:type,
+    title:String(chart.title || 'Graph').slice(0,160),
+    x_label:String(chart.x_label || '').slice(0,80),
+    y_label:String(chart.y_label || '').slice(0,80),
+    labels,
+    values,
+  }
+}
+
+function normalizeQuestion(question) {
+  const type = question?.question_type === 'short_answer' ? 'short_answer' : 'multiple_choice'
+  const marks = Math.min(10, Math.max(1, Math.round(Number(question?.marks) || 1)))
+  const options = type === 'multiple_choice' && Array.isArray(question?.options)
+    ? question.options.map(x=>String(x)).slice(0,4)
+    : []
+  return {
+    question_type:type,
+    prompt:String(question?.prompt || '').trim(),
+    options,
+    correct_answer:String(question?.correct_answer || '').trim(),
+    model_answer:String(question?.model_answer || question?.correct_answer || '').trim(),
+    grading_rubric:String(question?.grading_rubric || question?.model_answer || '').trim(),
+    explanation:String(question?.explanation || '').trim(),
+    topic:String(question?.topic || 'General').trim(),
+    marks,
+    chart_data:normalizeChart(question?.chart_data),
+  }
 }
 
 async function generateExam({ supabase, user, subjectId, count, difficulty = 'mixed', scope = '', timeLimit = 0, revisionContext = '' }) {
@@ -114,110 +150,263 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
   if (!apiKey) return NextResponse.json({ error: 'The Mock Exam system is not connected yet. Add GEMINI_API_KEY to Vercel.' }, { status: 503 })
 
   const schema = {
-    type: 'object',
-    properties: {
-      title: { type: 'string' },
-      questions: { type: 'array', minItems: count, maxItems: count, items: {
-        type: 'object',
-        properties: {
-          prompt: { type: 'string' },
-          options: { type: 'array', minItems: 4, maxItems: 4, items: { type: 'string' } },
-          correct_answer: { type: 'string' },
-          explanation: { type: 'string' },
-          topic: { type: 'string' },
+    type:'object',
+    properties:{
+      title:{type:'string'},
+      questions:{
+        type:'array',
+        minItems:count,
+        maxItems:count,
+        items:{
+          type:'object',
+          properties:{
+            question_type:{type:'string',enum:['multiple_choice','short_answer']},
+            prompt:{type:'string'},
+            options:{type:'array',items:{type:'string'}},
+            correct_answer:{type:'string'},
+            model_answer:{type:'string'},
+            grading_rubric:{type:'string'},
+            explanation:{type:'string'},
+            topic:{type:'string'},
+            marks:{type:'integer'},
+            chart_data:{
+              type:'object',
+              properties:{
+                chart_type:{type:'string',enum:['none','bar','line']},
+                title:{type:'string'},
+                x_label:{type:'string'},
+                y_label:{type:'string'},
+                labels:{type:'array',items:{type:'string'}},
+                values:{type:'array',items:{type:'number'}},
+              },
+              required:['chart_type','title','x_label','y_label','labels','values'],
+            },
+          },
+          required:['question_type','prompt','options','correct_answer','model_answer','grading_rubric','explanation','topic','marks','chart_data'],
         },
-        required: ['prompt', 'options', 'correct_answer', 'explanation', 'topic'],
-      } },
+      },
     },
-    required: ['title', 'questions'],
+    required:['title','questions'],
   }
 
   const language = outputLanguage(profile)
   const difficultyText = difficulty === 'mixed' ? 'a balanced mix of easy, medium and hard' : difficulty
   const scopeText = scope ? `Focus specifically on this chapter/topic when possible: ${scope}.` : 'Cover the most important examinable material from the supplied sources.'
   const revisionText = revisionContext ? `Create fresh questions that target the student’s mistakes below. Do not simply repeat the old questions.\nMISTAKES:\n${revisionContext}` : ''
+
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'}:generateContent`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    body: JSON.stringify({
-      systemInstruction:{parts:[{text:`You are TIALO Mock Exam Generator for ${subject.name}. Write the title, questions, options and explanations entirely in ${language}. Use ONLY the supplied study material. Do not invent facts. Create exactly ${count} multiple-choice questions, each with four options, and correct_answer must exactly match an option. Label every question with a concise topic/chapter. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}\n\nSUPPLIED STUDY MATERIAL:\n${context}`}]},
-      contents:[{role:'user',parts:[{text:`Generate a ${count}-question ${difficultyText} mock exam for ${subject.name}.`}]}],
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
+    body:JSON.stringify({
+      systemInstruction:{parts:[{text:`You are TIALO Mock Exam Generator for ${subject.name}. Write all student-facing text in ${language}. Use ONLY the supplied study material. Never invent facts, numbers, measurements, labels, trends or graph data.
+
+Create exactly ${count} questions. Mix question types: approximately 65–80% multiple choice and 20–35% short answer. Multiple-choice questions must have exactly four options. Short-answer questions must have no options and must include a concise model_answer plus grading_rubric describing the key points needed for full marks.
+
+Every question is worth 1–10 marks. Use lower marks for simple recall and higher marks for explanations, comparisons, processes or multi-step reasoning. The marks determine the student's score; do not make every question worth 1 mark.
+
+Graphs: when the supplied material contains suitable quantitative/comparison data, include 1–3 graph-based questions. For a graph-based question, chart_data.chart_type must be bar or line, chart_data.labels and chart_data.values must come directly from the supplied material, and the prompt must require the student to read or interpret the displayed graph. Do NOT create a graph from invented numbers. If the material has no suitable quantitative/comparison data, use chart_type "none" for all questions. Keep graph labels concise and use the same units as the source when available.
+
+For non-graph questions use chart_type "none" and empty labels/values. The graph itself must contain enough information to answer the graph-based question. Explanations should be useful for later review. Label every question with a concise topic/chapter. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}
+
+SUPPLIED STUDY MATERIAL:
+${context}`}]},
+      contents:[{role:'user',parts:[{text:`Generate a ${count}-question ${difficultyText} mock exam for ${subject.name} with varied marks, short-answer questions, and material-grounded graph questions where the source supports them.`}]}],
       generationConfig:{temperature:.2,responseMimeType:'application/json',responseSchema:schema}
     }),
   })
 
-  const result = await response.json().catch(() => ({}))
+  const result = await response.json().catch(()=>({}))
   if (!response.ok) {
     console.error('Gemini Mock Exam error:', result)
     return NextResponse.json({ error: result?.error?.message || 'The mock exam could not be generated right now.' }, { status: response.status === 429 ? 429 : 502 })
   }
 
-  const examData = parseExamData(result)
-  if (!examData) return NextResponse.json({ error: 'The AI returned an invalid exam format. Please try again.' }, { status: 502 })
-  const questions = Array.isArray(examData.questions) ? examData.questions.slice(0, count) : []
-  if (questions.length !== count) return NextResponse.json({ error: 'The AI did not generate the required number of questions. Please try again.' }, { status: 502 })
+  const examData = parseJsonText(extractModelText(result))
+  if (!examData || !Array.isArray(examData.questions)) return NextResponse.json({ error:'The AI returned an invalid exam format. Please try again.' }, { status:502 })
+
+  const questions = examData.questions.slice(0,count).map(normalizeQuestion)
+  if (questions.length !== count) return NextResponse.json({ error:'The AI did not generate the required number of questions. Please try again.' }, { status:502 })
+
   for (const question of questions) {
-    if (!question.prompt || !Array.isArray(question.options) || question.options.length !== 4 || !question.options.includes(question.correct_answer)) return NextResponse.json({ error: 'The generated exam failed validation. Please try again.' }, { status: 502 })
+    if (!question.prompt || !question.correct_answer || question.marks < 1 || question.marks > 10) return NextResponse.json({ error:'The generated exam failed validation. Please try again.' }, { status:502 })
+    if (question.question_type === 'multiple_choice' && question.options.length !== 4) return NextResponse.json({ error:'The generated multiple-choice question format was invalid. Please try again.' }, { status:502 })
+    if (question.question_type === 'multiple_choice' && !question.options.includes(question.correct_answer)) return NextResponse.json({ error:'The generated multiple-choice answer did not match an option. Please try again.' }, { status:502 })
+    if (question.question_type === 'short_answer' && !question.grading_rubric) return NextResponse.json({ error:'The generated short-answer marking guide was invalid. Please try again.' }, { status:502 })
+    if (question.chart_data.chart_type !== 'none' && question.chart_data.labels.length !== question.chart_data.values.length) return NextResponse.json({ error:'The generated graph data was invalid. Please try again.' }, { status:502 })
   }
 
-  const { data: exam, error: examError } = await supabase.from('exam_attempts').insert({ user_id: user.id, subject_id: subject.id, title: examData.title || `${subject.name} Mock Exam`, question_count: count, total_marks: count, status: 'in_progress', difficulty, scope: scope || null, time_limit_seconds: timeLimit }).select('id,title,question_count,total_marks,status,created_at,difficulty,scope,time_limit_seconds,subject_id').single()
-  if (examError) return NextResponse.json({ error: examError.message }, { status: 400 })
-  const rows = questions.map((question, index) => ({ exam_id: exam.id, position: index + 1, prompt: question.prompt, options: question.options, correct_answer: question.correct_answer, marks: 1, explanation: question.explanation || null, topic: question.topic || scope || 'General' }))
-  const { data: savedQuestions, error: questionsError } = await supabase.from('exam_questions').insert(rows).select('id,position,prompt,options,marks,topic')
-  if (questionsError) { await supabase.from('exam_attempts').delete().eq('id', exam.id).eq('user_id', user.id); return NextResponse.json({ error: questionsError.message }, { status: 400 }) }
-  return NextResponse.json({ exam, questions: savedQuestions })
+  const totalMarks = questions.reduce((sum,q)=>sum+q.marks,0)
+  const { data: exam, error: examError } = await supabase.from('exam_attempts').insert({
+    user_id:user.id,
+    subject_id:subject.id,
+    title:examData.title || `${subject.name} Mock Exam`,
+    question_count:count,
+    total_marks:totalMarks,
+    status:'in_progress',
+    difficulty,
+    scope:scope || null,
+    time_limit_seconds:timeLimit
+  }).select('id,title,question_count,total_marks,status,created_at,difficulty,scope,time_limit_seconds,subject_id').single()
+  if (examError) return NextResponse.json({ error:examError.message }, { status:400 })
+
+  const rows = questions.map((question,index)=>({
+    exam_id:exam.id,
+    position:index+1,
+    prompt:question.prompt,
+    options:question.options,
+    correct_answer:question.correct_answer,
+    student_answer:null,
+    marks:question.marks,
+    explanation:question.explanation || null,
+    topic:question.topic || scope || 'General',
+    question_type:question.question_type,
+    model_answer:question.model_answer || question.correct_answer,
+    grading_rubric:question.grading_rubric || question.model_answer || question.correct_answer,
+    chart_data:question.chart_data,
+  }))
+  const { data:savedQuestions, error:questionsError } = await supabase.from('exam_questions').insert(rows).select('id,position,prompt,options,marks,topic,question_type,chart_data')
+  if (questionsError) {
+    await supabase.from('exam_attempts').delete().eq('id',exam.id).eq('user_id',user.id)
+    return NextResponse.json({ error:questionsError.message }, { status:400 })
+  }
+  return NextResponse.json({ exam, questions:savedQuestions })
 }
 
-async function submitExam({ supabase, user, examId, answers }) {
-  if (!examId || !Array.isArray(answers)) return NextResponse.json({ error: 'Exam ID and answers are required.' }, { status: 400 })
-  const { data: exam, error: examError } = await supabase.from('exam_attempts').select('id,user_id,question_count,total_marks,status,subject_id,title,created_at,time_limit_seconds,difficulty,scope').eq('id', examId).eq('user_id', user.id).maybeSingle()
-  if (examError) return NextResponse.json({ error: examError.message }, { status: 400 })
-  if (!exam) return NextResponse.json({ error: 'Exam not found.' }, { status: 404 })
-  if (exam.status === 'completed') return NextResponse.json({ error: 'This exam has already been submitted.' }, { status: 400 })
-  const timedOut = exam.time_limit_seconds > 0 && (Date.now() - new Date(exam.created_at).getTime()) > exam.time_limit_seconds * 1000
-  const { data: questions, error: questionError } = await supabase.from('exam_questions').select('id,position,prompt,options,correct_answer,marks,explanation,topic').eq('exam_id', exam.id).order('position', { ascending: true })
-  if (questionError) return NextResponse.json({ error: questionError.message }, { status: 400 })
-  const answerMap = new Map(answers.map(item => [Number(item.position), typeof item.answer === 'string' ? item.answer : '']))
-  let score = 0
-  const review = []
-  for (const question of questions || []) {
-    const answer = answerMap.get(question.position) || ''
-    const correct = !timedOut && answer === question.correct_answer
-    if (correct) score += question.marks || 1
-    await supabase.from('exam_questions').update({ student_answer: answer || null }).eq('id', question.id)
-    review.push({ id: question.id, position: question.position, prompt: question.prompt, options: question.options, student_answer: answer, correct_answer: question.correct_answer, correct, marks: question.marks, explanation: question.explanation, topic: question.topic })
+async function gradeShortAnswers({apiKey,language,items}) {
+  if (!items.length) return new Map()
+  const schema = {
+    type:'object',
+    properties:{
+      grades:{
+        type:'array',
+        items:{
+          type:'object',
+          properties:{
+            position:{type:'integer'},
+            awarded_marks:{type:'integer'},
+            feedback:{type:'string'},
+          },
+          required:['position','awarded_marks','feedback'],
+        },
+      },
+    },
+    required:['grades'],
   }
-  const { error: updateError } = await supabase.from('exam_attempts').update({ score, status: 'completed', completed_at: new Date().toISOString() }).eq('id', exam.id).eq('user_id', user.id)
-  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 })
-  return NextResponse.json({ exam: { ...exam, score, status: 'completed', timed_out: timedOut }, review })
+  const prompt = items.map(item =>
+    `QUESTION ${item.position} (${item.marks} marks)\nQuestion: ${item.prompt}\nStudent answer: ${item.student_answer || 'No answer'}\nModel answer: ${item.model_answer}\nMarking rubric: ${item.grading_rubric}`
+  ).join('\n\n')
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'}:generateContent`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
+    body:JSON.stringify({
+      systemInstruction:{parts:[{text:`You are a strict but fair school examiner. Grade short answers in ${language} using ONLY the supplied model answers and marking rubrics. Award an integer from 0 up to the question's mark value. Give partial marks when the answer contains some correct rubric points. Do not award marks for invented or irrelevant claims. Return one grade per question position.`}]},
+      contents:[{role:'user',parts:[{text:prompt}]}],
+      generationConfig:{temperature:.1,responseMimeType:'application/json',responseSchema:schema}
+    }),
+  })
+  const result=await response.json().catch(()=>({}))
+  if (!response.ok) throw new Error(result?.error?.message || 'Short-answer grading failed.')
+  const parsed=parseJsonText(extractModelText(result))
+  const map=new Map()
+  for (const grade of parsed?.grades || []) {
+    const source=items.find(item=>Number(item.position)===Number(grade.position))
+    if (!source) continue
+    const awarded=Math.min(source.marks,Math.max(0,Math.round(Number(grade.awarded_marks)||0)))
+    map.set(source.position,{awarded_marks:awarded,feedback:String(grade.feedback||'').trim()})
+  }
+  return map
+}
+
+async function submitExam({supabase,user,examId,answers}) {
+  if (!examId || !Array.isArray(answers)) return NextResponse.json({error:'Exam ID and answers are required.'},{status:400})
+  const {data:exam,error:examError}=await supabase.from('exam_attempts').select('id,user_id,question_count,total_marks,status,subject_id,title,created_at,time_limit_seconds,difficulty,scope').eq('id',examId).eq('user_id',user.id).maybeSingle()
+  if (examError) return NextResponse.json({error:examError.message},{status:400})
+  if (!exam) return NextResponse.json({error:'Exam not found.'},{status:404})
+  if (exam.status==='completed') return NextResponse.json({error:'This exam has already been submitted.'},{status:400})
+  const timedOut=exam.time_limit_seconds>0 && (Date.now()-new Date(exam.created_at).getTime())>exam.time_limit_seconds*1000
+  const {data:questions,error:questionError}=await supabase.from('exam_questions').select('id,position,prompt,options,correct_answer,marks,explanation,topic,question_type,model_answer,grading_rubric,chart_data').eq('exam_id',exam.id).order('position',{ascending:true})
+  if (questionError) return NextResponse.json({error:questionError.message},{status:400})
+
+  const answerMap=new Map(answers.map(item=>[Number(item.position),typeof item.answer==='string'?item.answer.slice(0,5000):'']))
+  const apiKey=process.env.GEMINI_API_KEY
+  const shortItems=(questions||[]).filter(q=>q.question_type==='short_answer').map(q=>({...q,student_answer:answerMap.get(q.position)||''})).filter(q=>q.student_answer.trim())
+  let shortGrades=new Map()
+  if (!timedOut && shortItems.length) {
+    if (!apiKey) return NextResponse.json({error:'The short-answer grader is not connected yet. Add GEMINI_API_KEY to Vercel.'},{status:503})
+    try { shortGrades=await gradeShortAnswers({apiKey,language:outputLanguage((await supabase.from('profiles').select('language').eq('id',user.id).maybeSingle()).data),items:shortItems}) }
+    catch (error) { console.error('Short-answer grading error:',error); return NextResponse.json({error:'The short answers could not be graded right now. Please submit again.'},{status:502}) }
+  }
+
+  let score=0
+  const review=[]
+  for (const question of questions||[]) {
+    const answer=answerMap.get(question.position)||''
+    let awarded=0
+    let correct=false
+    let feedback=''
+    if (!timedOut) {
+      if (question.question_type==='short_answer') {
+        const grade=shortGrades.get(question.position)
+        awarded=grade?.awarded_marks||0
+        feedback=grade?.feedback||''
+        correct=awarded===question.marks
+      } else {
+        correct=answer===question.correct_answer
+        awarded=correct?(question.marks||1):0
+      }
+    }
+    score+=awarded
+    await supabase.from('exam_questions').update({student_answer:answer||null}).eq('id',question.id)
+    review.push({
+      id:question.id,
+      position:question.position,
+      prompt:question.prompt,
+      options:question.options,
+      student_answer:answer,
+      correct_answer:question.correct_answer,
+      correct,
+      awarded_marks:awarded,
+      marks:question.marks,
+      explanation:question.explanation,
+      topic:question.topic,
+      question_type:question.question_type,
+      chart_data:question.chart_data,
+      feedback,
+    })
+  }
+  const {error:updateError}=await supabase.from('exam_attempts').update({score,status:'completed',completed_at:new Date().toISOString()}).eq('id',exam.id).eq('user_id',user.id)
+  if (updateError) return NextResponse.json({error:updateError.message},{status:400})
+  return NextResponse.json({exam:{...exam,score,status:'completed',timed_out:timedOut},review})
 }
 
 export async function GET(request) {
-  const auth = await authenticate(request); if (auth.error) return auth.error
-  const { supabase, user } = auth
-  const { data, error } = await supabase.from('exam_attempts').select('id,title,subject_id,question_count,score,total_marks,status,created_at,completed_at,difficulty,scope,time_limit_seconds,subjects(name)').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50)
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
-  return NextResponse.json({ exams: data || [] })
+  const auth=await authenticate(request); if(auth.error)return auth.error
+  const {supabase,user}=auth
+  const {data,error}=await supabase.from('exam_attempts').select('id,title,subject_id,question_count,score,total_marks,status,created_at,completed_at,difficulty,scope,time_limit_seconds,subjects(name)').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50)
+  if(error)return NextResponse.json({error:error.message},{status:400})
+  return NextResponse.json({exams:data||[]})
 }
 
 export async function POST(request) {
-  const auth = await authenticate(request); if (auth.error) return auth.error
-  const { supabase, user } = auth
-  let body; try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid request.' }, { status: 400 }) }
-  if (body?.action === 'submit') return submitExam({ supabase, user, examId: body.examId, answers: body.answers })
-  if (body?.action === 'revision') {
-    const { data: sourceExam } = await supabase.from('exam_attempts').select('subject_id').eq('id', body.examId).eq('user_id', user.id).maybeSingle()
-    if (!sourceExam) return NextResponse.json({ error: 'Completed exam not found.' }, { status: 404 })
-    const { data: wrong } = await supabase.from('exam_questions').select('prompt,correct_answer,student_answer,explanation,topic').eq('exam_id', body.examId)
-    const mistakes = (wrong || []).filter(q => (q.student_answer || '') !== q.correct_answer)
-    if (!mistakes.length) return NextResponse.json({ error: 'You have no mistakes to revise from this exam.' }, { status: 400 })
-    const revisionContext = mistakes.slice(0, 12).map((q,i) => `${i+1}. Topic: ${q.topic || 'General'} | Question: ${q.prompt} | Student answer: ${q.student_answer || 'Not answered'} | Correct: ${q.correct_answer} | Explanation: ${q.explanation || ''}`).join('\n')
-    return generateExam({ supabase, user, subjectId: sourceExam.subject_id, count: Math.min(10, Math.max(5, mistakes.length)), difficulty: 'targeted', scope: mistakes.map(q => q.topic).filter(Boolean).join(', '), timeLimit: 0, revisionContext })
+  const auth=await authenticate(request); if(auth.error)return auth.error
+  const {supabase,user}=auth
+  let body
+  try{body=await request.json()}catch{return NextResponse.json({error:'Invalid request.'},{status:400})}
+  if(body?.action==='submit')return submitExam({supabase,user,examId:body.examId,answers:body.answers})
+  if(body?.action==='revision'){
+    const {data:sourceExam}=await supabase.from('exam_attempts').select('subject_id').eq('id',body.examId).eq('user_id',user.id).maybeSingle()
+    if(!sourceExam)return NextResponse.json({error:'Completed exam not found.'},{status:404})
+    const {data:wrong}=await supabase.from('exam_questions').select('prompt,correct_answer,student_answer,explanation,topic,question_type,marks').eq('exam_id',body.examId)
+    const mistakes=(wrong||[]).filter(q=>(q.student_answer||'')!==q.correct_answer)
+    if(!mistakes.length)return NextResponse.json({error:'You have no mistakes to revise from this exam.'},{status:400})
+    const revisionContext=mistakes.slice(0,12).map((q,i)=>`${i+1}. Topic: ${q.topic||'General'} | Type: ${q.question_type||'multiple_choice'} | Marks: ${q.marks||1} | Question: ${q.prompt} | Student answer: ${q.student_answer||'Not answered'} | Correct/model answer: ${q.correct_answer} | Explanation: ${q.explanation||''}`).join('\n')
+    return generateExam({supabase,user,subjectId:sourceExam.subject_id,count:Math.min(10,Math.max(5,mistakes.length)),difficulty:'targeted',scope:mistakes.map(q=>q.topic).filter(Boolean).join(', '),timeLimit:0,revisionContext})
   }
-  const subjectId = body?.subjectId
-  const count = Math.min(Math.max(Number(body?.count) || 10, 5), 20)
-  const difficulty = ['easy','medium','hard','mixed'].includes(body?.difficulty) ? body.difficulty : 'mixed'
-  const scope = typeof body?.scope === 'string' ? body.scope.trim().slice(0, 200) : ''
-  const timeLimit = Math.min(Math.max(Number(body?.timeLimit) || 0, 0), 10800)
-  if (!subjectId) return NextResponse.json({ error: 'Please choose a subject.' }, { status: 400 })
-  return generateExam({ supabase, user, subjectId, count, difficulty, scope, timeLimit })
+  const subjectId=body?.subjectId
+  const count=Math.min(Math.max(Number(body?.count)||10,5),20)
+  const difficulty=['easy','medium','hard','mixed'].includes(body?.difficulty)?body.difficulty:'mixed'
+  const scope=typeof body?.scope==='string'?body.scope.trim().slice(0,200):''
+  const timeLimit=Math.min(Math.max(Number(body?.timeLimit)||0,0),10800)
+  if(!subjectId)return NextResponse.json({error:'Please choose a subject.'},{status:400})
+  return generateExam({supabase,user,subjectId,count,difficulty,scope,timeLimit})
 }
