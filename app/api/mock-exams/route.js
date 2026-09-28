@@ -75,7 +75,9 @@ function buildVisualCandidates(materials, question = '') {
       let topicMatches = 0
       for (const term of terms) if (lower.includes(term)) topicMatches += 1
       const visualMatches = (lower.match(/\b(?:figure|fig\.?|diagram|sketch|illustration|illustrated|anatomy|structure|labelled|labeled|cross[- ]?section|schematic|parts)\b/g)||[]).length
-      if (!visualMatches) continue
+      // Prefer pages explicitly containing diagram language, but still allow a topic-matched source page as a visual candidate.
+      // The page itself is rendered in the exam, so this keeps relevant textbook sketches available even when OCR missed the word "diagram".
+      if (!visualMatches && topicMatches===0) continue
       candidates.push({score:topicMatches*8+visualMatches*2,materialId:material.id,page:Number(item.page)||1,excerpt:text.slice(0,900),title:material.title||material.file_name||'Study material'})
     }
   }
