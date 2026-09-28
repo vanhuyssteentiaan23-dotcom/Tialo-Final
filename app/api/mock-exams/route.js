@@ -254,6 +254,9 @@ SKETCH / DIAGRAM REQUIREMENT: When VISUAL CANDIDATES are available, include at l
 If multiple chapters/topics are requested, distribute questions across ALL requested topics where the material supports them; do not concentrate on only the first topic. Label every question with its topic/chapter. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}
 ${graphRequirement}
 
+VISUAL CANDIDATES (use these exact IDs/pages when adding a sketch question):
+${visualCandidateText}
+
 SUPPLIED STUDY MATERIAL:
 ${context}`
   const userInstruction = `Generate a ${count}-question ${difficultyText} mock exam for ${subject.name}. Include varied 1–10 mark questions, at least one short-answer question, at least one LINE graph-reading question, and at least one relevant source-page sketch/diagram question when VISUAL CANDIDATES are available.`
