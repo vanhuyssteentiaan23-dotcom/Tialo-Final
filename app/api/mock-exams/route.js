@@ -97,7 +97,7 @@ function parseExamData(result) {
   return null
 }
 
-async function generateExam({ supabase, user, subjectId, count }) {
+async function generateExam({ supabase, user, subjectId, count, difficulty = 'mixed', scope = '', timeLimit = 0, revisionContext = '' }) {
   const { data: profile } = await supabase.from('profiles').select('language').eq('id', user.id).maybeSingle()
   const { data: subject, error: subjectError } = await supabase.from('subjects').select('id,name').eq('id', subjectId).eq('user_id', user.id).maybeSingle()
   if (subjectError) return NextResponse.json({ error: subjectError.message }, { status: 400 })
@@ -107,7 +107,7 @@ async function generateExam({ supabase, user, subjectId, count }) {
   if (materialError) return NextResponse.json({ error: materialError.message }, { status: 400 })
   if (!materials?.length) return NextResponse.json({ error: 'This subject has no processed study material yet. Upload and read your material first.' }, { status: 400 })
 
-  const context = buildMaterialContext(materials)
+  const context = buildMaterialContext(materials, scope)
   if (!context) return NextResponse.json({ error: 'I could not find enough extracted text to create an exam.' }, { status: 400 })
 
   const apiKey = process.env.GEMINI_API_KEY
@@ -124,19 +124,23 @@ async function generateExam({ supabase, user, subjectId, count }) {
           options: { type: 'array', minItems: 4, maxItems: 4, items: { type: 'string' } },
           correct_answer: { type: 'string' },
           explanation: { type: 'string' },
+          topic: { type: 'string' },
         },
-        required: ['prompt', 'options', 'correct_answer', 'explanation'],
+        required: ['prompt', 'options', 'correct_answer', 'explanation', 'topic'],
       } },
     },
     required: ['title', 'questions'],
   }
 
   const language = outputLanguage(profile)
+  const difficultyText = difficulty === 'mixed' ? 'a balanced mix of easy, medium and hard' : difficulty
+  const scopeText = scope ? `Focus specifically on this chapter/topic when possible: ${scope}.` : 'Cover the most important examinable material from the supplied sources.'
+  const revisionText = revisionContext ? `Create fresh questions that target the student’s mistakes below. Do not simply repeat the old questions.\nMISTAKES:\n${revisionContext}` : ''
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'}:generateContent`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
-      systemInstruction:{parts:[{text:`You are TIALO Mock Exam Generator for ${subject.name}. Write the title, questions, options and explanations entirely in ${language}. Use ONLY the supplied study material. Do not invent facts. Create exactly ${count} multiple-choice questions, each with four options, and correct_answer must exactly match an option.\n\nSUPPLIED STUDY MATERIAL:\n${context}`}]},
-      contents:[{role:'user',parts:[{text:`Generate a ${count}-question mock exam for ${subject.name}.`}]}],
+      systemInstruction:{parts:[{text:`You are TIALO Mock Exam Generator for ${subject.name}. Write the title, questions, options and explanations entirely in ${language}. Use ONLY the supplied study material. Do not invent facts. Create exactly ${count} multiple-choice questions, each with four options, and correct_answer must exactly match an option. Label every question with a concise topic/chapter. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}\n\nSUPPLIED STUDY MATERIAL:\n${context}`}]},
+      contents:[{role:'user',parts:[{text:`Generate a ${count}-question ${difficultyText} mock exam for ${subject.name}.`}]}],
       generationConfig:{temperature:.2,responseMimeType:'application/json',responseSchema:schema}
     }),
   })
@@ -155,41 +159,42 @@ async function generateExam({ supabase, user, subjectId, count }) {
     if (!question.prompt || !Array.isArray(question.options) || question.options.length !== 4 || !question.options.includes(question.correct_answer)) return NextResponse.json({ error: 'The generated exam failed validation. Please try again.' }, { status: 502 })
   }
 
-  const { data: exam, error: examError } = await supabase.from('exam_attempts').insert({ user_id: user.id, subject_id: subject.id, title: examData.title || `${subject.name} Mock Exam`, question_count: count, total_marks: count, status: 'in_progress' }).select('id,title,question_count,total_marks,status,created_at').single()
+  const { data: exam, error: examError } = await supabase.from('exam_attempts').insert({ user_id: user.id, subject_id: subject.id, title: examData.title || `${subject.name} Mock Exam`, question_count: count, total_marks: count, status: 'in_progress', difficulty, scope: scope || null, time_limit_seconds: timeLimit }).select('id,title,question_count,total_marks,status,created_at,difficulty,scope,time_limit_seconds,subject_id').single()
   if (examError) return NextResponse.json({ error: examError.message }, { status: 400 })
-  const rows = questions.map((question, index) => ({ exam_id: exam.id, position: index + 1, prompt: question.prompt, options: question.options, correct_answer: question.correct_answer, marks: 1, explanation: question.explanation || null }))
-  const { data: savedQuestions, error: questionsError } = await supabase.from('exam_questions').insert(rows).select('id,position,prompt,options,marks')
+  const rows = questions.map((question, index) => ({ exam_id: exam.id, position: index + 1, prompt: question.prompt, options: question.options, correct_answer: question.correct_answer, marks: 1, explanation: question.explanation || null, topic: question.topic || scope || 'General' }))
+  const { data: savedQuestions, error: questionsError } = await supabase.from('exam_questions').insert(rows).select('id,position,prompt,options,marks,topic')
   if (questionsError) { await supabase.from('exam_attempts').delete().eq('id', exam.id).eq('user_id', user.id); return NextResponse.json({ error: questionsError.message }, { status: 400 }) }
   return NextResponse.json({ exam, questions: savedQuestions })
 }
 
 async function submitExam({ supabase, user, examId, answers }) {
   if (!examId || !Array.isArray(answers)) return NextResponse.json({ error: 'Exam ID and answers are required.' }, { status: 400 })
-  const { data: exam, error: examError } = await supabase.from('exam_attempts').select('id,user_id,question_count,total_marks,status,subject_id,title').eq('id', examId).eq('user_id', user.id).maybeSingle()
+  const { data: exam, error: examError } = await supabase.from('exam_attempts').select('id,user_id,question_count,total_marks,status,subject_id,title,created_at,time_limit_seconds,difficulty,scope').eq('id', examId).eq('user_id', user.id).maybeSingle()
   if (examError) return NextResponse.json({ error: examError.message }, { status: 400 })
   if (!exam) return NextResponse.json({ error: 'Exam not found.' }, { status: 404 })
   if (exam.status === 'completed') return NextResponse.json({ error: 'This exam has already been submitted.' }, { status: 400 })
-  const { data: questions, error: questionError } = await supabase.from('exam_questions').select('id,position,prompt,options,correct_answer,marks,explanation').eq('exam_id', exam.id).order('position', { ascending: true })
+  const timedOut = exam.time_limit_seconds > 0 && (Date.now() - new Date(exam.created_at).getTime()) > exam.time_limit_seconds * 1000
+  const { data: questions, error: questionError } = await supabase.from('exam_questions').select('id,position,prompt,options,correct_answer,marks,explanation,topic').eq('exam_id', exam.id).order('position', { ascending: true })
   if (questionError) return NextResponse.json({ error: questionError.message }, { status: 400 })
   const answerMap = new Map(answers.map(item => [Number(item.position), typeof item.answer === 'string' ? item.answer : '']))
   let score = 0
   const review = []
   for (const question of questions || []) {
     const answer = answerMap.get(question.position) || ''
-    const correct = answer === question.correct_answer
+    const correct = !timedOut && answer === question.correct_answer
     if (correct) score += question.marks || 1
     await supabase.from('exam_questions').update({ student_answer: answer || null }).eq('id', question.id)
-    review.push({ id: question.id, position: question.position, prompt: question.prompt, options: question.options, student_answer: answer, correct_answer: question.correct_answer, correct, marks: question.marks, explanation: question.explanation })
+    review.push({ id: question.id, position: question.position, prompt: question.prompt, options: question.options, student_answer: answer, correct_answer: question.correct_answer, correct, marks: question.marks, explanation: question.explanation, topic: question.topic })
   }
   const { error: updateError } = await supabase.from('exam_attempts').update({ score, status: 'completed', completed_at: new Date().toISOString() }).eq('id', exam.id).eq('user_id', user.id)
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 })
-  return NextResponse.json({ exam: { ...exam, score, status: 'completed' }, review })
+  return NextResponse.json({ exam: { ...exam, score, status: 'completed', timed_out: timedOut }, review })
 }
 
 export async function GET(request) {
   const auth = await authenticate(request); if (auth.error) return auth.error
   const { supabase, user } = auth
-  const { data, error } = await supabase.from('exam_attempts').select('id,title,subject_id,question_count,score,total_marks,status,created_at,completed_at,subjects(name)').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50)
+  const { data, error } = await supabase.from('exam_attempts').select('id,title,subject_id,question_count,score,total_marks,status,created_at,completed_at,difficulty,scope,time_limit_seconds,subjects(name)').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50)
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ exams: data || [] })
 }
@@ -199,8 +204,20 @@ export async function POST(request) {
   const { supabase, user } = auth
   let body; try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid request.' }, { status: 400 }) }
   if (body?.action === 'submit') return submitExam({ supabase, user, examId: body.examId, answers: body.answers })
+  if (body?.action === 'revision') {
+    const { data: sourceExam } = await supabase.from('exam_attempts').select('subject_id').eq('id', body.examId).eq('user_id', user.id).maybeSingle()
+    if (!sourceExam) return NextResponse.json({ error: 'Completed exam not found.' }, { status: 404 })
+    const { data: wrong } = await supabase.from('exam_questions').select('prompt,correct_answer,student_answer,explanation,topic').eq('exam_id', body.examId)
+    const mistakes = (wrong || []).filter(q => (q.student_answer || '') !== q.correct_answer)
+    if (!mistakes.length) return NextResponse.json({ error: 'You have no mistakes to revise from this exam.' }, { status: 400 })
+    const revisionContext = mistakes.slice(0, 12).map((q,i) => `${i+1}. Topic: ${q.topic || 'General'} | Question: ${q.prompt} | Student answer: ${q.student_answer || 'Not answered'} | Correct: ${q.correct_answer} | Explanation: ${q.explanation || ''}`).join('\n')
+    return generateExam({ supabase, user, subjectId: sourceExam.subject_id, count: Math.min(10, Math.max(5, mistakes.length)), difficulty: 'targeted', scope: mistakes.map(q => q.topic).filter(Boolean).join(', '), timeLimit: 0, revisionContext })
+  }
   const subjectId = body?.subjectId
   const count = Math.min(Math.max(Number(body?.count) || 10, 5), 20)
+  const difficulty = ['easy','medium','hard','mixed'].includes(body?.difficulty) ? body.difficulty : 'mixed'
+  const scope = typeof body?.scope === 'string' ? body.scope.trim().slice(0, 200) : ''
+  const timeLimit = Math.min(Math.max(Number(body?.timeLimit) || 0, 0), 10800)
   if (!subjectId) return NextResponse.json({ error: 'Please choose a subject.' }, { status: 400 })
   return generateExam({ supabase, user, subjectId, count })
 }
