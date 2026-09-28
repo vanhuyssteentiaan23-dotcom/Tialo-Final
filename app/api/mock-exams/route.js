@@ -491,6 +491,8 @@ async function submitExam({supabase,user,examId,answers}) {
       chart_data:question.chart_data,
       visual_data:question.visual_data,
       feedback,
+      model_answer:question.model_answer,
+      grading_rubric:question.grading_rubric,
     })
   }
   const {error:updateError}=await supabase.from('exam_attempts').update({score,status:'completed',completed_at:new Date().toISOString()}).eq('id',exam.id).eq('user_id',user.id)
@@ -501,6 +503,52 @@ async function submitExam({supabase,user,examId,answers}) {
 export async function GET(request) {
   const auth=await authenticate(request); if(auth.error)return auth.error
   const {supabase,user}=auth
+  const examId=new URL(request.url).searchParams.get('examId')
+
+  if (examId) {
+    const {data:exam,error:examError}=await supabase.from('exam_attempts')
+      .select('id,title,subject_id,question_count,score,total_marks,status,created_at,completed_at,difficulty,scope,time_limit_seconds,subjects(name)')
+      .eq('id',examId).eq('user_id',user.id).maybeSingle()
+    if(examError)return NextResponse.json({error:examError.message},{status:400})
+    if(!exam)return NextResponse.json({error:'Exam not found.'},{status:404})
+
+    const {data:questions,error:questionError}=await supabase.from('exam_questions')
+      .select('id,position,prompt,options,correct_answer,student_answer,marks,explanation,topic,question_type,model_answer,grading_rubric,chart_data,visual_data')
+      .eq('exam_id',exam.id).order('position',{ascending:true})
+    if(questionError)return NextResponse.json({error:questionError.message},{status:400})
+
+    const shortItems=(questions||[]).filter(q=>q.question_type==='short_answer').map(q=>({...q,student_answer:q.student_answer||''})).filter(q=>q.student_answer.trim())
+    const shortGrades=gradeShortAnswersLocally(shortItems)
+    const review=(questions||[]).map(question=>{
+      const answer=question.student_answer||''
+      const shortGrade=question.question_type==='short_answer' ? shortGrades.get(question.position) : null
+      const awarded=question.question_type==='short_answer'
+        ? (shortGrade?.awarded_marks||0)
+        : (answer===question.correct_answer ? question.marks : 0)
+      return {
+        id:question.id,
+        position:question.position,
+        prompt:question.prompt,
+        options:question.options,
+        student_answer:answer,
+        correct_answer:question.correct_answer,
+        correct:awarded===question.marks,
+        awarded_marks:awarded,
+        marks:question.marks,
+        explanation:question.explanation,
+        topic:question.topic,
+        question_type:question.question_type,
+        model_answer:question.model_answer,
+        grading_rubric:question.grading_rubric,
+        chart_data:question.chart_data,
+        visual_data:question.visual_data,
+        feedback:shortGrade?.feedback||'',
+      }
+    })
+
+    return NextResponse.json({exam,questions:questions||[],review})
+  }
+
   const {data,error}=await supabase.from('exam_attempts').select('id,title,subject_id,question_count,score,total_marks,status,created_at,completed_at,difficulty,scope,time_limit_seconds,subjects(name)').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50)
   if(error)return NextResponse.json({error:error.message},{status:400})
   return NextResponse.json({exams:data||[]})
