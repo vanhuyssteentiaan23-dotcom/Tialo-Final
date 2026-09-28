@@ -58,7 +58,7 @@ function buildMaterialContext(materials, question = '') {
       }
 
       const hasQuantitativeSignal = /\d+(?:\.\d+)?\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(chunk) || /\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|percentages|increase|decrease)\b/i.test(chunk)
-      if (hasQuantitativeSignal) score += 3
+      if (hasQuantitativeSignal && (!terms.length || topicMatches > 0)) score += 3
 
       candidates.push({
         score,
@@ -73,12 +73,21 @@ function buildMaterialContext(materials, question = '') {
 
   // Prefer topic matches. If the requested topic is not found, fall back
   // to the strongest source chunks instead of claiming the material is empty.
-  const matched = terms.length ? candidates.filter(item => item.score > 0) : candidates
+  const matched = terms.length ? candidates.filter(item => item.topicMatches > 0) : candidates
   const selected = (matched.length ? matched : candidates).slice(0, 12)
 
   return selected
     .map((item, index) => `SOURCE ${index + 1} — ${item.title}\n${item.text}`)
     .join('\n\n')
+}
+
+function graphMatchesScope(question, scope) {
+  if (!scope || !scope.trim()) return true
+  const terms = termsFromQuestion(scope)
+  if (!terms.length) return true
+  const chart = question?.chart_data || {}
+  const haystack = [question?.topic, question?.prompt, chart.title, chart.x_label, chart.y_label, ...(chart.labels || [])].join(' ').toLowerCase()
+  return terms.some(term => haystack.includes(term))
 }
 
 async function authenticate(request) {
@@ -119,18 +128,21 @@ function parseJsonText(raw) {
 function normalizeChart(chart) {
   if (!chart || typeof chart !== 'object') return { chart_type:'none', title:'', x_label:'', y_label:'', labels:[], values:[] }
   const type = ['none','bar','line'].includes(chart.chart_type) ? chart.chart_type : 'none'
+  const title = String(chart.title || 'Graph').slice(0,160)
+  const sourceType = ['source','illustrative'].includes(chart.source_type) ? chart.source_type : (/^illustrative\\b/i.test(title) ? 'illustrative' : 'source')
   const labels = Array.isArray(chart.labels) ? chart.labels.map(x=>String(x)).slice(0,12) : []
   const values = Array.isArray(chart.values) ? chart.values.map(Number).filter(Number.isFinite).slice(0,12) : []
   if (type === 'none' || labels.length < 2 || labels.length !== values.length) {
-    return { chart_type:'none', title:'', x_label:'', y_label:'', labels:[], values:[] }
+    return { chart_type:'none', title:'', x_label:'', y_label:'', labels:[], values:[], source_type:'source' }
   }
   return {
     chart_type:type,
-    title:String(chart.title || 'Graph').slice(0,160),
+    title,
     x_label:String(chart.x_label || '').slice(0,80),
     y_label:String(chart.y_label || '').slice(0,80),
     labels,
     values,
+    source_type:sourceType,
   }
 }
 
@@ -194,13 +206,14 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
               type:'object',description:'Graph data. Use bar or line for at least one graph question in every exam; use none only for non-graph questions.',
               properties:{
                 chart_type:{type:'string',enum:['none','bar','line']},
+                source_type:{type:'string',enum:['source','illustrative']},
                 title:{type:'string'},
                 x_label:{type:'string'},
                 y_label:{type:'string'},
                 labels:{type:'array',items:{type:'string'}},
                 values:{type:'array',items:{type:'number'}},
               },
-              required:['chart_type','title','x_label','y_label','labels','values'],
+              required:['chart_type','source_type','title','x_label','y_label','labels','values'],
             },
           },
           required:['question_type','prompt','options','correct_answer','model_answer','grading_rubric','explanation','topic','marks','chart_data'],
@@ -224,7 +237,7 @@ Create exactly ${count} questions. Question mix is mandatory: for exams of 5 or 
 
 Every question is worth 1–10 marks. Use lower marks for simple recall and higher marks for explanations, comparisons, processes or multi-step reasoning. Do not make every question worth 1 mark.
 
-GRAPH REQUIREMENT: Every exam must contain at least one graph-based question. If the supplied material contains numerical/table data, use those exact source values in chart_data. If the supplied material does not contain suitable numerical data, create an explicitly labelled "Illustrative practice graph" whose trend represents a relationship or process stated in the supplied material. In that fallback case, the numbers are an illustrative index for practice, NOT measurements from the source. The prompt must ask the student to read, compare, calculate from, or interpret the displayed graph. Never use a graph merely as decoration. Use chart_type "bar" or "line", at least 3 labels and matching numeric values. For non-graph questions use chart_type "none" with empty labels and values.
+GRAPH REQUIREMENT: Every exam must contain at least one graph-based question, and the graph MUST be about one of the requested chapters/topics. If the supplied material contains numerical/table data relevant to that topic, use those exact source values and set source_type to "source". If relevant source data does not exist, create an explicitly titled "Illustrative practice graph" tied directly to the requested topic, set source_type to "illustrative", and make clear that the numbers are an illustrative index for practice, NOT measurements from the source. The prompt must ask the student to read, compare, calculate from, or interpret the displayed graph. Never use a graph merely as decoration. Use chart_type "bar" or "line", at least 3 labels and matching numeric values. For non-graph questions use chart_type "none" with empty labels and values.
 
 If multiple chapters/topics are requested, distribute questions across ALL requested topics where the material supports them; do not concentrate on only the first topic. Label every question with its topic/chapter. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}
 
@@ -254,11 +267,11 @@ ${context}`
   let examData = parseJsonText(extractModelText(result))
   let questions = Array.isArray(examData?.questions) ? examData.questions.slice(0,count).map(normalizeQuestion) : []
 
-  const hasGraph = questions.some(q => q.chart_data.chart_type !== 'none' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length)
+  const hasGraph = questions.some(q => q.chart_data.chart_type !== 'none' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length && graphMatchesScope(q, scope))
   const hasShortAnswer = questions.some(q => q.question_type === 'short_answer')
   if (questions.length === count && (!hasGraph || (count >= 5 && !hasShortAnswer))) {
-    const missing = [!hasGraph ? 'at least one real graph question with chart_type bar or line and at least 3 labels/values' : '', (count >= 5 && !hasShortAnswer) ? 'at least one short-answer question' : ''].filter(Boolean).join(' and ')
-    response = await requestGeneration(`The previous output did not satisfy the exam requirements. You MUST include ${missing}. Do not return chart_type "none" for the graph question. If source data is unavailable, use an explicitly titled "Illustrative practice graph" based on a relationship described in the material, and make the question test interpretation of that displayed graph.`)
+    const missing = [!hasGraph ? 'at least one graph question about the requested topic(s), with chart_type bar or line and at least 3 labels/values' : '', (count >= 5 && !hasShortAnswer) ? 'at least one short-answer question' : ''].filter(Boolean).join(' and ')
+    response = await requestGeneration(`The previous output did not satisfy the exam requirements. You MUST include ${missing}. The graph must match the requested topic(s) and must not switch to an unrelated chapter. If relevant source data is unavailable, use an explicitly titled "Illustrative practice graph" tied to the requested topic and set source_type to "illustrative".`)
     result = await response.json().catch(()=>({}))
     if (response.ok) {
       examData = parseJsonText(extractModelText(result))
@@ -282,7 +295,7 @@ ${context}`
     if (question.chart_data.chart_type !== 'none' && question.chart_data.labels.length !== question.chart_data.values.length) return NextResponse.json({ error:'The generated graph data was invalid. Please try again.' }, { status:502 })
   }
 
-  const graphCount = questions.filter(q => q.chart_data.chart_type !== 'none' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length).length
+  const graphCount = questions.filter(q => q.chart_data.chart_type !== 'none' && q.chart_data.labels.length >= 3 && q.chart_data.labels.length === q.chart_data.values.length && graphMatchesScope(q, scope)).length
   const shortAnswerCount = questions.filter(q => q.question_type === 'short_answer').length
   if (graphCount < 1) return NextResponse.json({ error:'The generated exam did not include a valid graph question. Please try again.' }, { status:502 })
   if (count >= 5 && shortAnswerCount < 1) return NextResponse.json({ error:'The generated exam did not include a short-answer question. Please try again.' }, { status:502 })
