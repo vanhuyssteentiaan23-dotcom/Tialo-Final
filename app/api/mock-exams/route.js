@@ -71,7 +71,7 @@ function buildMaterialContext(materials, question = '') {
   // Prefer topic matches. If the requested topic is not found, fall back
   // to the strongest source chunks instead of claiming the material is empty.
   const matched = terms.length ? candidates.filter(item => item.score > 0) : candidates
-  const selected = (matched.length ? matched : candidates).slice(0, 6)
+  const selected = (matched.length ? matched : candidates).slice(0, 12)
 
   return selected
     .map((item, index) => `SOURCE ${index + 1} — ${item.title}\n${item.text}`)
@@ -209,7 +209,7 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
 
   const language = outputLanguage(profile)
   const difficultyText = difficulty === 'mixed' ? 'a balanced mix of easy, medium and hard' : difficulty
-  const scopeText = scope ? `Focus specifically on this chapter/topic when possible: ${scope}.` : 'Cover the most important examinable material from the supplied sources.'
+  const scopeText = scope ? `Cover ALL of these requested chapters/topics where the supplied material supports them: ${scope}. Spread questions across the requested topics instead of concentrating on only the first topic.` : 'Cover the most important examinable material from the supplied sources.'
   const revisionText = revisionContext ? `Create fresh questions that target the student’s mistakes below. Do not simply repeat the old questions.\nMISTAKES:\n${revisionContext}` : ''
 
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'}:generateContent`, {
@@ -218,11 +218,11 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
     body:JSON.stringify({
       systemInstruction:{parts:[{text:`You are TIALO Mock Exam Generator for ${subject.name}. Write all student-facing text in ${language}. Use ONLY the supplied study material. Never invent facts, numbers, measurements, labels, trends or graph data.
 
-Create exactly ${count} questions. Mix question types: approximately 65–80% multiple choice and 20–35% short answer. Multiple-choice questions must have exactly four options. Short-answer questions must have no options and must include a concise model_answer plus grading_rubric describing the key points needed for full marks.
+Create exactly ${count} questions. Mix question types: approximately 65–80% multiple choice and 20–35% short answer. If multiple chapters/topics are requested, distribute questions across them. Multiple-choice questions must have exactly four options. Short-answer questions must have no options and must include a concise model_answer plus grading_rubric describing the key points needed for full marks.
 
 Every question is worth 1–10 marks. Use lower marks for simple recall and higher marks for explanations, comparisons, processes or multi-step reasoning. The marks determine the student's score; do not make every question worth 1 mark.
 
-Graphs: when the supplied material contains suitable quantitative/comparison data, include 1–3 graph-based questions. For a graph-based question, chart_data.chart_type must be bar or line, chart_data.labels and chart_data.values must come directly from the supplied material, and the prompt must require the student to read or interpret the displayed graph. Do NOT create a graph from invented numbers. If the material has no suitable quantitative/comparison data, use chart_type "none" for all questions. Keep graph labels concise and use the same units as the source when available.
+Graphs: when the supplied material contains suitable quantitative/comparison data, include 1–3 graph-based questions and prioritize finding that data in the supplied sources. For a graph-based question, chart_data.chart_type must be bar or line, chart_data.labels and chart_data.values must come directly from the supplied material, and the prompt must require the student to read or interpret the displayed graph. Do NOT create a graph from invented numbers. If the material has no suitable quantitative/comparison data, use chart_type "none" for all questions. Keep graph labels concise and use the same units as the source when available.
 
 For non-graph questions use chart_type "none" and empty labels/values. The graph itself must contain enough information to answer the graph-based question. Explanations should be useful for later review. Label every question with a concise topic/chapter. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}
 
@@ -246,8 +246,8 @@ ${context}`}]},
   if (questions.length !== count) return NextResponse.json({ error:'The AI did not generate the required number of questions. Please try again.' }, { status:502 })
 
   for (const question of questions) {
-    if (!question.prompt || !question.correct_answer || question.marks < 1 || question.marks > 10) return NextResponse.json({ error:'The generated exam failed validation. Please try again.' }, { status:502 })
-    if (question.question_type === 'multiple_choice' && question.options.length !== 4) return NextResponse.json({ error:'The generated multiple-choice question format was invalid. Please try again.' }, { status:502 })
+    if (!question.prompt || question.marks < 1 || question.marks > 10) return NextResponse.json({ error:'The generated exam failed validation. Please try again.' }, { status:502 })
+    if (question.question_type === 'multiple_choice' && (!question.correct_answer || question.options.length !== 4)) return NextResponse.json({ error:'The generated multiple-choice question format was invalid. Please try again.' }, { status:502 })
     if (question.question_type === 'multiple_choice' && !question.options.includes(question.correct_answer)) return NextResponse.json({ error:'The generated multiple-choice answer did not match an option. Please try again.' }, { status:502 })
     if (question.question_type === 'short_answer' && !question.grading_rubric) return NextResponse.json({ error:'The generated short-answer marking guide was invalid. Please try again.' }, { status:502 })
     if (question.chart_data.chart_type !== 'none' && question.chart_data.labels.length !== question.chart_data.values.length) return NextResponse.json({ error:'The generated graph data was invalid. Please try again.' }, { status:502 })
@@ -423,7 +423,7 @@ export async function POST(request) {
   const subjectId=body?.subjectId
   const count=Math.min(Math.max(Number(body?.count)||10,5),20)
   const difficulty=['easy','medium','hard','mixed'].includes(body?.difficulty)?body.difficulty:'mixed'
-  const scope=typeof body?.scope==='string'?body.scope.trim().slice(0,200):''
+  const scope=typeof body?.scope==='string'?body.scope.trim().slice(0,600):''
   const timeLimit=Math.min(Math.max(Number(body?.timeLimit)||0,0),10800)
   if(!subjectId)return NextResponse.json({error:'Please choose a subject.'},{status:400})
   return generateExam({supabase,user,subjectId,count,difficulty,scope,timeLimit})
