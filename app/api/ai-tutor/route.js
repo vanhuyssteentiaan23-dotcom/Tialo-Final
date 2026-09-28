@@ -12,21 +12,44 @@ function sourcePagesForImages(materials,topic,count){const ts=terms(topic);const
 const STOP_WORDS=new Set('the a an and or but is are was were be been being to of in on for from with without what why how when where which who does do did can could should would will this that these those it its as at by about into than then them they their you your i me my we our explain please give tell'.split(' '))
 function terms(q){return[...new Set((q.toLowerCase().match(/[a-z0-9]+/g)||[]).filter(x=>x.length>2&&!STOP_WORDS.has(x)))]}
 function context(materials,q){const ts=terms(q),out=[];for(const m of materials){const text=m.extracted_text||'';const low=text.toLowerCase();for(let start=0;start<text.length;start+=6100){const chunk=text.slice(start,start+7000),cl=low.slice(start,start+chunk.length);let score=0;for(const t of ts){const n=cl.split(t).length-1;score+=Math.min(n,8)}if(score)out.push({score,text:chunk,title:m.title||m.file_name||'Study material'})}}out.sort((a,b)=>b.score-a.score);return out.slice(0,8).map((x,i)=>`SOURCE ${i+1} — ${x.title}\n${x.text}`).join('\n\n')}
+export async function GET(request){
+ const supabase=getServerSupabase(request);if(!supabase)return NextResponse.json({error:'Authentication is required.'},{status:401})
+ const {data:{user},error:authError}=await supabase.auth.getUser();if(authError||!user)return NextResponse.json({error:'Your session is invalid or expired. Please log in again.'},{status:401})
+ const subjectId=new URL(request.url).searchParams.get('subjectId');if(!subjectId)return NextResponse.json({chats:[]})
+ const {data:subject}=await supabase.from('subjects').select('id').eq('id',subjectId).eq('user_id',user.id).maybeSingle();if(!subject)return NextResponse.json({error:'Subject not found.'},{status:404})
+ const {data:chats,error}=await supabase.from('ai_tutor_chats').select('id,title,created_at,updated_at').eq('user_id',user.id).eq('subject_id',subjectId).order('updated_at',{ascending:false})
+ if(error)return NextResponse.json({error:error.message},{status:400})
+ return NextResponse.json({chats:chats||[]})
+}
 export async function POST(request){
  const supabase=getServerSupabase(request);if(!supabase)return NextResponse.json({error:'Authentication is required.'},{status:401})
  const {data:{user},error:authError}=await supabase.auth.getUser();if(authError||!user)return NextResponse.json({error:'Your session is invalid or expired. Please log in again.'},{status:401})
  const apiKey=process.env.GEMINI_API_KEY;if(!apiKey)return NextResponse.json({error:'The AI Tutor needs GEMINI_API_KEY configured in Vercel.'},{status:503})
  let body;try{body=await request.json()}catch{return NextResponse.json({error:'Invalid request.'},{status:400})}
- const question=typeof body?.question==='string'?body.question.trim():'';const subjectId=body?.subjectId;const history=Array.isArray(body?.history)?body.history.slice(-8):[]
+ const question=typeof body?.question==='string'?body.question.trim():'';const subjectId=body?.subjectId;const requestedChatId=typeof body?.chatId==='string'?body.chatId:null;let history=Array.isArray(body?.history)?body.history.slice(-8):[]
  if(!question)return NextResponse.json({error:'Please enter a question.'},{status:400});if(!subjectId)return NextResponse.json({error:'Please choose a subject.'},{status:400})
  const {data:profile}=await supabase.from('profiles').select('language').eq('id',user.id).maybeSingle()
  const {data:materials,error:me}=await supabase.from('materials').select('id,title,file_name,storage_path,mime_type,extracted_text,page_text,processing_status').eq('user_id',user.id).eq('subject_id',subjectId).eq('processing_status','ready').not('extracted_text','is',null)
  if(me)return NextResponse.json({error:me.message},{status:400});if(!materials?.length)return NextResponse.json({error:'This subject has no processed study material yet. Upload and read a PDF first.'},{status:400})
+ let chatId=requestedChatId
+ if(chatId){
+   const {data:chat}=await supabase.from('ai_tutor_chats').select('id,subject_id').eq('id',chatId).eq('user_id',user.id).maybeSingle()
+   if(!chat||chat.subject_id!==subjectId)return NextResponse.json({error:'That chat does not belong to this subject.'},{status:403})
+   const {data:saved}=await supabase.from('ai_tutor_messages').select('role,content').eq('chat_id',chatId).order('created_at',{ascending:true}).limit(12)
+   if(saved?.length)history=saved.slice(-8)
+ }else{
+   const title=question.length>58?question.slice(0,58).trim()+'…':question
+   const {data:newChat,error:chatError}=await supabase.from('ai_tutor_chats').insert({user_id:user.id,subject_id:subjectId,title:title||'New chat'}).select('id').single()
+   if(chatError)return NextResponse.json({error:chatError.message},{status:400})
+   chatId=newChat.id
+ }
+ const {error:userMessageError}=await supabase.from('ai_tutor_messages').insert({chat_id:chatId,user_id:user.id,role:'user',content:question})
+ if(userMessageError)return NextResponse.json({error:userMessageError.message},{status:400})
  const source=context(materials,question);if(!source)return NextResponse.json({answer:'I could not find enough relevant information in your uploaded material to answer that confidently.'})
  const previousUser=history.slice().reverse().find(x=>x?.role==='user'&&typeof x.content==='string')?.content||'';const imageRequest=wantsImages(question);const imageCount=requestedImageCount(question);const imageTopic=imageRequest?question+' '+previousUser:previousUser;const sourcePages=imageRequest?sourcePagesForImages(materials,imageTopic,imageCount):[]
  const language=LANGUAGE_NAMES[profile?.language]||'English'
  const contents=history.filter(x=>x&&(x.role==='user'||x.role==='assistant')&&typeof x.content==='string').map(x=>({role:x.role==='assistant'?'model':'user',parts:[{text:x.content}]}));contents.push({role:'user',parts:[{text:question}]})
  const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL||'gemini-3.5-flash-lite'}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},body:JSON.stringify({systemInstruction:{parts:[{text:`You are TIALO AI Tutor. Answer entirely in ${language}. Use ONLY the supplied study material. Do not invent facts. Teach clearly and step by step. If the student asks for images, diagrams, pictures, figures, or better images, do not provide external images and do not say you cannot display images. The application will attach exact source-material pages that are relevant to the request. Never claim an image is from the study material unless the application attached a source page.\n\nSUPPLIED STUDY MATERIAL:\n${source}`}]},contents,generationConfig:{temperature:.2}})})
  const result=await response.json().catch(()=>({}));if(!response.ok){console.error('Gemini Tutor error:',result);return NextResponse.json({error:result?.error?.message||'The AI Tutor could not answer right now.'},{status:502})}
- const answer=result?.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('')||'';if(!answer.trim())return NextResponse.json({error:'The AI Tutor returned an empty answer.'},{status:502});return NextResponse.json({answer,images:[],sourcePages})
+ const answer=result?.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('')||'';if(!answer.trim())return NextResponse.json({error:'The AI Tutor returned an empty answer.'},{status:502});const {error:assistantMessageError}=await supabase.from('ai_tutor_messages').insert({chat_id:chatId,user_id:user.id,role:'assistant',content:answer,source_pages:sourcePages});if(assistantMessageError)return NextResponse.json({error:assistantMessageError.message},{status:400});return NextResponse.json({answer,images:[],sourcePages,chatId})
 }
