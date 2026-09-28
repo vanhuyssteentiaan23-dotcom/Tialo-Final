@@ -190,48 +190,7 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'The Mock Exam system is not connected yet. Add GEMINI_API_KEY to Vercel.' }, { status: 503 })
 
-  const schema = {
-    type:'object',
-    properties:{
-      title:{type:'string'},
-      questions:{
-        type:'array',
-        minItems:count,
-        maxItems:count,
-        items:{
-          type:'object',
-          properties:{
-            question_type:{type:'string',enum:['multiple_choice','short_answer'],description:'Question format. Include at least one short_answer question.'},
-            prompt:{type:'string'},
-            options:{type:'array',items:{type:'string'}},
-            correct_answer:{type:'string'},
-            model_answer:{type:'string'},
-            grading_rubric:{type:'string'},
-            explanation:{type:'string'},
-            topic:{type:'string'},
-            marks:{type:'integer'},
-            visual_data:{type:'object',description:'Relevant source-page sketch or diagram. Use none if no visual candidate is suitable.',properties:{type:{type:'string',enum:['none','source_page']},material_id:{type:'string'},page:{type:'integer'},caption:{type:'string'}},required:['type','material_id','page','caption']},
-            chart_data:{
-              type:'object',description:'Graph data. Use bar or line for at least one graph question in every exam; use none only for non-graph questions.',
-              properties:{
-                chart_type:{type:'string',enum:['none','bar','line']},
-                source_type:{type:'string',enum:['source','illustrative']},
-                title:{type:'string'},
-                x_label:{type:'string'},
-                y_label:{type:'string'},
-                labels:{type:'array',items:{type:'string'}},
-                values:{type:'array',items:{type:'number'}},
-              },
-              required:['chart_type','source_type','title','x_label','y_label','labels','values'],
-            },
-          },
-          required:['question_type','prompt','options','correct_answer','model_answer','grading_rubric','explanation','topic','marks','chart_data','visual_data'],
-        },
-      },
-    },
-    required:['title','questions'],
-  }
-
+  // Gemini JSON mode is used instead of a nested responseSchema.
   const language = outputLanguage(profile)
   const difficultyText = difficulty === 'mixed' ? 'a balanced mix of easy, medium and hard' : difficulty
   const scopeText = scope ? `Cover ALL of these requested chapters/topics where the supplied material supports them: ${scope}. Spread questions across the requested topics instead of concentrating on only the first topic.` : 'Cover the most important examinable material from the supplied sources.'
@@ -268,7 +227,7 @@ ${context}`
       body:JSON.stringify({
         systemInstruction:{parts:[{text:baseInstruction + (extraInstruction ? '\\n\\nMANDATORY REPAIR: ' + extraInstruction : '')}]},
         contents:[{role:'user',parts:[{text:userInstruction}]}],
-        generationConfig:{temperature:.15,responseMimeType:'application/json',responseSchema:schema}
+        generationConfig:{temperature:.15,responseMimeType:'application/json'}
       }),
     })
   }
@@ -367,24 +326,7 @@ ${context}`
 
 async function gradeShortAnswers({apiKey,language,items}) {
   if (!items.length) return new Map()
-  const schema = {
-    type:'object',
-    properties:{
-      grades:{
-        type:'array',
-        items:{
-          type:'object',
-          properties:{
-            position:{type:'integer'},
-            awarded_marks:{type:'integer'},
-            feedback:{type:'string'},
-          },
-          required:['position','awarded_marks','feedback'],
-        },
-      },
-    },
-    required:['grades'],
-  }
+  // Gemini JSON mode is used here too; returned grades are validated below.
   const prompt = items.map(item =>
     `QUESTION ${item.position} (${item.marks} marks)\nQuestion: ${item.prompt}\nStudent answer: ${item.student_answer || 'No answer'}\nModel answer: ${item.model_answer}\nMarking rubric: ${item.grading_rubric}`
   ).join('\n\n')
@@ -394,7 +336,7 @@ async function gradeShortAnswers({apiKey,language,items}) {
     body:JSON.stringify({
       systemInstruction:{parts:[{text:`You are a strict but fair school examiner. Grade short answers in ${language} using ONLY the supplied model answers and marking rubrics. Award an integer from 0 up to the question's mark value. Give partial marks when the answer contains some correct rubric points. Do not award marks for invented or irrelevant claims. Return one grade per question position.`}]},
       contents:[{role:'user',parts:[{text:prompt}]}],
-      generationConfig:{temperature:.1,responseMimeType:'application/json',responseSchema:schema}
+      generationConfig:{temperature:.1,responseMimeType:'application/json'}
     }),
   })
   const result=await response.json().catch(()=>({}))
