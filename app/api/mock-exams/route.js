@@ -84,7 +84,7 @@ function extractModelText(result) {
 function parseJsonText(raw) {
   if (!raw) return null
   const candidates = [raw]
-  const fenced = raw.match(/\`\`\`(?:json)?\\s*([\\s\\S]*?)\\s*\`\`\`/i)
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)
   if (fenced?.[1]) candidates.push(fenced[1].trim())
   const firstBrace = raw.indexOf('{')
   const lastBrace = raw.lastIndexOf('}')
