@@ -52,10 +52,14 @@ function buildMaterialContext(materials, question = '') {
       let score = terms.length ? 0 : 1
 
       for (const term of terms) {
-        const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\for (const term of terms) {
+        const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')')
         const matches = chunkLower.match(new RegExp('\\b' + safe + '\\b', 'g'))
         if (matches) score += Math.min(matches.length, 8)
       }
+
+      const hasQuantitativeSignal = /\d+(?:\.\d+)?\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(chunk) || /\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|percentages|increase|decrease)\b/i.test(chunk)
+      if (hasQuantitativeSignal) score += 3
 
       candidates.push({
         score,
@@ -211,6 +215,8 @@ async function generateExam({ supabase, user, subjectId, count, difficulty = 'mi
   const difficultyText = difficulty === 'mixed' ? 'a balanced mix of easy, medium and hard' : difficulty
   const scopeText = scope ? `Cover ALL of these requested chapters/topics where the supplied material supports them: ${scope}. Spread questions across the requested topics instead of concentrating on only the first topic.` : 'Cover the most important examinable material from the supplied sources.'
   const revisionText = revisionContext ? `Create fresh questions that target the student’s mistakes below. Do not simply repeat the old questions.\nMISTAKES:\n${revisionContext}` : ''
+  const graphDataLikely = /\d+(?:\.\d+)?\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(context) || /\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|increase|decrease)\b/i.test(context)
+  const graphRequirement = graphDataLikely ? 'The supplied material contains quantitative/comparison signals, so MUST include at least 1 graph-based question and up to 3 when appropriate.' : 'Include graph-based questions when the supplied material contains suitable quantitative/comparison data.'
 
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite'}:generateContent`, {
     method:'POST',
@@ -222,7 +228,7 @@ Create exactly ${count} questions. Mix question types: approximately 65–80% mu
 
 Every question is worth 1–10 marks. Use lower marks for simple recall and higher marks for explanations, comparisons, processes or multi-step reasoning. The marks determine the student's score; do not make every question worth 1 mark.
 
-Graphs: when the supplied material contains suitable quantitative/comparison data, include 1–3 graph-based questions and prioritize finding that data in the supplied sources. For a graph-based question, chart_data.chart_type must be bar or line, chart_data.labels and chart_data.values must come directly from the supplied material, and the prompt must require the student to read or interpret the displayed graph. Do NOT create a graph from invented numbers. If the material has no suitable quantitative/comparison data, use chart_type "none" for all questions. Keep graph labels concise and use the same units as the source when available.
+Graphs: when quantitative/comparison signals are present, graph questions are required. ${graphRequirement} Prioritize finding graph/table/data values in the supplied sources. For a graph-based question, chart_data.chart_type must be bar or line, chart_data.labels and chart_data.values must come directly from the supplied material, and the prompt must require the student to read or interpret the displayed graph. Do NOT create a graph from invented numbers. If the material has no suitable quantitative/comparison data, use chart_type "none" for all questions. Keep graph labels concise and use the same units as the source when available.
 
 For non-graph questions use chart_type "none" and empty labels/values. The graph itself must contain enough information to answer the graph-based question. Explanations should be useful for later review. Label every question with a concise topic/chapter. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}
 
