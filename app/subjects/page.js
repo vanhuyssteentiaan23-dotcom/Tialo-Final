@@ -2,7 +2,7 @@
 import {useEffect,useState} from 'react'
 import {getSupabaseBrowserClient} from '../../lib/supabase'
 import WorkspaceHeader from '../components/WorkspaceHeader'
-const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress'],['Settings','⚙','/settings']]
+const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress']]
 export default function SubjectsPage(){
  const [subjects,setSubjects]=useState([]),[materials,setMaterials]=useState([]),[name,setName]=useState(''),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState('')
  async function load(){const s=getSupabaseBrowserClient();if(!s)return;const {data:{user}}=await s.auth.getUser();if(!user){location.href='/login';return}const [a,b]=await Promise.all([s.from('subjects').select('id,name,created_at').eq('user_id',user.id).order('created_at',{ascending:true}),s.from('materials').select('id,subject_id,title,file_name,processing_status,extracted_at,storage_path').eq('user_id',user.id).order('uploaded_at',{ascending:false})]);if(a.error)setError(a.error.message);else setSubjects(a.data||[]);if(b.error)setError(x=>x||b.error.message);else setMaterials(b.data||[]);setLoading(false)}
