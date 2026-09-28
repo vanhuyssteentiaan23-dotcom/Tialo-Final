@@ -244,6 +244,7 @@ Every question is worth 1–10 marks. Use lower marks for simple recall and high
 GRAPH REQUIREMENT: Every exam must contain at least one graph-based question, and the graph MUST be about one of the requested chapters/topics. If the supplied material contains numerical/table data relevant to that topic, use those exact source values and set source_type to "source". If relevant source data does not exist, create an explicitly titled "Illustrative practice graph" tied directly to the requested topic, set source_type to "illustrative", and make clear that the numbers are an illustrative index for practice, NOT measurements from the source. The prompt must ask the student to read, compare, calculate from, or interpret the displayed graph. Never use a graph merely as decoration. Use chart_type "bar" or "line", at least 3 labels and matching numeric values. For non-graph questions use chart_type "none" with empty labels and values.
 
 If multiple chapters/topics are requested, distribute questions across ALL requested topics where the material supports them; do not concentrate on only the first topic. Label every question with its topic/chapter. Difficulty: ${difficultyText}. ${scopeText} ${revisionText}
+${graphRequirement}
 
 SUPPLIED STUDY MATERIAL:
 ${context}`
