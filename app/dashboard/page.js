@@ -2,7 +2,7 @@
 import {useEffect,useMemo,useState} from 'react'
 import {getSupabaseBrowserClient} from '../../lib/supabase'
 
-const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress']]
+const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress'],['Settings','⚙','/settings']]
 const day=v=>new Date(v).toISOString().slice(0,10)
 const age=dob=>{if(!dob)return null;const d=new Date(dob+'T00:00:00'),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))a--;return a}
 
@@ -18,7 +18,7 @@ export default function Dashboard(){
  async function signOut(){const s=getSupabaseBrowserClient();await s?.auth.signOut();location.href='/'}
  if(loading)return <main className="new-loading"><div className="new-logo">TIA<span>LO</span></div><span>Opening your workspace…</span></main>
  return <main className="dashboard-shell tialo-workspace">
-  <aside className="sidebar"><a className="brand" href="/dashboard">TIA<span>LO</span></a><div className="sidebar-label">Workspace</div><nav className="sidebar-nav">{nav.map(([label,icon,href])=><a className={'side-link '+(href==='/dashboard'?'active':'')} href={href} key={href}><span>{icon}</span>{label}{href==='/daily-tasks'&&pending.length>0?<b>{pending.length}</b>:null}</a>)}</nav><div className="sidebar-bottom"><a className="side-settings" href="/settings">⚙ Settings</a><div className="new-user"><div>{first[0]?.toUpperCase()}</div><span>{first}</span></div><button onClick={signOut}>Sign out</button></div></aside>
+  <aside className="sidebar"><a className="brand" href="/dashboard">TIA<span>LO</span></a><div className="sidebar-label">Workspace</div><nav className="sidebar-nav">{nav.map(([label,icon,href])=><a className={'side-link '+(href==='/dashboard'?'active':'')} href={href} key={href}><span>{icon}</span>{label}{href==='/daily-tasks'&&pending.length>0?<b>{pending.length}</b>:null}</a>)}</nav><div className="sidebar-bottom"><div className="new-user"><div>{first[0]?.toUpperCase()}</div><span>{first}</span></div><button className="side-signout" onClick={signOut}>Sign out</button></div></aside>
   <section className="dashboard-main">
    <header className="new-header"><button className="new-menu" onClick={()=>setMobile(true)}>☰</button><div><strong>Overview</strong><span> / {new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</span></div><div className="new-header-user">{first}<div>{first[0]?.toUpperCase()}</div></div></header>
    <div className="new-content">
