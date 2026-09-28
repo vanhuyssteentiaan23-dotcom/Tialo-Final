@@ -4,10 +4,12 @@ import {useState} from 'react'
 const nav=[
   ['Overview','/dashboard'],
   ['Subjects','/subjects'],
+  ['Summaries','/summaries'],
   ['AI Tutor','/ai-tutor'],
   ['Mock Exams','/mock-exams'],
   ['Daily Tasks','/daily-tasks'],
   ['Progress','/progress'],
+  ['Settings','/settings'],
 ]
 
 export default function WorkspaceHeader({title,subtitle='',active=''}) {
