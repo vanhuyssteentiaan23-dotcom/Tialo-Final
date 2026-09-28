@@ -52,8 +52,7 @@ function buildMaterialContext(materials, question = '') {
       let score = terms.length ? 0 : 1
 
       for (const term of terms) {
-        const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\for (const term of terms) {
-        const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')')
+        const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
         const matches = chunkLower.match(new RegExp('\\b' + safe + '\\b', 'g'))
         if (matches) score += Math.min(matches.length, 8)
       }
