@@ -34,6 +34,33 @@ function termsFromQuestion(question) {
   return [...new Set((question.toLowerCase().match(/[a-z0-9]+/g) || []).filter(term => term.length > 2 && !STOP_WORDS.has(term)))]
 }
 
+function parseRequestedTopics(scope, subjectName) {
+  const raw = String(scope || '').split(',').map(x => x.trim()).filter(Boolean)
+  const topics = raw.length ? raw : [String(subjectName || 'General').trim()]
+  return [...new Set(topics)].slice(0, 8)
+}
+
+function questionQualityIssues(questions, topics, count) {
+  const issues=[]
+  const topicWords=topics.flatMap(termsFromQuestion)
+  const badPrompt=/which statement is supported by the supplied study material|this statement is not supported by the supplied study material|no conclusion can be drawn from the supplied study material|this option describes a different concept from the requested topic/i
+  for(const [index,question] of questions.entries()){
+    const prompt=String(question?.prompt||'').trim()
+    const topic=String(question?.topic||'').trim()
+    if(!prompt||prompt.length<20)issues.push('Question '+(index+1)+' has no specific question.')
+    if(badPrompt.test(prompt))issues.push('Question '+(index+1)+' is generic filler.')
+    if(topicWords.length&&!topicWords.some(word=>topic.toLowerCase().includes(word)))issues.push('Question '+(index+1)+' is not assigned to a requested topic.')
+    if(question?.question_type==='multiple_choice'){
+      const options=Array.isArray(question.options)?question.options:[]
+      if(options.some(option=>String(option).length>320))issues.push('Question '+(index+1)+' has a raw source passage as an option.')
+      if(String(question.correct_answer||'').length>320)issues.push('Question '+(index+1)+' has a raw source passage as the answer.')
+    }
+    if(question?.question_type==='short_answer'&&String(question.model_answer||'').length>900)issues.push('Question '+(index+1)+' has an oversized model answer.')
+  }
+  if(questions.length!==count)issues.push('The exam must contain exactly '+count+' questions.')
+  return [...new Set(issues)]
+}
+
 function buildMaterialContext(materials, question = '') {
   const terms = termsFromQuestion(question)
   const candidates = []
