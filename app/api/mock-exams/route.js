@@ -50,11 +50,15 @@ function buildMaterialContext(materials, question = '') {
       const chunk = text.slice(start, start + chunkSize)
       const chunkLower = lower.slice(start, start + chunk.length)
       let score = terms.length ? 0 : 1
+      let topicMatches = 0
 
       for (const term of terms) {
         const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
         const matches = chunkLower.match(new RegExp('\\b' + safe + '\\b', 'g'))
-        if (matches) score += Math.min(matches.length, 8)
+        if (matches) {
+          topicMatches += matches.length
+          score += Math.min(matches.length, 8)
+        }
       }
 
       const hasQuantitativeSignal = /\d+(?:\.\d+)?\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(chunk) || /\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|percentages|increase|decrease)\b/i.test(chunk)
