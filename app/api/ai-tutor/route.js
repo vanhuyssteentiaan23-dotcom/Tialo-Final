@@ -15,10 +15,11 @@ function context(materials,q){const ts=terms(q),out=[];for(const m of materials)
 export async function GET(request){
  const supabase=getServerSupabase(request);if(!supabase)return NextResponse.json({error:'Authentication is required.'},{status:401})
  const {data:{user},error:authError}=await supabase.auth.getUser();if(authError||!user)return NextResponse.json({error:'Your session is invalid or expired. Please log in again.'},{status:401})
- const subjectId=new URL(request.url).searchParams.get('subjectId');if(!subjectId)return NextResponse.json({chats:[]})
+ const params=new URL(request.url).searchParams;const subjectId=params.get('subjectId');const chatId=params.get('chatId');if(!subjectId)return NextResponse.json({chats:[]})
  const {data:subject}=await supabase.from('subjects').select('id').eq('id',subjectId).eq('user_id',user.id).maybeSingle();if(!subject)return NextResponse.json({error:'Subject not found.'},{status:404})
  const {data:chats,error}=await supabase.from('ai_tutor_chats').select('id,title,created_at,updated_at').eq('user_id',user.id).eq('subject_id',subjectId).order('updated_at',{ascending:false})
  if(error)return NextResponse.json({error:error.message},{status:400})
+ if(chatId){const chat=chats?.find(x=>x.id===chatId);if(!chat)return NextResponse.json({error:'Chat not found for this subject.'},{status:404});const {data:messages,error:messageError}=await supabase.from('ai_tutor_messages').select('id,role,content,source_pages,created_at').eq('chat_id',chatId).eq('user_id',user.id).order('created_at',{ascending:true});if(messageError)return NextResponse.json({error:messageError.message},{status:400});return NextResponse.json({chat,messages:messages||[]})}
  return NextResponse.json({chats:chats||[]})
 }
 export async function POST(request){
