@@ -43,14 +43,14 @@ function buildMaterialContext(materials, question = '') {
       const text = pageItem.text.trim()
       if (!text) continue
       const lower = text.toLowerCase()
-      const chunkSize = 4200, overlap = 400
+      const chunkSize = 3000, overlap = 300
       for (let start = 0; start < text.length; start += chunkSize - overlap) {
         const chunk = text.slice(start, start + chunkSize)
         const chunkLower = lower.slice(start, start + chunk.length)
         let score = terms.length ? 0 : 1, topicMatches = 0
         for (const term of terms) {
           const safe = term.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')
-          const matches = chunkLower.match(new RegExp('\\\\b' + safe + '\\\\b', 'g'))
+          const matches = chunkLower.match(new RegExp('\\b' + safe + '\\b', 'g'))
           if (matches) { topicMatches += matches.length; score += Math.min(matches.length, 10) }
         }
         const hasQuantitativeSignal = /\\d+(?:\\.\\d+)?\\s*(?:%|percent|cm|mm|m|km|g|kg|mg|ml|l|s|sec|min|hours?|hz|°c|degrees?)/i.test(chunk) || /\\b(?:table|graph|data|rate|frequency|concentration|temperature|mass|volume|distance|speed|percentage|increase|decrease)\\b/i.test(chunk)
@@ -63,7 +63,7 @@ function buildMaterialContext(materials, question = '') {
   }
   candidates.sort((a,b)=>b.score-a.score)
   const matched = terms.length ? candidates.filter(item=>item.topicMatches>0) : candidates
-  return (matched.length ? matched : candidates).slice(0,14).map((item,index)=>'SOURCE '+(index+1)+' — '+item.title+' — PAGE '+item.page+' — MATERIAL '+item.materialId+'\n'+item.text).join('\n\n')
+  return (matched.length ? matched : candidates).slice(0,8).map((item,index)=>'SOURCE '+(index+1)+' — '+item.title+' — PAGE '+item.page+' — MATERIAL '+item.materialId+'\n'+item.text).join('\n\n')
 }
 
 function buildVisualCandidates(materials, question = '') {
@@ -74,7 +74,7 @@ function buildVisualCandidates(materials, question = '') {
       if (!text) continue
       let topicMatches = 0
       for (const term of terms) if (lower.includes(term)) topicMatches += 1
-      const visualMatches = (lower.match(/\\b(?:figure|fig\\.?|diagram|sketch|illustration|illustrated|anatomy|structure|labelled|labeled|cross[- ]?section|schematic|parts)\\b/g)||[]).length
+      const visualMatches = (lower.match(/\b(?:figure|fig\.?|diagram|sketch|illustration|illustrated|anatomy|structure|labelled|labeled|cross[- ]?section|schematic|parts)\b/g)||[]).length
       if (!visualMatches) continue
       candidates.push({score:topicMatches*8+visualMatches*2,materialId:material.id,page:Number(item.page)||1,excerpt:text.slice(0,900),title:material.title||material.file_name||'Study material'})
     }
