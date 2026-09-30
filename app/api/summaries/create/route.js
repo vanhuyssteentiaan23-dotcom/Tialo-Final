@@ -26,6 +26,7 @@ function supabaseClient(request) {
 
 const SUMMARY_MAX_INPUT_CHARS = 550000
 const SUMMARY_MAX_PAGES_WITHOUT_CHAPTER = 90
+const SUMMARY_TARGET_WORDS = '900-1400 words total'
 
 function sourcePagesForRequest(material, request) {
   const pages = Array.isArray(material.page_text)
@@ -241,9 +242,15 @@ export async function POST(request) {
       }),
       '',
       'QUALITY RULES:',
-      'Explain the important ideas rather than copying large passages.',
-      'Keep essential definitions, processes, comparisons, cause-and-effect relationships, formulas, and exam-relevant details.',
-      'Organise the material into logical sections.',
+      'This MUST be a condensed study summary, not a rewrite, transcript, outline of every paragraph, or reproduction of the chapter.',
+      `Target ${SUMMARY_TARGET_WORDS}. The final answer must be short enough to revise before a test.`,
+      'For a chapter request, cover the chapter\'s main concepts and exam-relevant relationships, not every subsection or example.',
+      'Use 6-8 logical sections maximum. Combine closely related subsections instead of giving one section to every source heading.',
+      'Keep the overview to about 80-120 words.',
+      'For each section, write 1-3 concise sentences followed by at most 4 short key points.',
+      'Keep importantTerms to at most 12 essential terms.',
+      'Do not repeat the same idea in the overview, section summaries, key points, and important terms.',
+      'Paraphrase aggressively. Never copy long source passages or reproduce the chapter wording.',
       'Do not add outside knowledge just to make the summary longer.',
       '',
       'SELECTED DOCUMENTS:',
@@ -278,7 +285,8 @@ export async function POST(request) {
           contents: [{ role: 'user', parts }],
           generationConfig: {
             responseMimeType: 'application/json',
-            temperature: 0.2,
+            temperature: 0.15,
+            maxOutputTokens: 5000,
           },
         }),
       },
@@ -309,10 +317,10 @@ export async function POST(request) {
 
     const allowedMaterialIds = new Set(selectedMaterials.map(material => material.id))
 
-    summary.sections = Array.isArray(summary.sections) ? summary.sections : []
+    summary.sections = Array.isArray(summary.sections) ? summary.sections.slice(0, 8) : []
     summary.sections = summary.sections.map(section => ({
       ...section,
-      keyPoints: Array.isArray(section.keyPoints) ? section.keyPoints : [],
+      keyPoints: Array.isArray(section.keyPoints) ? section.keyPoints.slice(0, 4) : [],
       sourcePages: (Array.isArray(section.sourcePages) ? section.sourcePages : [])
         .filter(reference =>
           allowedMaterialIds.has(reference?.materialId) &&
@@ -325,7 +333,7 @@ export async function POST(request) {
         })),
     }))
 
-    summary.importantTerms = Array.isArray(summary.importantTerms) ? summary.importantTerms : []
+    summary.importantTerms = Array.isArray(summary.importantTerms) ? summary.importantTerms.slice(0, 12) : []
 
     const title = String(summary.title || `${subject.name} study summary`).slice(0, 180)
 
