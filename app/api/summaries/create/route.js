@@ -41,7 +41,7 @@ function sourcePagesForRequest(material, request) {
   }
 
   const requestText = String(request || '').toLowerCase()
-  const chapterMatch = requestText.match(/\\bchapter\\s+(\\d+)\\b/i)
+  const chapterMatch = requestText.match(/\bchapter\s+(\d+)\b/i)
   if (chapterMatch) {
     const chapterNumber = Number(chapterMatch[1])
     const startIndex = pages.findIndex(item =>
