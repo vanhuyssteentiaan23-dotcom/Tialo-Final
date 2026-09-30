@@ -45,10 +45,10 @@ function sourcePagesForRequest(material, request) {
   if (chapterMatch) {
     const chapterNumber = Number(chapterMatch[1])
     const startIndex = pages.findIndex(item =>
-      new RegExp('\\\\bchapter\\\\s*' + chapterNumber + '\\\\b', 'i').test(item.text)
+      new RegExp('\\bchapter\\s*' + chapterNumber + '\\b', 'i').test(item.text)
     )
     if (startIndex >= 0) {
-      const nextChapterPattern = new RegExp('\\\\bchapter\\\\s*' + (chapterNumber + 1) + '\\\\b', 'i')
+      const nextChapterPattern = new RegExp('\\bchapter\\s*' + (chapterNumber + 1) + '\\b', 'i')
       let endIndex = pages.findIndex((item, index) => index > startIndex && nextChapterPattern.test(item.text))
       if (endIndex < 0) endIndex = pages.length
       return pages.slice(startIndex, endIndex)
@@ -93,7 +93,7 @@ function buildSummarySource(materials, request) {
 
     let documentText = ''
     for (const page of selectedPages) {
-      const block = '[SOURCE PAGE ' + page.page + ']\\n' + page.text + '\\n\\n'
+      const block = '[SOURCE PAGE ' + page.page + ']\n' + page.text + '\n\n'
       if (documentText.length + block.length > remaining) {
         const room = Math.max(0, remaining - documentText.length)
         if (room > 1200) documentText += block.slice(0, room)
@@ -103,14 +103,14 @@ function buildSummarySource(materials, request) {
     }
 
     if (documentText) {
-      const header = 'DOCUMENT: ' + name + '\\nDOCUMENT_ID: ' + material.id + '\\n'
+      const header = 'DOCUMENT: ' + name + '\nDOCUMENT_ID: ' + material.id + '\n'
       const chunk = header + documentText
       chunks.push(chunk.slice(0, remaining))
       remaining -= Math.min(remaining, chunk.length)
     }
   }
 
-  return chunks.join('\\n==============================\\n\\n')
+  return chunks.join('\n==============================\n\n')
 }
 
 function parseJson(text) {
