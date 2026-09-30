@@ -8,9 +8,51 @@ const LANGUAGE_NAMES={en:'English',af:'Afrikaans',zu:'isiZulu',xh:'isiXhosa',st:
 
 function requestedImageCount(q){const s=String(q||'');const direct=s.match(/\b(\d+)\s+(?:images?|pictures?|photos?|diagrams?)\b/i);const trailing=s.match(/(?:images?|pictures?|photos?|diagrams?).*?\b(\d+)\s+(?:of them|total)\b/i);const n=direct?.[1]||trailing?.[1];return Math.min(Math.max(n?Number(n):2,1),6)}
 function wantsImages(q){return /\b(?:images?|pictures?|photos?|diagrams?|figures?)\b/i.test(String(q||''))}
-function sourcePagesForImages(materials,topic,count){const ts=terms(topic);const ranked=[];for(const m of materials){const pages=Array.isArray(m.page_text)?m.page_text:[];for(const p of pages){const text=String(p?.text||'');if(!text.trim())continue;const low=text.toLowerCase();let score=0;for(const t of ts){const n=low.split(t).length-1;score+=Math.min(n,10)*3}if(/\b(figure|fig\.|diagram|illustration|image|photo|graph|table)\b/i.test(text))score+=5;if(score>0)ranked.push({score,materialId:m.id,title:m.title||m.file_name||'Study material',page:Number(p.page)})}}ranked.sort((a,b)=>b.score-a.score);const seen=new Set();return ranked.filter(x=>{const k=x.materialId+':'+x.page;if(seen.has(k))return false;seen.add(k);return true}).slice(0,count)}
+function sourcePagesForImages(materials,topic,count){const ts=imageSearchTerms(topic);const ranked=[];for(const m of materials){const pages=Array.isArray(m.page_text)?m.page_text:[];for(const p of pages){const text=String(p?.text||'');if(!text.trim())continue;const low=text.toLowerCase();let score=0;for(const t of ts){const n=low.split(t.toLowerCase()).length-1;score+=Math.min(n,10)*3}if(/\b(figure|fig\.|diagram|illustration|image|photo|graph|table|curve)\b/i.test(text))score+=7;if(score>0)ranked.push({score,materialId:m.id,title:m.title||m.file_name||'Study material',page:Number(p.page)})}}ranked.sort((a,b)=>b.score-a.score);const seen=new Set();return ranked.filter(x=>{const k=x.materialId+':'+x.page;if(seen.has(k))return false;seen.add(k);return true}).slice(0,count)}
 const STOP_WORDS=new Set('the a an and or but is are was were be been being to of in on for from with without what why how when where which who does do did can could should would will this that these those it its as at by about into than then them they their you your i me my we our explain please give tell'.split(' '))
 function terms(q){return[...new Set((q.toLowerCase().match(/[a-z0-9]+/g)||[]).filter(x=>x.length>2&&!STOP_WORDS.has(x)))]}
+
+function imageSearchTerms(topic){
+ const base=terms(topic)
+ const aliases={
+  ppc:['production possibilities curve','production possibility curve','production possibilities frontier','production possibility frontier','ppf','attainable','unattainable'],
+  graph:['graph','diagram','figure','chart','curve'],
+  diagram:['diagram','figure','illustration','graph','chart'],
+  demand:['demand curve','quantity demanded','demand'],
+  supply:['supply curve','quantity supplied','supply'],
+  equilibrium:['equilibrium price','equilibrium quantity','market equilibrium','equilibrium'],
+ }
+ const expanded=[...base]
+ for(const t of base){if(aliases[t])expanded.push(...aliases[t])}
+ if(/production\s+possibil|\bppc\b|\bppf\b/i.test(String(topic))) expanded.push(...aliases.ppc)
+ return [...new Set(expanded)]
+}
+
+function svgDataUri(svg){return 'data:image/svg+xml;base64,'+Buffer.from(svg,'utf8').toString('base64')}
+function generatedStudyImage(question){
+ const q=String(question||'')
+ if(/\bppc\b|production\s+possibilit|production\s+possibility|ppf/i.test(q)){
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="700" viewBox="0 0 1000 700">
+  <rect width="1000" height="700" rx="28" fill="#ffffff"/>
+  <text x="500" y="55" text-anchor="middle" font-family="Arial,sans-serif" font-size="30" font-weight="700" fill="#20231f">Production Possibilities Curve (PPC)</text>
+  <line x1="120" y1="590" x2="900" y2="590" stroke="#222" stroke-width="4"/>
+  <line x1="120" y1="590" x2="120" y2="120" stroke="#222" stroke-width="4"/>
+  <path d="M155 160 C300 180 420 255 535 350 C650 445 760 520 875 560" fill="none" stroke="#5b9b3f" stroke-width="8"/>
+  <line x1="120" y1="160" x2="875" y2="590" stroke="#9aa09a" stroke-width="2" stroke-dasharray="10 10"/>
+  <circle cx="340" cy="215" r="9" fill="#20231f"/><text x="355" y="210" font-family="Arial,sans-serif" font-size="22" fill="#20231f">A</text>
+  <circle cx="535" cy="350" r="9" fill="#20231f"/><text x="550" y="345" font-family="Arial,sans-serif" font-size="22" fill="#20231f">B</text>
+  <circle cx="690" cy="470" r="9" fill="#20231f"/><text x="705" y="465" font-family="Arial,sans-serif" font-size="22" fill="#20231f">C</text>
+  <circle cx="330" cy="430" r="9" fill="#315a9b"/><text x="345" y="425" font-family="Arial,sans-serif" font-size="22" fill="#315a9b">Attainable / inefficient</text>
+  <circle cx="760" cy="250" r="9" fill="#b24b4b"/><text x="775" y="245" font-family="Arial,sans-serif" font-size="22" fill="#b24b4b">Unattainable</text>
+  <text x="500" y="645" text-anchor="middle" font-family="Arial,sans-serif" font-size="23" fill="#333">Good X</text>
+  <text x="45" y="360" transform="rotate(-90 45 360)" text-anchor="middle" font-family="Arial,sans-serif" font-size="23" fill="#333">Good Y</text>
+  <text x="330" y="455" font-family="Arial,sans-serif" font-size="20" fill="#315a9b">inside curve</text>
+  <text x="720" y="215" font-family="Arial,sans-serif" font-size="20" fill="#b24b4b">outside curve</text>
+  </svg>`
+  return [{title:'PPC graph — attainable vs unattainable combinations',data:svgDataUri(svg)}]
+ }
+ return []
+}
 function context(materials,q){const ts=terms(q),out=[];for(const m of materials){const text=m.extracted_text||'';const low=text.toLowerCase();for(let start=0;start<text.length;start+=6100){const chunk=text.slice(start,start+7000),cl=low.slice(start,start+chunk.length);let score=0;for(const t of ts){const n=cl.split(t).length-1;score+=Math.min(n,8)}if(score)out.push({score,text:chunk,title:m.title||m.file_name||'Study material'})}}out.sort((a,b)=>b.score-a.score);return out.slice(0,8).map((x,i)=>`SOURCE ${i+1} — ${x.title}\n${x.text}`).join('\n\n')}
 export async function GET(request){
  const supabase=getServerSupabase(request);if(!supabase)return NextResponse.json({error:'Authentication is required.'},{status:401})
@@ -52,5 +94,5 @@ export async function POST(request){
  const contents=history.filter(x=>x&&(x.role==='user'||x.role==='assistant')&&typeof x.content==='string').map(x=>({role:x.role==='assistant'?'model':'user',parts:[{text:x.content}]}));contents.push({role:'user',parts:[{text:question}]})
  const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_TUTOR_MODEL||'gemini-3.5-flash-lite'}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},body:JSON.stringify({systemInstruction:{parts:[{text:`You are TIALO AI Tutor. Answer entirely in ${language}. Use ONLY the supplied study material. Do not invent facts. Teach clearly and step by step. If the student asks for images, diagrams, pictures, figures, or better images, do not provide external images and do not say you cannot display images. The application will attach exact source-material pages that are relevant to the request. Never claim an image is from the study material unless the application attached a source page.\n\nSUPPLIED STUDY MATERIAL:\n${source}`}]},contents,generationConfig:{temperature:.2}})})
  const result=await response.json().catch(()=>({}));if(!response.ok){console.error('Gemini Tutor error:',result);return NextResponse.json({error:result?.error?.message||'The AI Tutor could not answer right now.'},{status:502})}
- const answer=result?.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('')||'';if(!answer.trim())return NextResponse.json({error:'The AI Tutor returned an empty answer.'},{status:502});const {error:assistantMessageError}=await supabase.from('ai_tutor_messages').insert({chat_id:chatId,user_id:user.id,role:'assistant',content:answer,source_pages:sourcePages});if(assistantMessageError)return NextResponse.json({error:assistantMessageError.message},{status:400});return NextResponse.json({answer,images:[],sourcePages,chatId})
+ const answer=result?.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('')||'';if(!answer.trim())return NextResponse.json({error:'The AI Tutor returned an empty answer.'},{status:502});const generatedImages=imageRequest?generatedStudyImage(question):[];const finalSourcePages=sourcePages.length?sourcePages:[];const {error:assistantMessageError}=await supabase.from('ai_tutor_messages').insert({chat_id:chatId,user_id:user.id,role:'assistant',content:answer,source_pages:finalSourcePages});if(assistantMessageError)return NextResponse.json({error:assistantMessageError.message},{status:400});return NextResponse.json({answer,images:generatedImages,sourcePages:finalSourcePages,chatId})
 }
