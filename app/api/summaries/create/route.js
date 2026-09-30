@@ -24,7 +24,7 @@ function supabaseClient(request) {
   }
 }
 
-const SUMMARY_MAX_INPUT_CHARS = 700000
+const SUMMARY_MAX_INPUT_CHARS = 550000
 const SUMMARY_MAX_PAGES_WITHOUT_CHAPTER = 90
 
 function sourcePagesForRequest(material, request) {
