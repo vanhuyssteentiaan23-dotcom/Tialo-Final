@@ -24,15 +24,93 @@ function supabaseClient(request) {
   }
 }
 
-function sourceFromMaterial(material) {
-  const pages = Array.isArray(material.page_text) ? material.page_text : []
-  if (pages.length) {
-    return pages
+const SUMMARY_MAX_INPUT_CHARS = 700000
+const SUMMARY_MAX_PAGES_WITHOUT_CHAPTER = 90
+
+function sourcePagesForRequest(material, request) {
+  const pages = Array.isArray(material.page_text)
+    ? material.page_text
       .filter(page => page && Number(page.page) > 0 && String(page.text || '').trim())
-      .map(page => `[SOURCE PAGE ${Number(page.page)}]\n${String(page.text).trim()}`)
-      .join('\n\n')
+      .map(page => ({ page: Number(page.page), text: String(page.text).trim() }))
+      .sort((a, b) => a.page - b.page)
+    : []
+
+  if (!pages.length) {
+    const text = String(material.extracted_text || '').trim()
+    return text ? [{ page: 1, text }] : []
   }
-  return String(material.extracted_text || '').trim()
+
+  const requestText = String(request || '').toLowerCase()
+  const chapterMatch = requestText.match(/\\bchapter\\s+(\\d+)\\b/i)
+  if (chapterMatch) {
+    const chapterNumber = Number(chapterMatch[1])
+    const startIndex = pages.findIndex(item =>
+      new RegExp('\\\\bchapter\\\\s*' + chapterNumber + '\\\\b', 'i').test(item.text)
+    )
+    if (startIndex >= 0) {
+      const nextChapterPattern = new RegExp('\\\\bchapter\\\\s*' + (chapterNumber + 1) + '\\\\b', 'i')
+      let endIndex = pages.findIndex((item, index) => index > startIndex && nextChapterPattern.test(item.text))
+      if (endIndex < 0) endIndex = pages.length
+      return pages.slice(startIndex, endIndex)
+    }
+  }
+
+  const terms = [...new Set((requestText.match(/[a-z0-9]{3,}/g) || []))]
+  if (!terms.length) return pages.slice(0, SUMMARY_MAX_PAGES_WITHOUT_CHAPTER)
+
+  const scored = pages.map((item, index) => {
+    const lower = item.text.toLowerCase()
+    let score = 0
+    for (const term of terms) {
+      const hits = lower.split(term).length - 1
+      if (hits) score += Math.min(hits, 8)
+    }
+    return { ...item, index, score }
+  }).filter(item => item.score > 0)
+
+  if (!scored.length) return pages.slice(0, SUMMARY_MAX_PAGES_WITHOUT_CHAPTER)
+
+  scored.sort((a, b) => b.score - a.score)
+  const selectedIndexes = new Set()
+  for (const item of scored.slice(0, 18)) {
+    for (let offset = -1; offset <= 1; offset++) {
+      const index = item.index + offset
+      if (index >= 0 && index < pages.length) selectedIndexes.add(index)
+    }
+  }
+  return [...selectedIndexes].sort((a, b) => a - b).map(index => pages[index])
+}
+
+function buildSummarySource(materials, request) {
+  const chunks = []
+  let remaining = SUMMARY_MAX_INPUT_CHARS
+
+  for (const material of materials) {
+    if (remaining <= 0) break
+    const name = material.title || material.file_name || 'Study document'
+    const selectedPages = sourcePagesForRequest(material, request)
+    if (!selectedPages.length) continue
+
+    let documentText = ''
+    for (const page of selectedPages) {
+      const block = '[SOURCE PAGE ' + page.page + ']\\n' + page.text + '\\n\\n'
+      if (documentText.length + block.length > remaining) {
+        const room = Math.max(0, remaining - documentText.length)
+        if (room > 1200) documentText += block.slice(0, room)
+        break
+      }
+      documentText += block
+    }
+
+    if (documentText) {
+      const header = 'DOCUMENT: ' + name + '\\nDOCUMENT_ID: ' + material.id + '\\n'
+      const chunk = header + documentText
+      chunks.push(chunk.slice(0, remaining))
+      remaining -= Math.min(remaining, chunk.length)
+    }
+  }
+
+  return chunks.join('\\n==============================\\n\\n')
 }
 
 function parseJson(text) {
@@ -117,14 +195,7 @@ export async function POST(request) {
     const languageNames = { en:'English', af:'Afrikaans', zu:'isiZulu', xh:'isiXhosa', st:'Sesotho', tn:'Setswana', nso:'Sepedi', ts:'XiTsonga', ss:'siSwati', de:'German', fr:'French', es:'Spanish', pt:'Portuguese' }
     const outputLanguage = languageNames[selectedLanguage] || 'English'
 
-    const documents = selectedMaterials.map(material => {
-      const name = material.title || material.file_name || 'Study document'
-      return [
-        `DOCUMENT: ${name}`,
-        `DOCUMENT_ID: ${material.id}`,
-        sourceFromMaterial(material) || '[This document has no extracted text.]',
-      ].join('\n')
-    }).join('\n\n==============================\n\n')
+    const documents = buildSummarySource(selectedMaterials, chapterRequest || '');
 
     const studyBrief = [
       'You are TIALO, an academic study assistant for Grade 12 students.',
