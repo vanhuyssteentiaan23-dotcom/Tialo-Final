@@ -88,7 +88,6 @@ export default function Dashboard(){
    .avatar-view-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:90;display:flex;align-items:center;justify-content:center;padding:28px}
    .avatar-view-image{max-width:min(80vw,720px);max-height:80vh;width:auto;height:auto;object-fit:contain;border-radius:16px;box-shadow:0 25px 80px rgba(0,0,0,.45);background:#fff}
    .avatar-view-close{position:fixed;right:24px;top:20px;width:38px;height:38px;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(0,0,0,.4);color:#fff;font-size:22px;cursor:pointer}
-  `}
    .dashboard-feature-select,.planner-grid,.dashboard-tool-panel{margin-top:22px}
    .dashboard-feature-select{display:flex;justify-content:space-between;gap:20px;align-items:end;padding:22px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:linear-gradient(145deg,#111b2a,#0d1624);box-shadow:0 18px 45px rgba(0,0,0,.16)}
    .dashboard-feature-select h2,.dashboard-tool-panel h2,.planner-grid h2{margin:4px 0 7px;color:#f5f7fb}.dashboard-feature-select p,.dashboard-tool-panel p,.planner-grid p{margin:0;color:#8995a8}
