@@ -28,19 +28,15 @@ const themes=[
 ]
 
 export default function Settings(){
- const [theme,setTheme]=useState('tialo-neon')
  const [language,setLanguage]=useState('en')
  const [languageSaving,setLanguageSaving]=useState(false)
  const [languageNotice,setLanguageNotice]=useState('')
  const [email,setEmail]=useState('')
  const [name,setName]=useState('')
  useEffect(()=>{
-  const saved=localStorage.getItem('tialo-color-theme')||'tialo-neon'
-  setTheme(saved)
   const savedLanguage=localStorage.getItem('tialo-language')||'en'
   setLanguage(savedLanguage)
   document.documentElement.lang=savedLanguage
-  applyTheme(saved)
   const load=async()=>{
    const supabase=getSupabaseBrowserClient()
    const {data:{user}}=await supabase.auth.getUser()
@@ -52,10 +48,6 @@ export default function Settings(){
   }
   load()
  },[])
- function applyTheme(id){
-  document.documentElement.classList.remove('tialo-ai-default','tialo-midnight','tialo-emerald','tialo-sunset')
-  if(id!=='tialo-neon')document.documentElement.classList.add('tialo-'+id.replace('tialo-',''))
- }
  async function chooseLanguage(id){
   setLanguage(id)
   setLanguageNotice('')
@@ -78,9 +70,8 @@ export default function Settings(){
   `}</style>
   <div className="settings-wrap">
    <a className="settings-back" href="/dashboard">← Back to dashboard</a>
-   <div className="settings-header"><div><div className="settings-kicker">TIALO CONFIGURATION</div><h1>Settings</h1><p>Control your account and TIALO's appearance.</p></div></div>
+   <div className="settings-header"><div><div className="settings-kicker">TIALO CONFIGURATION</div><h1>Settings</h1><p>Choose the language used for your learning content and manage your account.</p></div></div>
    <section className="settings-card"><h2>Language</h2><p>Choose the language you want TIALO to use for your learning content. You can change it at any time.</p><div className="language-grid">{languages.map(l=><button type="button" className={`language-item ${language===l.id?'selected':''}`} key={l.id} onClick={()=>chooseLanguage(l.id)}><span><strong>{l.native}</strong><small>{l.name}</small></span><b className="check">{language===l.id?'✓':''}</b></button>)}</div>{languageSaving&&<div className="settings-save">Saving language preference…</div>}{languageNotice&&<div className="settings-save">{languageNotice}</div>}</section>
-   <section className="settings-card"><h2>Appearance</h2><p>Choose the visual theme used across your TIALO workspace.</p><div className="theme-grid">{themes.map(t=><button className={`theme-item ${theme===t.id?'selected':''}`} key={t.id} onClick={()=>chooseTheme(t.id)}><span className="swatch" style={{background:t.gradient}}/><span><strong>{t.name}</strong><small>{t.description}</small></span><b className="check">{theme===t.id?'✓':''}</b></button>)}</div></section>
    <section className="settings-card"><h2>Account</h2><p>Your current TIALO account information.</p><div className="account-row"><span>Name</span><strong>{name||'—'}</strong></div><div className="account-row"><span>Email</span><strong>{email||'—'}</strong></div></section>
    <section className="settings-card danger"><h2>Session</h2><p>Sign out of your TIALO account on this device.</p><button className="signout" onClick={signOut}>Sign out</button></section>
    <div className="settings-footer">TIALO · Academic workspace</div>
