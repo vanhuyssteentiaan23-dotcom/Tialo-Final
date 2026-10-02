@@ -1188,3 +1188,186 @@ body{letter-spacing:-.012em}
   .tialo-workspace .add-subject{grid-template-columns:1fr!important}
   .tialo-workspace .add-subject .btn{width:100%!important}
 }
+
+
+/* ===== TIALO GLOBAL WORKSPACE THEME — ALL PRODUCT PAGES ===== */
+/* One shared shell rule-set intentionally covers every workspace route. */
+
+.dashboard-shell{
+  background:radial-gradient(circle at 82% -10%,rgba(104,88,255,.10),transparent 32%),radial-gradient(circle at 20% 0%,rgba(40,210,205,.07),transparent 28%),#090f1b!important;
+  color:#f4f7fb!important;
+}
+.dashboard-shell .sidebar{
+  width:272px!important;
+  background:rgba(7,12,22,.98)!important;
+  border-right:1px solid rgba(255,255,255,.08)!important;
+  color:#9aa6b8!important;
+}
+.dashboard-shell .brand{color:#f5f7fb!important}
+.dashboard-shell .brand span{color:#8067ff!important}
+.dashboard-shell .sidebar-label{color:#647187!important}
+.dashboard-shell .side-link{
+  color:#8d99ac!important;
+  border:1px solid transparent!important;
+}
+.dashboard-shell .side-link:hover{
+  color:#eef2f8!important;
+  background:rgba(255,255,255,.045)!important;
+}
+.dashboard-shell .side-link.active{
+  color:#fff!important;
+  background:linear-gradient(90deg,rgba(128,103,255,.17),rgba(128,103,255,.06))!important;
+  border-color:rgba(128,103,255,.34)!important;
+  box-shadow:0 8px 26px rgba(73,57,170,.16)!important;
+}
+.dashboard-shell .side-settings{color:#77849a!important}
+.dashboard-shell .dashboard-main{margin-left:272px!important}
+.dashboard-shell .dashboard-topbar{
+  background:rgba(9,15,27,.82)!important;
+  border-bottom:1px solid rgba(255,255,255,.08)!important;
+  color:#f1f4f8!important;
+  backdrop-filter:blur(18px)!important;
+}
+.dashboard-shell .topbar-title{color:#f1f4f8!important}
+.dashboard-shell .topbar-subtitle{color:#7f8ba0!important}
+.dashboard-shell .dashboard-content{
+  max-width:1240px!important;
+  color:#f4f7fb!important;
+}
+
+/* Every shared hero/card surface across Subjects, Summaries, Tutor, Exams, Tasks and Progress. */
+.dashboard-shell .dashboard-hero{
+  background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.022))!important;
+  border:1px solid rgba(255,255,255,.09)!important;
+  color:#f5f7fb!important;
+  box-shadow:0 22px 65px rgba(0,0,0,.20)!important;
+}
+.dashboard-shell .dashboard-hero h1,
+.dashboard-shell .dashboard-hero h2{color:#f7f9fc!important}
+.dashboard-shell .dashboard-hero p{color:#8995a8!important}
+.dashboard-shell .eyebrow{
+  color:#a99aff!important;
+  background:rgba(128,103,255,.09)!important;
+  border-color:rgba(128,103,255,.25)!important;
+}
+.dashboard-shell .hero-badge{
+  background:rgba(255,255,255,.055)!important;
+  border-color:rgba(255,255,255,.10)!important;
+  color:#dce3ec!important;
+}
+.dashboard-shell .hero-badge span{color:#55d8c8!important}
+
+.dashboard-shell .stat-card,
+.dashboard-shell .panel,
+.dashboard-shell .empty-state,
+.dashboard-shell .result-row,
+.dashboard-shell .review-card,
+.dashboard-shell .metric-card,
+.dashboard-shell .progress-subject{
+  background:linear-gradient(145deg,rgba(255,255,255,.048),rgba(255,255,255,.018))!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  color:#f4f7fb!important;
+  box-shadow:0 16px 44px rgba(0,0,0,.15)!important;
+}
+.dashboard-shell .stat-card span,
+.dashboard-shell .metric-card span{color:#7f8ba0!important}
+.dashboard-shell .stat-card strong,
+.dashboard-shell .metric-card strong{color:#f5f7fb!important}
+.dashboard-shell .stat-card small,
+.dashboard-shell .metric-card p{color:#78869a!important}
+.dashboard-shell .section-heading h2,
+.dashboard-shell .section-heading h3,
+.dashboard-shell .panel h2,
+.dashboard-shell .panel h3,
+.dashboard-shell .empty-state h3,
+.dashboard-shell .review-card h2{color:#f4f7fb!important}
+.dashboard-shell .muted,
+.dashboard-shell .section-heading p,
+.dashboard-shell .panel p{color:#8995a8!important}
+
+/* Forms/buttons are part of the shared shell too. */
+.dashboard-shell input,
+.dashboard-shell select,
+.dashboard-shell textarea{
+  background:rgba(255,255,255,.045)!important;
+  border-color:rgba(255,255,255,.11)!important;
+  color:#f4f7fb!important;
+}
+.dashboard-shell select option{background:#101827;color:#fff}
+.dashboard-shell input::placeholder,
+.dashboard-shell textarea::placeholder{color:#68758a!important}
+.dashboard-shell .btn.secondary,
+.dashboard-shell .secondary,
+.dashboard-shell .icon-button{
+  background:rgba(255,255,255,.045)!important;
+  border-color:rgba(255,255,255,.11)!important;
+  color:#e8edf4!important;
+}
+.dashboard-shell .btn.primary{
+  background:linear-gradient(135deg,#8067ff,#6351dc)!important;
+  color:#fff!important;
+  border-color:rgba(128,103,255,.55)!important;
+  box-shadow:0 12px 30px rgba(80,62,190,.24)!important;
+}
+.dashboard-shell .notice{
+  background:rgba(255,180,80,.055)!important;
+  border-color:rgba(255,180,80,.20)!important;
+  color:#d1b58b!important;
+}
+.dashboard-shell .empty-icon{
+  background:rgba(53,214,197,.08)!important;
+  color:#62d9cf!important;
+  border-color:rgba(53,214,197,.14)!important;
+}
+.dashboard-shell .tool-status{
+  background:rgba(128,103,255,.08)!important;
+  border-color:rgba(128,103,255,.16)!important;
+  color:#aaa0ff!important;
+}
+
+/* Catch remaining light cards/list surfaces used by older workspace screens. */
+.dashboard-shell .chat-head,
+.dashboard-shell .tutor-chat,
+.dashboard-shell .tutor-messages,
+.dashboard-shell .tutor-context,
+.dashboard-shell .chat-message,
+.dashboard-shell .prompt-row button,
+.dashboard-shell .context-note,
+.dashboard-shell .explanation,
+.dashboard-shell .add-subject,
+.dashboard-shell .library-card,
+.dashboard-shell .material-item,
+.dashboard-shell .material-empty,
+.dashboard-shell .mock-card,
+.dashboard-shell .exam-card,
+.dashboard-shell .task-card,
+.dashboard-shell .task-row,
+.dashboard-shell .daily-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018))!important;
+  border-color:rgba(255,255,255,.08)!important;
+  color:#f4f7fb!important;
+}
+.dashboard-shell .library-card h2,
+.dashboard-shell .chat-empty h2{color:#f4f7fb!important}
+.dashboard-shell .library-meta,
+.dashboard-shell .material-item span,
+.dashboard-shell .material-empty,
+.dashboard-shell .chat-head span,
+.dashboard-shell .tutor-context p{color:#7f8ba0!important}
+.dashboard-shell .material-icon{
+  background:rgba(53,214,197,.08)!important;
+  color:#62d9cf!important;
+}
+.dashboard-shell .material-list,
+.dashboard-shell .chat-head{border-color:rgba(255,255,255,.08)!important}
+.dashboard-shell .progress-bar{background:#202938!important}
+.dashboard-shell .progress-bar span{background:linear-gradient(90deg,#8067ff,#45d9ca)!important}
+
+/* Keep the layout responsive while the visual theme stays identical. */
+@media(max-width:900px){
+  .dashboard-shell .sidebar{width:230px!important}
+  .dashboard-shell .dashboard-main{margin-left:230px!important}
+}
+@media(max-width:700px){
+  .dashboard-shell .dashboard-main{margin-left:0!important}
+}
