@@ -350,3 +350,371 @@ input,textarea,select{border-color:var(--line)!important;background:#fff!importa
 .tutor-image-modal-caption{padding:9px 4px 2px;font-size:11px;font-weight:700;color:#3e473f;text-align:center}
 
 .tutor-chat-history{margin-top:22px;padding-top:18px;border-top:1px solid #e5e9e4}.chat-history-empty{font-size:11px;line-height:1.5;color:#7b857c;margin-top:8px}.chat-history-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:230px;overflow:auto;padding-right:2px}.chat-history-item{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;padding:9px 10px;border:1px solid transparent;border-radius:10px;background:transparent;text-align:left;cursor:pointer}.chat-history-item:hover{background:#f4f7f2;border-color:#dfe6dc}.chat-history-item.active{background:#edf5e9;border-color:#d6e6cf}.chat-history-item strong{font-size:11px;line-height:1.35;color:#263027;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.chat-history-item span{font-size:9px;color:#89918b}
+
+
+/* ===== TIALO 2026 PREMIUM VISUAL SYSTEM ===== */
+/* Visual-only redesign: preserve all existing components, routes and functionality. */
+:root{
+  --t-bg:#0a0f1c;
+  --t-bg-2:#0d1424;
+  --t-surface:#111a2c;
+  --t-surface-2:#162139;
+  --t-surface-3:#1b2844;
+  --t-border:rgba(255,255,255,.085);
+  --t-border-strong:rgba(255,255,255,.14);
+  --t-text:#f6f8fc;
+  --t-text-2:#c8d0df;
+  --t-muted:#8490a6;
+  --t-indigo:#8067ff;
+  --t-indigo-2:#9b86ff;
+  --t-cyan:#35d6c5;
+  --t-blue:#5b8cff;
+  --t-success:#48d39b;
+  --t-shadow:0 24px 70px rgba(0,0,0,.24);
+  --t-radius:18px;
+  --t-radius-lg:24px;
+}
+html,body{
+  background:var(--t-bg)!important;
+  color:var(--t-text);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+body{letter-spacing:-.012em}
+::selection{background:rgba(128,103,255,.28);color:#fff}
+
+/* Global shell */
+.shell{
+  background:
+    radial-gradient(760px 520px at 88% -10%,rgba(128,103,255,.12),transparent 64%),
+    radial-gradient(620px 440px at 8% 0%,rgba(53,214,197,.07),transparent 62%),
+    linear-gradient(180deg,#0a0f1c 0%,#0b1120 100%)!important;
+}
+
+/* Premium sidebar */
+.dashboard-shell .sidebar{
+  width:272px;
+  padding:22px 15px;
+  background:rgba(8,13,25,.96);
+  border-right:1px solid var(--t-border);
+  box-shadow:18px 0 70px rgba(0,0,0,.22);
+}
+.dashboard-shell .sidebar .brand{
+  padding:7px 13px 34px;
+  font-size:21px;
+  letter-spacing:.16em;
+  color:#f7f8fc;
+}
+.dashboard-shell .sidebar .brand span{
+  color:var(--t-indigo-2);
+}
+.dashboard-shell .sidebar-label{
+  color:#65728a;
+  font-size:9px;
+  letter-spacing:.2em;
+  padding:0 12px 11px;
+}
+.dashboard-shell .sidebar-nav{gap:4px}
+.dashboard-shell .side-link{
+  min-height:46px;
+  padding:11px 13px;
+  border:1px solid transparent;
+  border-radius:13px;
+  color:#8995aa;
+  font-size:13px;
+  font-weight:750;
+}
+.dashboard-shell .side-link span{
+  color:#69768d;
+  font-size:15px;
+}
+.dashboard-shell .side-link:hover{
+  background:rgba(255,255,255,.045);
+  border-color:rgba(255,255,255,.055);
+  color:#f6f8fc;
+  transform:translateX(2px);
+}
+.dashboard-shell .side-link.active{
+  background:
+    linear-gradient(100deg,rgba(128,103,255,.17),rgba(91,140,255,.07));
+  border-color:rgba(128,103,255,.18);
+  box-shadow:inset 3px 0 0 var(--t-indigo),0 8px 24px rgba(65,52,150,.12);
+  color:#fff;
+}
+.dashboard-shell .side-link.active span{color:#a998ff}
+.dashboard-shell .sidebar-bottom{
+  border-top:1px solid var(--t-border)!important;
+  padding:17px 8px 10px!important;
+}
+.dashboard-shell .sidebar-bottom .new-user div{
+  background:linear-gradient(135deg,var(--t-indigo-2),var(--t-cyan));
+  color:#08101d;
+}
+.dashboard-shell .sidebar-bottom .side-signout{color:#718097}
+.dashboard-shell .sidebar-bottom .side-signout:hover{color:#fff}
+
+/* Main workspace + top bar */
+.dashboard-shell .dashboard-main{
+  margin-left:272px;
+  width:calc(100% - 272px);
+}
+.dashboard-shell .dashboard-topbar{
+  height:72px;
+  padding:0 40px;
+  background:rgba(9,14,26,.78);
+  border-bottom:1px solid var(--t-border);
+  backdrop-filter:blur(20px);
+}
+.dashboard-shell .topbar-title{font-size:13px;font-weight:800}
+.dashboard-shell .topbar-dot{color:var(--t-cyan)}
+.dashboard-shell .topbar-avatar{
+  background:linear-gradient(135deg,rgba(128,103,255,.2),rgba(53,214,197,.13));
+  border-color:rgba(128,103,255,.28);
+  color:#b4a7ff;
+}
+.dashboard-shell .dashboard-content{
+  max-width:1400px;
+  padding:44px 48px 96px;
+}
+
+/* Dashboard hero */
+.dashboard-shell .dashboard-hero{
+  position:relative;
+  overflow:hidden;
+  padding:46px 48px;
+  border-radius:28px;
+  border:1px solid rgba(128,103,255,.16);
+  background:
+    radial-gradient(circle at 84% 50%,rgba(128,103,255,.14),transparent 29%),
+    radial-gradient(circle at 70% 100%,rgba(53,214,197,.07),transparent 28%),
+    linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+  box-shadow:var(--t-shadow);
+}
+.dashboard-shell .dashboard-hero:after{
+  content:"";
+  position:absolute;
+  width:360px;height:360px;
+  right:-150px;top:-190px;
+  border:1px solid rgba(128,103,255,.12);
+  border-radius:50%;
+  pointer-events:none;
+}
+.dashboard-shell .dashboard-hero h1{
+  font-size:clamp(40px,4.8vw,64px);
+  letter-spacing:-.06em;
+  line-height:.99;
+}
+.dashboard-shell .dashboard-hero h1 span{
+  background:linear-gradient(100deg,#a99aff,#63dcd0);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.dashboard-shell .dashboard-hero p{
+  color:#9ba7ba;
+  max-width:650px;
+}
+.dashboard-shell .eyebrow{
+  border-color:rgba(128,103,255,.28);
+  background:rgba(128,103,255,.08);
+  color:#b4a7ff;
+}
+
+/* Buttons */
+.dashboard-shell .btn{
+  border-radius:12px;
+  padding:12px 18px;
+  font-size:12px;
+  font-weight:800;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease;
+}
+.dashboard-shell .btn.primary{
+  background:linear-gradient(135deg,#8b73ff 0%,#6652e9 55%,#4e83ff 100%);
+  color:#fff;
+  box-shadow:0 12px 30px rgba(102,82,233,.24);
+}
+.dashboard-shell .btn.primary:hover{
+  box-shadow:0 16px 38px rgba(102,82,233,.34);
+  transform:translateY(-2px);
+}
+.dashboard-shell .btn.secondary{
+  background:rgba(255,255,255,.045);
+  border:1px solid var(--t-border-strong);
+  color:#eef2f8;
+}
+.dashboard-shell .btn.secondary:hover{
+  background:rgba(255,255,255,.075);
+  border-color:rgba(128,103,255,.28);
+}
+
+/* Section hierarchy */
+.dashboard-shell .dashboard-section{margin-top:52px}
+.dashboard-shell .section-heading{margin-bottom:20px}
+.dashboard-shell .section-heading h2{
+  font-size:26px;
+  letter-spacing:-.04em;
+}
+.dashboard-shell .section-heading p{color:#78859b}
+
+/* Cards */
+.dashboard-shell .panel,
+.dashboard-shell .stat-card,
+.dashboard-shell .subject-card,
+.dashboard-shell .tool-card{
+  border:1px solid var(--t-border);
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018));
+  box-shadow:0 16px 42px rgba(0,0,0,.12);
+}
+.dashboard-shell .stat-card{
+  border-radius:18px;
+  padding:22px;
+}
+.dashboard-shell .stat-card:hover,
+.dashboard-shell .subject-card:hover,
+.dashboard-shell .tool-card:hover{
+  border-color:rgba(128,103,255,.25);
+  box-shadow:0 22px 52px rgba(0,0,0,.2);
+}
+.dashboard-shell .stat-icon,
+.dashboard-shell .tool-icon{
+  background:linear-gradient(135deg,rgba(128,103,255,.14),rgba(53,214,197,.08));
+  border-color:rgba(128,103,255,.16);
+  color:#aa9cff;
+}
+.dashboard-shell .stat-card small b{color:var(--t-cyan)}
+.dashboard-shell .featured-stat{
+  background:
+    radial-gradient(circle at 85% 20%,rgba(128,103,255,.13),transparent 38%),
+    linear-gradient(145deg,rgba(255,255,255,.05),rgba(255,255,255,.018));
+}
+.dashboard-shell .subject-card{
+  border-radius:18px;
+  min-height:164px;
+}
+.dashboard-shell .subject-number{color:#a998ff}
+.dashboard-shell .subject-arrow{
+  background:rgba(255,255,255,.045);
+  color:#8b98ad;
+}
+.dashboard-shell .tool-card{border-radius:17px}
+.dashboard-shell .tool-status b{color:var(--t-cyan)}
+
+/* Empty / utility states */
+.dashboard-shell .empty-state{
+  border-color:rgba(255,255,255,.12);
+  background:rgba(255,255,255,.018);
+}
+.dashboard-shell .empty-icon{
+  background:rgba(128,103,255,.1);
+  color:#a998ff;
+}
+.dashboard-shell .privacy-strip{
+  border-color:rgba(53,214,197,.14);
+  background:linear-gradient(90deg,rgba(53,214,197,.055),rgba(128,103,255,.035));
+}
+.dashboard-shell .privacy-title span{
+  background:rgba(53,214,197,.1);
+  color:var(--t-cyan);
+}
+.dashboard-shell .privacy-strip>span{color:var(--t-cyan)}
+
+/* AI styling: visibly distinct, but still part of TIALO */
+.tutor-chat{
+  border:1px solid rgba(128,103,255,.16);
+  background:
+    radial-gradient(circle at 85% 0%,rgba(128,103,255,.08),transparent 30%),
+    linear-gradient(145deg,rgba(255,255,255,.038),rgba(255,255,255,.014));
+  border-radius:22px;
+  box-shadow:0 24px 65px rgba(0,0,0,.2);
+}
+.tutor-messages{padding:28px}
+.tutor-empty{
+  background:radial-gradient(circle at center,rgba(128,103,255,.07),transparent 48%);
+}
+.tutor-empty h3{font-size:22px;letter-spacing:-.03em}
+.tutor-message{
+  border-radius:18px;
+  border:1px solid var(--t-border);
+  box-shadow:0 8px 25px rgba(0,0,0,.08);
+}
+.tutor-message.user{
+  background:linear-gradient(135deg,rgba(128,103,255,.13),rgba(91,140,255,.055));
+  border-color:rgba(128,103,255,.2);
+}
+.tutor-message.assistant{
+  background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018));
+}
+.tutor-role{
+  color:#a998ff;
+  letter-spacing:.16em;
+}
+.tutor-content{color:#dbe2ed}
+.tutor-content strong{color:#fff}
+.tutor-content code{
+  background:rgba(128,103,255,.09);
+  border-color:rgba(128,103,255,.16);
+  color:#c9c0ff;
+}
+.tutor-composer{
+  padding:17px;
+  background:rgba(7,12,23,.8);
+  border-top:1px solid var(--t-border);
+}
+.tutor-composer textarea{
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.045);
+  color:#fff;
+}
+.tutor-composer textarea:focus{
+  border-color:rgba(128,103,255,.48);
+  box-shadow:0 0 0 3px rgba(128,103,255,.08);
+}
+
+/* Interactive images / source material */
+.tutor-image-card,
+.tutor-source-page{
+  border-color:rgba(128,103,255,.16);
+  background:#111827;
+}
+.tutor-image-card:hover,
+.tutor-source-page:hover{
+  border-color:rgba(128,103,255,.38);
+  box-shadow:0 12px 30px rgba(0,0,0,.18);
+}
+.tutor-images-title{color:#9da9bd}
+.tutor-image-modal{
+  background:rgba(5,9,18,.84);
+  backdrop-filter:blur(7px);
+}
+.tutor-image-modal-inner{
+  border:1px solid rgba(255,255,255,.1);
+  box-shadow:0 30px 100px rgba(0,0,0,.5);
+}
+
+/* Keep summary documents themselves clean/readable; redesign only their surrounding workspace. */
+.summaries-page .summary-document{
+  box-shadow:0 26px 75px rgba(0,0,0,.28);
+}
+
+/* Mobile: retain the existing mobile navigation/functionality, improve visual hierarchy. */
+@media(max-width:1050px){
+  .dashboard-shell .dashboard-content{padding:34px 30px 80px}
+}
+@media(max-width:700px){
+  .dashboard-shell .dashboard-main{margin-left:0;width:100%}
+  .dashboard-shell .dashboard-topbar{
+    height:68px;
+    padding:0 16px;
+    background:rgba(9,14,26,.9);
+  }
+  .dashboard-shell .dashboard-content{padding:24px 18px 72px}
+  .dashboard-shell .dashboard-hero{
+    padding:30px 24px;
+    border-radius:22px;
+  }
+  .dashboard-shell .dashboard-hero h1{font-size:42px}
+}
+@media(max-width:430px){
+  .dashboard-shell .dashboard-content{padding:20px 14px 68px}
+  .dashboard-shell .dashboard-hero h1{font-size:37px}
+}
