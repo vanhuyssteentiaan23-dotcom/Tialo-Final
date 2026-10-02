@@ -1371,3 +1371,132 @@ body{letter-spacing:-.012em}
 @media(max-width:700px){
   .dashboard-shell .dashboard-main{margin-left:0!important}
 }
+
+
+/* ===== FINAL WORKSPACE THEME OVERRIDE ===== */
+/* Highest-specificity shared override: every workspace shell gets the same dark visual language. */
+.dashboard-shell,
+.tialo-new-shell{
+  background:#090f1b!important;
+  color:#f4f7fb!important;
+}
+.dashboard-shell .dashboard-main,
+.tialo-new-shell .new-main{
+  background:transparent!important;
+}
+.dashboard-shell .dashboard-topbar,
+.tialo-new-shell .new-header{
+  background:rgba(9,15,27,.92)!important;
+  color:#f4f7fb!important;
+  border-bottom:1px solid rgba(255,255,255,.08)!important;
+}
+.dashboard-shell .dashboard-topbar *,
+.tialo-new-shell .new-header *{
+  color:inherit!important;
+}
+.dashboard-shell .dashboard-content,
+.tialo-new-shell .new-content{
+  color:#f4f7fb!important;
+}
+.dashboard-shell .dashboard-hero,
+.tialo-new-shell .summary-hero,
+.tialo-new-shell .summary-builder,
+.tialo-new-shell .summary-document,
+.tialo-new-shell .saved-summaries,
+.dashboard-shell .panel,
+.dashboard-shell .stat-card,
+.dashboard-shell .empty-state,
+.dashboard-shell .review-card,
+.dashboard-shell .metric-card,
+.dashboard-shell .progress-subject,
+.dashboard-shell .library-card,
+.dashboard-shell .add-subject{
+  background:linear-gradient(145deg,#111b2a,#0d1624)!important;
+  color:#f4f7fb!important;
+  border:1px solid rgba(255,255,255,.09)!important;
+  box-shadow:0 20px 55px rgba(0,0,0,.22)!important;
+}
+.dashboard-shell .dashboard-hero h1,
+.dashboard-shell .dashboard-hero h2,
+.dashboard-shell .section-heading h2,
+.dashboard-shell .panel h2,
+.dashboard-shell .panel h3,
+.dashboard-shell .stat-card strong,
+.dashboard-shell .metric-card strong,
+.dashboard-shell .empty-state h3,
+.dashboard-shell .review-card h2,
+.tialo-new-shell .summary-hero h1,
+.tialo-new-shell .summary-builder h2,
+.tialo-new-shell .summary-document h2,
+.tialo-new-shell .summary-document h3,
+.tialo-new-shell .saved-summaries h2{
+  color:#f7f9fc!important;
+}
+.dashboard-shell .dashboard-hero p,
+.dashboard-shell .muted,
+.dashboard-shell .section-heading p,
+.dashboard-shell .panel p,
+.dashboard-shell .stat-card small,
+.dashboard-shell .metric-card p,
+.tialo-new-shell .summary-hero p,
+.tialo-new-shell .summary-document p,
+.tialo-new-shell .saved-summaries p{
+  color:#8995a8!important;
+}
+.dashboard-shell .side-link.active{
+  background:linear-gradient(90deg,rgba(128,103,255,.20),rgba(128,103,255,.06))!important;
+  border-color:rgba(128,103,255,.40)!important;
+  color:#fff!important;
+}
+.dashboard-shell input,
+.dashboard-shell select,
+.dashboard-shell textarea,
+.tialo-new-shell input,
+.tialo-new-shell select,
+.tialo-new-shell textarea{
+  background:#101a29!important;
+  color:#f4f7fb!important;
+  border-color:rgba(255,255,255,.12)!important;
+}
+.dashboard-shell select option,
+.tialo-new-shell select option{background:#101a29!important;color:#fff!important}
+.dashboard-shell .empty-icon{
+  background:rgba(69,217,202,.08)!important;
+  color:#62d9cf!important;
+}
+
+/* Summary Studio uses a different shell from the other product routes; force it into the same system. */
+.tialo-new-shell .new-sidebar{
+  background:#070c16!important;
+  border-right:1px solid rgba(255,255,255,.08)!important;
+}
+.tialo-new-shell .new-sidebar nav a{
+  color:#8d99ac!important;
+}
+.tialo-new-shell .new-sidebar nav a.selected{
+  color:#fff!important;
+  background:rgba(128,103,255,.15)!important;
+  border-color:rgba(128,103,255,.35)!important;
+}
+.tialo-new-shell .new-content{
+  background:transparent!important;
+}
+.tialo-new-shell .summary-field label,
+.tialo-new-shell .summary-material b,
+.tialo-new-shell .summary-material small,
+.tialo-new-shell .summary-source-label{
+  color:#dce3ec!important;
+}
+.tialo-new-shell .summary-material{
+  background:rgba(255,255,255,.025)!important;
+  border-color:rgba(255,255,255,.09)!important;
+}
+.tialo-new-shell .summary-material.selected{
+  background:rgba(128,103,255,.10)!important;
+  border-color:rgba(128,103,255,.30)!important;
+}
+.tialo-new-shell .saved-summary{
+  background:rgba(255,255,255,.025)!important;
+  color:#eef2f8!important;
+  border-color:rgba(255,255,255,.09)!important;
+}
