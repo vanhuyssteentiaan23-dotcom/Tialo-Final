@@ -19,7 +19,7 @@ export default function Home() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  return <main className="shell">
+  return <main className="shell home-page">
     <nav className="nav">
       <a className="brand" href="/">TIA<span>LO</span></a>
       <div className="navlinks"><a href="#method">Method</a><a href="#workspace">Workspace</a><a href="#pricing">Pricing</a></div>
