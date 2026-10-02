@@ -508,9 +508,9 @@ function gradeShortAnswersLocally(items) {
   return new Map(items.map(item=>[item.position,grade(item)]))
 }
 
-async function submitExam({supabase,user,examId,answers}) {
+async function submitExam({supabase,user,examId,answers,durationSeconds=0}) {
   if (!examId || !Array.isArray(answers)) return NextResponse.json({error:'Exam ID and answers are required.'},{status:400})
-  const {data:exam,error:examError}=await supabase.from('exam_attempts').select('id,user_id,question_count,total_marks,status,subject_id,title,created_at,time_limit_seconds,difficulty,scope').eq('id',examId).eq('user_id',user.id).maybeSingle()
+  const {data:exam,error:examError}=await supabase.from('exam_attempts').select('id,user_id,question_count,total_marks,status,subject_id,title,created_at,completed_at,duration_seconds,time_limit_seconds,difficulty,scope').eq('id',examId).eq('user_id',user.id).maybeSingle()
   if (examError) return NextResponse.json({error:examError.message},{status:400})
   if (!exam) return NextResponse.json({error:'Exam not found.'},{status:404})
   if (exam.status==='completed') return NextResponse.json({error:'This exam has already been submitted.'},{status:400})
@@ -567,7 +567,9 @@ async function submitExam({supabase,user,examId,answers}) {
       grading_rubric:question.grading_rubric,
     })
   }
-  const {error:updateError}=await supabase.from('exam_attempts').update({score,status:'completed',completed_at:new Date().toISOString()}).eq('id',exam.id).eq('user_id',user.id)
+  const completedAt=new Date().toISOString()
+  const safeDuration=Math.max(0,Math.min(Math.round(Number(durationSeconds)||0),Math.max(0,Math.round((Date.now()-new Date(exam.created_at).getTime())/1000))))
+  const {error:updateError}=await supabase.from('exam_attempts').update({score,status:'completed',completed_at:completedAt,duration_seconds:safeDuration}).eq('id',exam.id).eq('user_id',user.id)
   if (updateError) return NextResponse.json({error:updateError.message},{status:400})
   return NextResponse.json({exam:{...exam,score,status:'completed',timed_out:timedOut},review})
 }
@@ -579,7 +581,7 @@ export async function GET(request) {
 
   if (examId) {
     const {data:exam,error:examError}=await supabase.from('exam_attempts')
-      .select('id,title,subject_id,question_count,score,total_marks,status,created_at,completed_at,difficulty,scope,time_limit_seconds,subjects(name)')
+      .select('id,title,subject_id,question_count,score,total_marks,status,created_at,completed_at,duration_seconds,difficulty,scope,time_limit_seconds,subjects(name)')
       .eq('id',examId).eq('user_id',user.id).maybeSingle()
     if(examError)return NextResponse.json({error:examError.message},{status:400})
     if(!exam)return NextResponse.json({error:'Exam not found.'},{status:404})
@@ -631,7 +633,7 @@ export async function POST(request) {
   const {supabase,user}=auth
   let body
   try{body=await request.json()}catch{return NextResponse.json({error:'Invalid request.'},{status:400})}
-  if(body?.action==='submit')return submitExam({supabase,user,examId:body.examId,answers:body.answers})
+  if(body?.action==='submit')return submitExam({supabase,user,examId:body.examId,answers:body.answers,durationSeconds:body.durationSeconds})
   if(body?.action==='revision'){
     const {data:sourceExam}=await supabase.from('exam_attempts').select('subject_id').eq('id',body.examId).eq('user_id',user.id).maybeSingle()
     if(!sourceExam)return NextResponse.json({error:'Completed exam not found.'},{status:404})
