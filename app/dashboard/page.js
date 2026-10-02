@@ -126,7 +126,7 @@ export default function Dashboard(){
    .xp-panel{min-height:220px}
    .xp-grid span{background:#151f2f}
 
-   .sidebar-tools{margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.07);display:grid;gap:3px}
+   .sidebar-tools{margin-top:24px;padding-top:0;border-top:0;display:grid;gap:3px}
    .sidebar-tool-subject select{width:100%;box-sizing:border-box;background:#101a29;color:#aeb9c9;border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:7px 8px;font-size:10px;margin-bottom:5px}
    .side-tool-link{display:flex;align-items:center;gap:13px;width:100%;border:0;background:transparent;color:#8f9caf;padding:12px;border-radius:11px;font-size:14px;font-weight:700;text-align:left;cursor:pointer;transition:background .18s ease,color .18s ease,transform .18s ease}
    .side-tool-link span{width:20px;text-align:center;font-size:16px}
