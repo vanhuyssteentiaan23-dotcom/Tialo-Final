@@ -1500,3 +1500,152 @@ body{letter-spacing:-.012em}
   color:#eef2f8!important;
   border-color:rgba(255,255,255,.09)!important;
 }
+
+
+/* ===== TIALO ONE-DARK-SURFACE FIX ===== */
+/* Route-specific legacy selectors were still painting individual cards white.
+   Keep all existing layout/functionality, but force every workspace surface into
+   the same dark visual system. */
+
+.dashboard-shell .tutor-chat,
+.dashboard-shell .tutor-messages,
+.dashboard-shell .chat-head,
+.dashboard-shell .chat-composer,
+.dashboard-shell .chat-message,
+.dashboard-shell .prompt-row button,
+.dashboard-shell .context-note,
+.dashboard-shell .chat-mark,
+.dashboard-shell .exam-builder,
+.dashboard-shell .builder-controls,
+.dashboard-shell .exam-history,
+.dashboard-shell .history-row,
+.dashboard-shell .question-card,
+.dashboard-shell .option,
+.dashboard-shell .option.chosen,
+.dashboard-shell .option-letter,
+.dashboard-shell .result-hero,
+.dashboard-shell .review-card,
+.dashboard-shell .explanation,
+.dashboard-shell .progress-note{
+  background:linear-gradient(145deg,#111b2a,#0d1624)!important;
+  border-color:rgba(255,255,255,.09)!important;
+  color:#f4f7fb!important;
+  box-shadow:0 18px 48px rgba(0,0,0,.16)!important;
+}
+
+.dashboard-shell .chat-head,
+.dashboard-shell .chat-composer{
+  border-top-color:rgba(255,255,255,.08)!important;
+  border-bottom-color:rgba(255,255,255,.08)!important;
+}
+.dashboard-shell .chat-message.user{
+  background:linear-gradient(135deg,rgba(128,103,255,.16),rgba(91,140,255,.06))!important;
+  border-color:rgba(128,103,255,.25)!important;
+}
+.dashboard-shell .chat-message p,
+.dashboard-shell .chat-head span,
+.dashboard-shell .tutor-context p,
+.dashboard-shell .history-row span,
+.dashboard-shell .history-score small,
+.dashboard-shell .review-card p,
+.dashboard-shell .result-hero p,
+.dashboard-shell .explanation,
+.dashboard-shell .progress-note span{
+  color:#8995a8!important;
+}
+.dashboard-shell .chat-empty h2,
+.dashboard-shell .chat-empty p,
+.dashboard-shell .question-card h2,
+.dashboard-shell .review-card h2,
+.dashboard-shell .history-row strong,
+.dashboard-shell .result-hero h1{
+  color:#f4f7fb!important;
+}
+.dashboard-shell .chat-mark,
+.dashboard-shell .option-letter,
+.dashboard-shell .history-index{
+  background:rgba(69,217,202,.08)!important;
+  color:#62d9cf!important;
+}
+.dashboard-shell .prompt-row button{
+  color:#dce3ec!important;
+}
+.dashboard-shell .option.chosen{
+  background:rgba(128,103,255,.12)!important;
+  border-color:rgba(128,103,255,.30)!important;
+}
+.dashboard-shell .exam-history{
+  overflow:hidden;
+}
+.dashboard-shell .exam-history .history-row:last-child{
+  border-bottom-color:transparent!important;
+}
+.dashboard-shell .correct{color:#62d9cf!important}
+.dashboard-shell .incorrect{color:#ff9b8b!important}
+.dashboard-shell .explanation span{color:#8fa8ff!important}
+
+/* Summary Studio: eliminate every remaining light card from the legacy summary CSS. */
+.tialo-new-shell .summary-field,
+.tialo-new-shell .summary-materials,
+.tialo-new-shell .summary-rubric-grid,
+.tialo-new-shell .summary-rubric-grid>div,
+.tialo-new-shell .rubric-file,
+.tialo-new-shell .summary-source-image,
+.tialo-new-shell .summary-source-loading,
+.tialo-new-shell .saved-summary{
+  color:#f4f7fb!important;
+}
+.tialo-new-shell .summary-rubric-grid>div,
+.tialo-new-shell .rubric-file,
+.tialo-new-shell .summary-source-image,
+.tialo-new-shell .summary-source-loading{
+  background:linear-gradient(145deg,#111b2a,#0d1624)!important;
+  border-color:rgba(255,255,255,.09)!important;
+}
+.tialo-new-shell .rubric-upload{
+  background:rgba(255,255,255,.04)!important;
+  border-color:rgba(255,255,255,.18)!important;
+  color:#dce3ec!important;
+}
+.tialo-new-shell .rubric-upload:hover{
+  background:rgba(128,103,255,.10)!important;
+  border-color:rgba(128,103,255,.32)!important;
+}
+.tialo-new-shell .summary-rubric-grid p,
+.tialo-new-shell .rubric-file small,
+.tialo-new-shell .summary-source-image figcaption,
+.tialo-new-shell .summary-source-loading,
+.tialo-new-shell .saved-summary small,
+.tialo-new-shell .saved-summaries>p{
+  color:#8995a8!important;
+}
+.tialo-new-shell .rubric-file b,
+.tialo-new-shell .saved-summary b,
+.tialo-new-shell .saved-summary{
+  color:#eef2f8!important;
+}
+.tialo-new-shell .summary-source-image img{
+  background:#101a29!important;
+}
+.tialo-new-shell .summary-source-images{
+  border-top-color:rgba(255,255,255,.08)!important;
+}
+
+/* Summary controls were also authored with legacy light colors. */
+.tialo-new-shell .summary-field>label,
+.tialo-new-shell .summary-rubric-label{
+  color:#dce3ec!important;
+}
+.tialo-new-shell .summary-field select,
+.tialo-new-shell .summary-field textarea,
+.tialo-new-shell .summary-rubric-grid textarea{
+  background:#101a29!important;
+  color:#f4f7fb!important;
+  border-color:rgba(255,255,255,.12)!important;
+}
+.tialo-new-shell .summary-field select:focus,
+.tialo-new-shell .summary-field textarea:focus,
+.tialo-new-shell .summary-rubric-grid textarea:focus{
+  border-color:rgba(128,103,255,.45)!important;
+  box-shadow:0 0 0 3px rgba(128,103,255,.08)!important;
+}
