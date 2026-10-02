@@ -77,9 +77,35 @@ function ExamGraph({chart}) {
 export default function MockExamsPage(){
  const [subjects,setSubjects]=useState([]),[materials,setMaterials]=useState([]),[subjectId,setSubjectId]=useState(''),[count,setCount]=useState(10),[difficulty,setDifficulty]=useState('mixed'),[scope,setScope]=useState(''),[timeLimit,setTimeLimit]=useState(0),[exam,setExam]=useState(null),[questions,setQuestions]=useState([]),[answers,setAnswers]=useState({}),[current,setCurrent]=useState(0),[review,setReview]=useState(null),[history,setHistory]=useState([]),[loading,setLoading]=useState(true),[working,setWorking]=useState(false),[error,setError]=useState(''),[secondsLeft,setSecondsLeft]=useState(0),[openReviews,setOpenReviews]=useState({})
  const selected=useMemo(()=>subjects.find(x=>x.id===subjectId),[subjects,subjectId])
+ const examActiveSecondsRef=useRef(0)
+ const examActiveSinceRef=useRef(null)
+ const examIdRef=useRef(null)
+ function startExamTime(examId){
+  examIdRef.current=examId||null
+  examActiveSecondsRef.current=0
+  examActiveSinceRef.current=examId?Date.now():null
+ }
+ function pauseExamTime(){
+  if(examActiveSinceRef.current){
+   examActiveSecondsRef.current+=Math.max(0,Math.floor((Date.now()-examActiveSinceRef.current)/1000))
+   examActiveSinceRef.current=null
+  }
+ }
+ function getExamTimeSeconds(){
+  if(examActiveSinceRef.current){
+   examActiveSecondsRef.current+=Math.max(0,Math.floor((Date.now()-examActiveSinceRef.current)/1000))
+   examActiveSinceRef.current=Date.now()
+  }
+  return Math.max(0,examActiveSecondsRef.current)
+ }
+ useEffect(()=>{
+  const onVisibility=()=>document.hidden?pauseExamTime(): (exam&& !review && examIdRef.current===exam?.id && !examActiveSinceRef.current ? examActiveSinceRef.current=Date.now() : null)
+  document.addEventListener('visibilitychange',onVisibility)
+  return()=>document.removeEventListener('visibilitychange',onVisibility)
+ },[exam,review])
  async function token(s){const {data}=await s.auth.getSession();if(data?.session?.access_token)return data.session.access_token;const r=await s.auth.refreshSession();if(!r.data?.session?.access_token)throw Error('Your login session has expired.');return r.data.session.access_token}
  useEffect(()=>{async function load(){const s=getSupabaseBrowserClient();if(!s){location.href='/login';return}const {data:{user}}=await s.auth.getUser();if(!user){location.href='/login';return}const a=await s.from('subjects').select('id,name').eq('user_id',user.id).order('created_at',{ascending:true});const m=await s.from('materials').select('id,subject_id,title,file_name,mime_type,storage_path,processing_status').eq('user_id',user.id).eq('processing_status','ready');if(a.error)setError(a.error.message);else{setSubjects(a.data||[]);if(a.data?.[0])setSubjectId(a.data[0].id)}if(!m.error)setMaterials(m.data||[]);try{const t=await token(s),r=await fetch('/api/mock-exams',{headers:{Authorization:'Bearer '+t}}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Could not load history.');setHistory(j.exams||[])}catch(e){setError(e.message)}setLoading(false)}load()},[])
- async function generate(){if(!subjectId||working)return;setWorking(true);setError('');setReview(null);setExam(null);setAnswers({});try{const s=getSupabaseBrowserClient(),t=await token(s),r=await fetch('/api/mock-exams',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+t},body:JSON.stringify({subjectId,count,difficulty,scope,timeLimit})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Could not generate the exam.');setExam(j.exam);setQuestions(j.questions||[]);setCurrent(0);setSecondsLeft(j.exam?.time_limit_seconds||0);scrollTo(0,0)}catch(e){setError(e.message)}finally{setWorking(false)}}
+ async function generate(){if(!subjectId||working)return;setWorking(true);setError('');setReview(null);setExam(null);setAnswers({});try{const s=getSupabaseBrowserClient(),t=await token(s),r=await fetch('/api/mock-exams',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+t},body:JSON.stringify({subjectId,count,difficulty,scope,timeLimit})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Could not generate the exam.');setExam(j.exam);setQuestions(j.questions||[]);setCurrent(0);setSecondsLeft(j.exam?.time_limit_seconds||0);startExamTime(j.exam?.id);scrollTo(0,0)}catch(e){setError(e.message)}finally{setWorking(false)}}
  async function openPreviousExam(examId){
   if(!examId||working)return
   setWorking(true);setError('')
@@ -90,6 +116,7 @@ export default function MockExamsPage(){
     if(!r.ok)throw Error(j.error||'Could not open this exam.')
     const previous=j.exam
     setExam(previous)
+    if(previous?.status==='in_progress')startExamTime(previous.id);else startExamTime(null)
     setQuestions(j.questions||[])
     setCurrent(0)
     setSecondsLeft(previous?.time_limit_seconds||0)
@@ -103,10 +130,10 @@ export default function MockExamsPage(){
   }catch(e){setError(e.message)}
   finally{setWorking(false)}
  }
- async function submit(e){e.preventDefault();if(!exam||working)return;setWorking(true);setError('');try{const s=getSupabaseBrowserClient(),t=await token(s),payload=questions.map(q=>({position:q.position,answer:answers[q.position]||''})),r=await fetch('/api/mock-exams',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+t},body:JSON.stringify({action:'submit',examId:exam.id,answers:payload})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Could not submit the exam.');setReview(j.review||[]);setExam(j.exam);setCurrent(0);setSecondsLeft(0);const h=await fetch('/api/mock-exams',{headers:{Authorization:'Bearer '+t}}),hj=await h.json().catch(()=>({}));if(h.ok)setHistory(hj.exams||[]);scrollTo(0,0)}catch(e){setError(e.message)}finally{setWorking(false)}}
- const reset=()=>{setExam(null);setQuestions([]);setAnswers({});setReview(null);setOpenReviews({});setCurrent(0);setError('');setSecondsLeft(0);scrollTo(0,0)}
+ async function submit(e){e.preventDefault();if(!exam||working)return;setWorking(true);setError('');try{const s=getSupabaseBrowserClient(),t=await token(s),payload=questions.map(q=>({position:q.position,answer:answers[q.position]||''})),r=await fetch('/api/mock-exams',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+t},body:JSON.stringify({action:'submit',examId:exam.id,answers:payload,durationSeconds:getExamTimeSeconds()})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Could not submit the exam.');setReview(j.review||[]);setExam(j.exam);setCurrent(0);setSecondsLeft(0);const h=await fetch('/api/mock-exams',{headers:{Authorization:'Bearer '+t}}),hj=await h.json().catch(()=>({}));if(h.ok)setHistory(hj.exams||[]);scrollTo(0,0)}catch(e){setError(e.message)}finally{setWorking(false)}}
+ const reset=()=>{pauseExamTime();startExamTime(null);setExam(null);setQuestions([]);setAnswers({});setReview(null);setOpenReviews({});setCurrent(0);setError('');setSecondsLeft(0);scrollTo(0,0)}
  const toggleReview=(position)=>setOpenReviews(v=>({...v,[position]:!v[position]}))
- const submitExam=async()=>{if(!exam||working)return;setWorking(true);setError('');try{const s=getSupabaseBrowserClient(),t=await token(s),payload=questions.map(q=>({position:q.position,answer:answers[q.position]||''})),r=await fetch('/api/mock-exams',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+t},body:JSON.stringify({action:'submit',examId:exam.id,answers:payload})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Could not submit the exam.');setReview(j.review||[]);setExam(j.exam);setSecondsLeft(0);const h=await fetch('/api/mock-exams',{headers:{Authorization:'Bearer '+t}}),hj=await h.json().catch(()=>({}));if(h.ok)setHistory(hj.exams||[]);scrollTo(0,0)}catch(e){setError(e.message)}finally{setWorking(false)}}
+ const submitExam=async()=>{if(!exam||working)return;setWorking(true);setError('');try{const s=getSupabaseBrowserClient(),t=await token(s),payload=questions.map(q=>({position:q.position,answer:answers[q.position]||''})),r=await fetch('/api/mock-exams',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+t},body:JSON.stringify({action:'submit',examId:exam.id,answers:payload})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Could not submit the exam.');setReview(j.review||[]);pauseExamTime();setExam(j.exam);setSecondsLeft(0);const h=await fetch('/api/mock-exams',{headers:{Authorization:'Bearer '+t}}),hj=await h.json().catch(()=>({}));if(h.ok)setHistory(hj.exams||[]);scrollTo(0,0)}catch(e){setError(e.message)}finally{setWorking(false)}}
  const createRevision=async()=>{if(!exam||working)return;setWorking(true);setError('');try{const s=getSupabaseBrowserClient(),t=await token(s),r=await fetch('/api/mock-exams',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+t},body:JSON.stringify({action:'revision',examId:exam.id})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Could not create revision exam.');setExam(j.exam);setQuestions(j.questions||[]);setAnswers({});setReview(null);setCurrent(0);scrollTo(0,0)}catch(e){setError(e.message)}finally{setWorking(false)}}
  useEffect(()=>{if(!exam||review||!exam.time_limit_seconds)return;const started=new Date(exam.created_at).getTime();const tick=()=>{const left=Math.max(0,Math.ceil((exam.time_limit_seconds*1000-(Date.now()-started))/1000));setSecondsLeft(left);if(left===0&&!working)submitExam()};tick();const id=setInterval(tick,1000);return()=>clearInterval(id)},[exam,review,working])
  if(loading)return <main className="shell dashboard-loading"><div className="loader-card"><div className="brand">TIA<span>LO</span></div><p>Loading your exams…</p></div></main>
