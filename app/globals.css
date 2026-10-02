@@ -971,3 +971,220 @@ body{letter-spacing:-.012em}
   .tialo-workspace .welcome-row h1{font-size:43px!important}
   .tialo-workspace .new-subject-grid{grid-template-columns:1fr!important}
 }
+
+
+/* ===== TIALO WORKSPACE V4 — MATCH THE DARK WORKSPACE ACROSS ALL PRODUCT SCREENS ===== */
+/* The dashboard was redesigned, but the product pages still had their original light-screen styles. */
+/* Keep all page markup and functionality unchanged; only bring those screens into the same visual system. */
+
+.tialo-workspace .dashboard-content{
+  color:#f5f7fb!important;
+}
+.tialo-workspace .workspace-intro{
+  padding:12px 0 42px!important;
+}
+.tialo-workspace .workspace-intro h1{
+  color:#f7f9fc!important;
+}
+.tialo-workspace .workspace-intro p{
+  color:#8995a8!important;
+}
+.tialo-workspace .workspace-chip{
+  border-color:rgba(255,255,255,.10)!important;
+  background:rgba(255,255,255,.045)!important;
+  color:#d8e0ea!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.12)!important;
+}
+.tialo-workspace .workspace-chip span{
+  color:#65d8c7!important;
+}
+
+/* Shared product-screen surfaces */
+.tialo-workspace .panel,
+.tialo-workspace .metric-card,
+.tialo-workspace .result-row,
+.tialo-workspace .review-card,
+.tialo-workspace .progress-subject,
+.tialo-workspace .exam-builder,
+.tialo-workspace .builder-controls,
+.tialo-workspace .exam-question,
+.tialo-workspace .question-card,
+.tialo-workspace .task-card,
+.tialo-workspace .task-row,
+.tialo-workspace .daily-card,
+.tialo-workspace .settings-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018))!important;
+  border-color:rgba(255,255,255,.08)!important;
+  color:#f4f7fb!important;
+  box-shadow:0 16px 42px rgba(0,0,0,.14)!important;
+}
+
+/* Subjects */
+.tialo-workspace .add-subject{
+  background:linear-gradient(145deg,rgba(255,255,255,.05),rgba(255,255,255,.018))!important;
+  border:1px solid rgba(128,103,255,.16)!important;
+  border-radius:20px!important;
+  box-shadow:0 20px 55px rgba(0,0,0,.18)!important;
+}
+.tialo-workspace .add-subject strong{color:#eef2f8!important}
+.tialo-workspace .add-subject>div>span{color:#7f8ba0!important}
+.tialo-workspace .add-subject input{
+  border-color:rgba(255,255,255,.11)!important;
+  background:rgba(255,255,255,.045)!important;
+  color:#fff!important;
+  outline:none!important;
+}
+.tialo-workspace .add-subject input::placeholder{color:#68758a!important}
+.tialo-workspace .add-subject input:focus{
+  border-color:rgba(128,103,255,.45)!important;
+  box-shadow:0 0 0 3px rgba(128,103,255,.07)!important;
+}
+.tialo-workspace .subject-library{gap:15px!important}
+.tialo-workspace .library-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018))!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:20px!important;
+  box-shadow:0 18px 48px rgba(0,0,0,.16)!important;
+}
+.tialo-workspace .subject-mark{
+  background:rgba(128,103,255,.12)!important;
+  color:#aa9cff!important;
+}
+.tialo-workspace .library-actions .secondary,
+.tialo-workspace .icon-button{
+  background:rgba(255,255,255,.04)!important;
+  border-color:rgba(255,255,255,.11)!important;
+  color:#e8edf4!important;
+}
+.tialo-workspace .icon-button:hover{
+  background:rgba(128,103,255,.10)!important;
+  border-color:rgba(128,103,255,.28)!important;
+}
+.tialo-workspace .library-card h2{color:#f4f7fb!important}
+.tialo-workspace .library-meta{color:#7f8ba0!important}
+.tialo-workspace .material-list{
+  border-top-color:rgba(255,255,255,.08)!important;
+}
+.tialo-workspace .material-item,
+.tialo-workspace .material-empty{
+  background:rgba(255,255,255,.025)!important;
+  color:#dce3ec!important;
+}
+.tialo-workspace .material-icon{
+  background:rgba(53,214,197,.08)!important;
+  color:#62d9cf!important;
+}
+.tialo-workspace .material-item strong{color:#dce3ec!important}
+.tialo-workspace .material-item span{color:#718097!important}
+.tialo-workspace .material-item button{color:#8b97a9!important}
+.tialo-workspace .material-empty{color:#78869a!important}
+.tialo-workspace .subject-empty{
+  background:rgba(255,255,255,.02)!important;
+  border-color:rgba(255,255,255,.12)!important;
+}
+
+/* Forms and controls shared by the other product pages */
+.tialo-workspace select,
+.tialo-workspace textarea,
+.tialo-workspace input{
+  background:rgba(255,255,255,.045)!important;
+  border-color:rgba(255,255,255,.11)!important;
+  color:#f4f7fb!important;
+}
+.tialo-workspace select option{background:#101827;color:#fff}
+.tialo-workspace .secondary{
+  background:rgba(255,255,255,.04)!important;
+  border-color:rgba(255,255,255,.11)!important;
+  color:#e8edf4!important;
+}
+
+/* Tutor / summaries / exams / tasks: remove remaining light surfaces without changing layout. */
+.tialo-workspace .tutor-context,
+.tialo-workspace .chat-head,
+.tialo-workspace .tutor-chat,
+.tialo-workspace .tutor-messages,
+.tialo-workspace .chat-message,
+.tialo-workspace .prompt-row button,
+.tialo-workspace .context-note,
+.tialo-workspace .review-card,
+.tialo-workspace .explanation,
+.tialo-workspace .mock-card,
+.tialo-workspace .exam-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018))!important;
+  border-color:rgba(255,255,255,.08)!important;
+  color:#f4f7fb!important;
+}
+.tialo-workspace .chat-head{
+  border-bottom-color:rgba(255,255,255,.08)!important;
+}
+.tialo-workspace .chat-head span,
+.tialo-workspace .tutor-context p,
+.tialo-workspace .chat-message p,
+.tialo-workspace .context-note span,
+.tialo-workspace .review-card p,
+.tialo-workspace .explanation{
+  color:#8995a8!important;
+}
+.tialo-workspace .chat-message.user{
+  background:linear-gradient(135deg,rgba(128,103,255,.13),rgba(91,140,255,.055))!important;
+  border-color:rgba(128,103,255,.20)!important;
+}
+.tialo-workspace .context-note{
+  background:rgba(53,214,197,.045)!important;
+}
+.tialo-workspace .chat-empty h2,
+.tialo-workspace .chat-empty p,
+.tialo-workspace .review-card h2,
+.tialo-workspace .metric-card strong,
+.tialo-workspace .progress-subject-head h3{
+  color:#f4f7fb!important;
+}
+.tialo-workspace .explanation{
+  background:rgba(255,255,255,.025)!important;
+}
+.tialo-workspace .progress-bar{background:#202938!important}
+.tialo-workspace .progress-bar span{
+  background:linear-gradient(90deg,#8067ff,#45d9ca)!important;
+}
+.tialo-workspace .progress-foot,
+.tialo-workspace .progress-subject-head span,
+.tialo-workspace .metric-card span,
+.tialo-workspace .metric-card p,
+.tialo-workspace .result-row span{
+  color:#7f8ba0!important;
+}
+.tialo-workspace .result-icon{
+  background:rgba(128,103,255,.11)!important;
+  color:#a99aff!important;
+}
+.tialo-workspace .progress-note{
+  background:linear-gradient(90deg,rgba(53,214,197,.045),rgba(128,103,255,.035))!important;
+  border-color:rgba(53,214,197,.13)!important;
+}
+.tialo-workspace .progress-note span{color:#8995a8!important}
+
+/* Notices, links and empty states */
+.tialo-workspace .notice,
+.tialo-workspace .new-notice{
+  background:rgba(255,180,80,.055)!important;
+  border-color:rgba(255,180,80,.20)!important;
+  color:#c9ad83!important;
+}
+.tialo-workspace .text-link,
+.tialo-workspace .progress-foot a,
+.tialo-workspace a:not(.side-link):not(.brand){
+  transition:color .18s ease;
+}
+.tialo-workspace .text-link,
+.tialo-workspace .progress-foot a{color:#a99aff!important}
+
+/* Responsive product screens */
+@media(max-width:900px){
+  .tialo-workspace .subject-library,
+  .tialo-workspace .progress-subjects{grid-template-columns:1fr!important}
+}
+@media(max-width:700px){
+  .tialo-workspace .workspace-intro h1{font-size:46px!important}
+  .tialo-workspace .add-subject{grid-template-columns:1fr!important}
+  .tialo-workspace .add-subject .btn{width:100%!important}
+}
