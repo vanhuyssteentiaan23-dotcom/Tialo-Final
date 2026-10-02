@@ -89,6 +89,17 @@ export default function Dashboard(){
    .avatar-view-image{max-width:min(80vw,720px);max-height:80vh;width:auto;height:auto;object-fit:contain;border-radius:16px;box-shadow:0 25px 80px rgba(0,0,0,.45);background:#fff}
    .avatar-view-close{position:fixed;right:24px;top:20px;width:38px;height:38px;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(0,0,0,.4);color:#fff;font-size:22px;cursor:pointer}
    .dashboard-feature-select,.planner-grid,.dashboard-tool-panel{margin-top:22px}
+   .dashboard-tools-live{margin-top:22px;padding:24px;border:1px solid rgba(128,103,255,.24);border-radius:20px;background:linear-gradient(145deg,#111b2a,#0d1624);box-shadow:0 20px 55px rgba(0,0,0,.18)}
+   .dashboard-tools-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:18px}
+   .dashboard-tools-heading h2{margin:4px 0 7px;color:#f5f7fb}.dashboard-tools-heading p{margin:0;color:#8995a8;max-width:700px}
+   .dashboard-tools-heading select{min-width:190px;background:#101a29;color:#f4f7fb;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:11px 12px}
+   .dashboard-tools-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+   .dashboard-tool-card{min-height:116px;display:flex;align-items:center;gap:13px;text-align:left;padding:17px;border:1px solid rgba(255,255,255,.08);border-radius:15px;background:rgba(255,255,255,.035);color:#f4f7fb;cursor:pointer;transition:.18s ease}
+   .dashboard-tool-card:hover{transform:translateY(-2px);border-color:rgba(98,217,207,.38);background:rgba(98,217,207,.06)}
+   .dashboard-tool-card.planner{border-color:rgba(128,103,255,.38);background:rgba(128,103,255,.08)}
+   .tool-card-icon{width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:11px;background:rgba(128,103,255,.12);color:#a99aff;font-size:17px}
+   .tool-card-copy{display:grid;gap:5px;min-width:0;flex:1}.tool-card-copy b{font-size:13px}.tool-card-copy small{font-size:10px;line-height:1.45;color:#8995a8}.dashboard-tool-card i{color:#62d9cf;font-style:normal;font-size:17px}
+
    .dashboard-feature-select{display:flex;justify-content:space-between;gap:20px;align-items:end;padding:22px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:linear-gradient(145deg,#111b2a,#0d1624);box-shadow:0 18px 45px rgba(0,0,0,.16)}
    .dashboard-feature-select h2,.dashboard-tool-panel h2,.planner-grid h2{margin:4px 0 7px;color:#f5f7fb}.dashboard-feature-select p,.dashboard-tool-panel p,.planner-grid p{margin:0;color:#8995a8}
    .dashboard-feature-controls{display:flex;gap:10px;flex-wrap:wrap}.dashboard-feature-controls select,.tool-form-grid input,.tool-form-grid textarea,.assignment-columns textarea,.dashboard-tool-panel>textarea{background:#101a29;color:#f4f7fb;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:11px 12px}
@@ -100,7 +111,7 @@ export default function Dashboard(){
    .assignment-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}.assignment-columns div{display:grid;gap:7px}.assignment-columns label{font-size:11px;font-weight:800;color:#62d9cf}.assignment-columns textarea{min-height:150px}
    .xp-panel{display:grid;grid-template-columns:1fr 1.4fr;gap:20px}.xp-bar{height:10px;border-radius:20px;background:#080d18;overflow:hidden;margin-top:12px}.xp-bar i{display:block;height:100%;background:linear-gradient(90deg,#8067ff,#62d9cf)}.xp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.xp-grid span{padding:12px;border:1px solid rgba(255,255,255,.07);border-radius:12px;color:#9aa8bb;font-size:12px}.xp-grid b{color:#f5f7fb}.xp-badge{color:#62d9cf!important;border-color:rgba(98,217,207,.25)!important}
    .visual-result{text-align:center}.visual-placeholder{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:20px 0}.visual-node{min-width:150px;padding:18px;border-radius:14px;background:rgba(128,103,255,.10);border:1px solid rgba(128,103,255,.3);color:#a99aff;font-size:10px}.visual-node b{display:block;margin-top:5px;color:#f4f7fb;font-size:12px}.visual-arrow{color:#62d9cf;font-size:20px}.tool-error{color:#ff9b8b!important}
-   @media(max-width:850px){.dashboard-feature-select,.xp-panel{display:grid;grid-template-columns:1fr}.planner-grid,.assignment-columns,.tool-form-grid{grid-template-columns:1fr}.dashboard-feature-controls{width:100%}.dashboard-feature-controls select{width:100%}}
+   @media(max-width:850px){.dashboard-feature-select,.xp-panel{display:grid;grid-template-columns:1fr}.planner-grid,.assignment-columns,.tool-form-grid,.dashboard-tools-grid{grid-template-columns:1fr}.dashboard-feature-controls{width:100%}.dashboard-feature-controls select{width:100%}.dashboard-tools-heading{display:grid}.dashboard-tools-heading select{width:100%}}
  `}</style>
   <input ref={avatarInput} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} hidden/>
   <aside className="sidebar"><a className="brand" href="/dashboard">TIA<span>LO</span></a><div className="sidebar-label">Workspace</div><nav className="sidebar-nav">{nav.map(([label,icon,href])=><a className={'side-link '+(href==='/dashboard'?'active':'')} href={href} key={href}><span>{icon}</span>{label}{href==='/daily-tasks'&&pending.length>0?<b>{pending.length}</b>:null}</a>)}</nav><div className="sidebar-bottom"><div className="sidebar-profile"><button type="button" className="sidebar-profile-button" onClick={handleAvatarClick} title={profile?.avatar_url?"View or change profile photo":"Add profile photo"} aria-label={profile?.avatar_url?"View or change profile photo":"Add profile photo"}><span className="avatar-picker sidebar-avatar">{profile?.avatar_url?<img className="avatar-image" src={profile.avatar_url} alt="Profile" />:<span className="avatar-fallback">{first[0]?.toUpperCase()}</span>}<span className="avatar-camera">+</span></span><span className="sidebar-profile-name">{first}</span></button></div><button className="side-signout" onClick={signOut}>Sign out</button></div></aside>
@@ -113,11 +124,30 @@ export default function Dashboard(){
       <div className="today-main"><div className="new-kicker">UP NEXT</div><h2>{pending[0]?.title||'You are all caught up.'}</h2><p>{pending[0]?((pending[0].subjects?.name||'Study session')+' · '+(pending[0].estimated_minutes||15)+' min'): 'Choose a subject or ask TIALO something new.'}</p><div className="today-actions">{pending[0]&&<a className="new-primary small" href="/daily-tasks">Continue →</a>}<a className="new-ghost" href="/subjects">Browse subjects</a></div></div>
       <div className="today-side"><div className="today-number">{streak}</div><span>day{streak===1?'':'s'} in a row</span><div className="mini-dots">{[0,1,2,3,4,5,6].map(i=><i className={i<Math.min(streak,7)?'on':''} key={i}/>)}</div></div>
     </section>
-    <section className="dashboard-feature-select">
-      <div><div className="new-kicker">DASHBOARD TOOLS</div><h2>{selectedSubject?'Study Planner':'Your workspace'}</h2><p>{selectedSubject?'Planner focused on '+selectedSubject.name+'.':'Select a subject to unlock the personalised Study Planner.'}</p></div>
-      <div className="dashboard-feature-controls">
-        <select value={selectedSubjectId} onChange={e=>{setSelectedSubjectId(e.target.value);setDashboardFeature('')}}><option value="">No subject selected</option>{subjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>
-        <select value={dashboardFeature} onChange={e=>setDashboardFeature(e.target.value)}><option value="">Dashboard functions</option><option value="flashcards">Flashcards</option><option value="assignment">AI Assignment Checker</option><option value="xp">Level XP</option><option value="voice">AI Tutor Voice</option><option value="visual">Visual Learning</option></select>
+    <section className="dashboard-tools-live">
+      <div className="dashboard-tools-heading">
+        <div><div className="new-kicker">YOUR NEW TIALO TOOLS</div><h2>Everything you need to study</h2><p>Choose a subject to personalise your Study Planner, then open any tool directly from your dashboard.</p></div>
+        <select value={selectedSubjectId} onChange={e=>{setSelectedSubjectId(e.target.value);setDashboardFeature('')}}><option value="">Select a subject</option>{subjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>
+      </div>
+      <div className="dashboard-tools-grid">
+        <button className="dashboard-tool-card planner" onClick={()=>setSelectedSubjectId(selectedSubjectId||subjects[0]?.id||'')}>
+          <span className="tool-card-icon">◈</span><span className="tool-card-copy"><b>Study Planner</b><small>{selectedSubject?'Deadlines · weaknesses · materials':'Select a subject to personalise it'}</small></span><i>→</i>
+        </button>
+        <button className="dashboard-tool-card" onClick={()=>setDashboardFeature('flashcards')}>
+          <span className="tool-card-icon">▣</span><span className="tool-card-copy"><b>Flashcards</b><small>Create cards, add notes, images & graphs</small></span><i>→</i>
+        </button>
+        <button className="dashboard-tool-card" onClick={()=>setDashboardFeature('assignment')}>
+          <span className="tool-card-icon">✓</span><span className="tool-card-copy"><b>AI Assignment Checker</b><small>Assignment given → assignment done → feedback</small></span><i>→</i>
+        </button>
+        <button className="dashboard-tool-card" onClick={()=>setDashboardFeature('xp')}>
+          <span className="tool-card-icon">★</span><span className="tool-card-copy"><b>Level XP</b><small>XP · levels 1–1000 · streaks · achievements</small></span><i>→</i>
+        </button>
+        <button className="dashboard-tool-card" onClick={()=>setDashboardFeature('voice')}>
+          <span className="tool-card-icon">◉</span><span className="tool-card-copy"><b>AI Tutor Voice</b><small>Ask TIALO a question with your voice</small></span><i>→</i>
+        </button>
+        <button className="dashboard-tool-card" onClick={()=>setDashboardFeature('visual')}>
+          <span className="tool-card-icon">△</span><span className="tool-card-copy"><b>Visual Learning</b><small>Turn subject material into explained visuals</small></span><i>→</i>
+        </button>
       </div>
     </section>
     {selectedSubject ? <section className="planner-grid">
