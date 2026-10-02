@@ -89,6 +89,12 @@ export default function Dashboard(){
    .avatar-view-image{max-width:min(80vw,720px);max-height:80vh;width:auto;height:auto;object-fit:contain;border-radius:16px;box-shadow:0 25px 80px rgba(0,0,0,.45);background:#fff}
    .avatar-view-close{position:fixed;right:24px;top:20px;width:38px;height:38px;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(0,0,0,.4);color:#fff;font-size:22px;cursor:pointer}
    .dashboard-feature-select,.planner-grid,.dashboard-tool-panel{margin-top:22px}
+   .sidebar-tools{margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.07);display:grid;gap:4px}
+   .sidebar-tool-subject select{width:100%;box-sizing:border-box;background:#101a29;color:#aeb9c9;border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:7px 8px;font-size:10px;margin-bottom:5px}
+   .side-tool-link{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;color:#8e9bad;padding:8px 7px;border-radius:8px;font-size:10px;font-weight:800;text-align:left;cursor:pointer}
+   .side-tool-link span{width:16px;text-align:center;color:#9d8cff}
+   .side-tool-link:hover{background:rgba(128,103,255,.08);color:#f4f7fb}
+
    .dashboard-tools-live{margin-top:22px;padding:24px;border:1px solid rgba(128,103,255,.24);border-radius:20px;background:linear-gradient(145deg,#111b2a,#0d1624);box-shadow:0 20px 55px rgba(0,0,0,.18)}
    .dashboard-tools-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:18px}
    .dashboard-tools-heading h2{margin:4px 0 7px;color:#f5f7fb}.dashboard-tools-heading p{margin:0;color:#8995a8;max-width:700px}
@@ -111,10 +117,10 @@ export default function Dashboard(){
    .assignment-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}.assignment-columns div{display:grid;gap:7px}.assignment-columns label{font-size:11px;font-weight:800;color:#62d9cf}.assignment-columns textarea{min-height:150px}
    .xp-panel{display:grid;grid-template-columns:1fr 1.4fr;gap:20px}.xp-bar{height:10px;border-radius:20px;background:#080d18;overflow:hidden;margin-top:12px}.xp-bar i{display:block;height:100%;background:linear-gradient(90deg,#8067ff,#62d9cf)}.xp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.xp-grid span{padding:12px;border:1px solid rgba(255,255,255,.07);border-radius:12px;color:#9aa8bb;font-size:12px}.xp-grid b{color:#f5f7fb}.xp-badge{color:#62d9cf!important;border-color:rgba(98,217,207,.25)!important}
    .visual-result{text-align:center}.visual-placeholder{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:20px 0}.visual-node{min-width:150px;padding:18px;border-radius:14px;background:rgba(128,103,255,.10);border:1px solid rgba(128,103,255,.3);color:#a99aff;font-size:10px}.visual-node b{display:block;margin-top:5px;color:#f4f7fb;font-size:12px}.visual-arrow{color:#62d9cf;font-size:20px}.tool-error{color:#ff9b8b!important}
-   @media(max-width:850px){.dashboard-feature-select,.xp-panel{display:grid;grid-template-columns:1fr}.planner-grid,.assignment-columns,.tool-form-grid,.dashboard-tools-grid{grid-template-columns:1fr}.dashboard-feature-controls{width:100%}.dashboard-feature-controls select{width:100%}.dashboard-tools-heading{display:grid}.dashboard-tools-heading select{width:100%}}
+   @media(max-width:850px){.dashboard-feature-select,.xp-panel{display:grid;grid-template-columns:1fr}.planner-grid,.assignment-columns,.tool-form-grid{grid-template-columns:1fr}.dashboard-feature-controls{width:100%}.dashboard-feature-controls select{width:100%}}
  `}</style>
   <input ref={avatarInput} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} hidden/>
-  <aside className="sidebar"><a className="brand" href="/dashboard">TIA<span>LO</span></a><div className="sidebar-label">Workspace</div><nav className="sidebar-nav">{nav.map(([label,icon,href])=><a className={'side-link '+(href==='/dashboard'?'active':'')} href={href} key={href}><span>{icon}</span>{label}{href==='/daily-tasks'&&pending.length>0?<b>{pending.length}</b>:null}</a>)}</nav><div className="sidebar-bottom"><div className="sidebar-profile"><button type="button" className="sidebar-profile-button" onClick={handleAvatarClick} title={profile?.avatar_url?"View or change profile photo":"Add profile photo"} aria-label={profile?.avatar_url?"View or change profile photo":"Add profile photo"}><span className="avatar-picker sidebar-avatar">{profile?.avatar_url?<img className="avatar-image" src={profile.avatar_url} alt="Profile" />:<span className="avatar-fallback">{first[0]?.toUpperCase()}</span>}<span className="avatar-camera">+</span></span><span className="sidebar-profile-name">{first}</span></button></div><button className="side-signout" onClick={signOut}>Sign out</button></div></aside>
+  <aside className="sidebar"><a className="brand" href="/dashboard">TIA<span>LO</span></a><div className="sidebar-label">Workspace</div><nav className="sidebar-nav">{nav.map(([label,icon,href])=><a className={'side-link '+(href==='/dashboard'?'active':'')} href={href} key={href}><span>{icon}</span>{label}{href==='/daily-tasks'&&pending.length>0?<b>{pending.length}</b>:null}</a>)}</nav><div className="sidebar-tools"><div className="sidebar-label">Study Tools</div><div className="sidebar-tool-subject"><select value={selectedSubjectId} onChange={e=>setSelectedSubjectId(e.target.value)}><option value="">Subject</option>{subjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></div><button className="side-tool-link" onClick={()=>{if(!selectedSubjectId&&subjects[0])setSelectedSubjectId(subjects[0].id)}}><span>◈</span>Study Planner</button><button className="side-tool-link" onClick={()=>setDashboardFeature("flashcards")}><span>▣</span>Flashcards</button><button className="side-tool-link" onClick={()=>setDashboardFeature("assignment")}><span>✓</span>AI Assignment Checker</button><button className="side-tool-link" onClick={()=>setDashboardFeature("xp")}><span>★</span>Level XP</button><button className="side-tool-link" onClick={()=>setDashboardFeature("voice")}><span>◉</span>AI Tutor Voice</button><button className="side-tool-link" onClick={()=>setDashboardFeature("visual")}><span>△</span>Visual Learning</button></div><div className="sidebar-bottom"><div className="sidebar-profile"><button type="button" className="sidebar-profile-button" onClick={handleAvatarClick} title={profile?.avatar_url?"View or change profile photo":"Add profile photo"} aria-label={profile?.avatar_url?"View or change profile photo":"Add profile photo"}><span className="avatar-picker sidebar-avatar">{profile?.avatar_url?<img className="avatar-image" src={profile.avatar_url} alt="Profile" />:<span className="avatar-fallback">{first[0]?.toUpperCase()}</span>}<span className="avatar-camera">+</span></span><span className="sidebar-profile-name">{first}</span></button></div><button className="side-signout" onClick={signOut}>Sign out</button></div></aside>
   <section className="dashboard-main">
    <header className="new-header"><button className="new-menu" onClick={()=>setMobile(true)}>☰</button><div><strong>{selectedSubject?'Study Planner':'Overview'}</strong><span> / {new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</span></div><div className="new-header-user">{first}<button type="button" className="avatar-picker new-header-avatar" onClick={handleAvatarClick} title={profile?.avatar_url?"View or change profile photo":"Add profile photo"} aria-label={profile?.avatar_url?"View or change profile photo":"Add profile photo"}>{profile?.avatar_url?<img className="avatar-image" src={profile.avatar_url} alt="Profile" />:<span className="avatar-fallback">{first[0]?.toUpperCase()}</span>}<span className="avatar-camera">+</span></button></div></header>
    <div className="new-content">
@@ -123,32 +129,6 @@ export default function Dashboard(){
     <section className="today-grid">
       <div className="today-main"><div className="new-kicker">UP NEXT</div><h2>{pending[0]?.title||'You are all caught up.'}</h2><p>{pending[0]?((pending[0].subjects?.name||'Study session')+' · '+(pending[0].estimated_minutes||15)+' min'): 'Choose a subject or ask TIALO something new.'}</p><div className="today-actions">{pending[0]&&<a className="new-primary small" href="/daily-tasks">Continue →</a>}<a className="new-ghost" href="/subjects">Browse subjects</a></div></div>
       <div className="today-side"><div className="today-number">{streak}</div><span>day{streak===1?'':'s'} in a row</span><div className="mini-dots">{[0,1,2,3,4,5,6].map(i=><i className={i<Math.min(streak,7)?'on':''} key={i}/>)}</div></div>
-    </section>
-    <section className="dashboard-tools-live">
-      <div className="dashboard-tools-heading">
-        <div><div className="new-kicker">YOUR NEW TIALO TOOLS</div><h2>Everything you need to study</h2><p>Choose a subject to personalise your Study Planner, then open any tool directly from your dashboard.</p></div>
-        <select value={selectedSubjectId} onChange={e=>{setSelectedSubjectId(e.target.value);setDashboardFeature('')}}><option value="">Select a subject</option>{subjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>
-      </div>
-      <div className="dashboard-tools-grid">
-        <button className="dashboard-tool-card planner" onClick={()=>setSelectedSubjectId(selectedSubjectId||subjects[0]?.id||'')}>
-          <span className="tool-card-icon">◈</span><span className="tool-card-copy"><b>Study Planner</b><small>{selectedSubject?'Deadlines · weaknesses · materials':'Select a subject to personalise it'}</small></span><i>→</i>
-        </button>
-        <button className="dashboard-tool-card" onClick={()=>setDashboardFeature('flashcards')}>
-          <span className="tool-card-icon">▣</span><span className="tool-card-copy"><b>Flashcards</b><small>Create cards, add notes, images & graphs</small></span><i>→</i>
-        </button>
-        <button className="dashboard-tool-card" onClick={()=>setDashboardFeature('assignment')}>
-          <span className="tool-card-icon">✓</span><span className="tool-card-copy"><b>AI Assignment Checker</b><small>Assignment given → assignment done → feedback</small></span><i>→</i>
-        </button>
-        <button className="dashboard-tool-card" onClick={()=>setDashboardFeature('xp')}>
-          <span className="tool-card-icon">★</span><span className="tool-card-copy"><b>Level XP</b><small>XP · levels 1–1000 · streaks · achievements</small></span><i>→</i>
-        </button>
-        <button className="dashboard-tool-card" onClick={()=>setDashboardFeature('voice')}>
-          <span className="tool-card-icon">◉</span><span className="tool-card-copy"><b>AI Tutor Voice</b><small>Ask TIALO a question with your voice</small></span><i>→</i>
-        </button>
-        <button className="dashboard-tool-card" onClick={()=>setDashboardFeature('visual')}>
-          <span className="tool-card-icon">△</span><span className="tool-card-copy"><b>Visual Learning</b><small>Turn subject material into explained visuals</small></span><i>→</i>
-        </button>
-      </div>
     </section>
     {selectedSubject ? <section className="planner-grid">
       <article><div className="new-kicker">STUDY PLANNER</div><h2>{selectedSubject.name}</h2><div className="planner-list"><div><b>Weaknesses</b><span>Use recent exam results and completed work to focus revision.</span></div><div><b>Deadlines</b><span>{pending.length?pending.slice(0,3).map(t=>t.title).join(' · '):'No upcoming dashboard tasks.'}</span></div><div><b>Study material needed</b><span>{materials.filter(m=>m.subject_id===selectedSubject.id).length} connected material item(s)</span></div></div></article>
