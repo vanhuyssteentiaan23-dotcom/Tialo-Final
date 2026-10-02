@@ -1944,3 +1944,97 @@ body{letter-spacing:-.012em}
   text-shadow:0 0 24px rgba(128,103,255,.35)!important;
 }
 .new-loading .new-logo span{color:#62d9cf!important}
+
+
+/* ===== FINAL FIXES: TUTOR HISTORY + BRIGHT LANGUAGE SETTINGS ===== */
+.dashboard-shell .tutor-chat-history{
+  border-top-color:rgba(255,255,255,.09)!important;
+}
+.dashboard-shell .chat-history-empty{
+  color:#6f7d92!important;
+}
+.dashboard-shell .chat-history-item{
+  background:rgba(255,255,255,.025)!important;
+  border:1px solid rgba(255,255,255,.07)!important;
+  color:#eef2f8!important;
+}
+.dashboard-shell .chat-history-item:hover{
+  background:linear-gradient(100deg,rgba(128,103,255,.14),rgba(53,214,197,.055))!important;
+  border-color:rgba(128,103,255,.30)!important;
+}
+.dashboard-shell .chat-history-item.active{
+  background:linear-gradient(100deg,rgba(128,103,255,.22),rgba(91,140,255,.08))!important;
+  border-color:rgba(128,103,255,.42)!important;
+  box-shadow:inset 3px 0 0 #8067ff!important;
+}
+.dashboard-shell .chat-history-item strong{
+  color:#f1f4fa!important;
+}
+.dashboard-shell .chat-history-item span{
+  color:#8190a6!important;
+}
+
+/* Settings is deliberately bright and neon, but no longer offers appearance themes. */
+.settings-page{
+  min-height:100vh!important;
+  background:
+    radial-gradient(700px 500px at 10% 0%,rgba(0,245,255,.16),transparent 60%),
+    radial-gradient(650px 500px at 90% 20%,rgba(124,60,255,.18),transparent 60%),
+    #050914!important;
+  color:#f5fbff!important;
+}
+.settings-page .settings-back{color:#6eefff!important}
+.settings-page .settings-kicker{color:#00f5ff!important;text-shadow:0 0 14px rgba(0,245,255,.28)!important}
+.settings-page .settings-header h1{color:#fff!important}
+.settings-page .settings-header p{color:#9db2cc!important}
+.settings-page .settings-card{
+  background:linear-gradient(145deg,rgba(14,25,44,.94),rgba(6,13,27,.94))!important;
+  border:1px solid rgba(0,245,255,.20)!important;
+  box-shadow:0 20px 60px rgba(0,0,0,.28),0 0 35px rgba(124,60,255,.06)!important;
+}
+.settings-page .settings-card h2{color:#fff!important}
+.settings-page .settings-card>p{color:#91a6bf!important}
+.settings-page .language-grid{gap:12px!important}
+.settings-page .language-item{
+  position:relative!important;
+  min-height:68px!important;
+  background:rgba(255,255,255,.025)!important;
+  border:1px solid rgba(255,255,255,.09)!important;
+  color:#fff!important;
+  overflow:hidden!important;
+}
+.settings-page .language-item::before{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  opacity:.11!important;
+  pointer-events:none!important;
+}
+.settings-page .language-item:nth-child(1)::before{background:linear-gradient(135deg,#00f5ff,#0066ff)!important}
+.settings-page .language-item:nth-child(2)::before{background:linear-gradient(135deg,#00ff9d,#00c98b)!important}
+.settings-page .language-item:nth-child(3)::before{background:linear-gradient(135deg,#7c3cff,#ff3cf2)!important}
+.settings-page .language-item:nth-child(4)::before{background:linear-gradient(135deg,#ff4f9a,#ff7a00)!important}
+.settings-page .language-item:nth-child(5)::before{background:linear-gradient(135deg,#ffe600,#ff7a00)!important}
+.settings-page .language-item:nth-child(6)::before{background:linear-gradient(135deg,#00f5ff,#00ff9d)!important}
+.settings-page .language-item:nth-child(7)::before{background:linear-gradient(135deg,#ff3cf2,#7c3cff)!important}
+.settings-page .language-item:nth-child(8)::before{background:linear-gradient(135deg,#00b8ff,#7c3cff)!important}
+.settings-page .language-item:nth-child(9)::before{background:linear-gradient(135deg,#00ff9d,#00f5ff)!important}
+.settings-page .language-item:nth-child(10)::before{background:linear-gradient(135deg,#ff3cf2,#7c3cff)!important}
+.settings-page .language-item:nth-child(11)::before{background:linear-gradient(135deg,#ff4f9a,#ffb347)!important}
+.settings-page .language-item:nth-child(12)::before{background:linear-gradient(135deg,#00f5ff,#7c3cff)!important}
+.settings-page .language-item:nth-child(13)::before{background:linear-gradient(135deg,#ff7a00,#ff3cf2)!important}
+.settings-page .language-item:hover,
+.settings-page .language-item.selected{
+  background:rgba(255,255,255,.055)!important;
+  border-color:rgba(0,245,255,.62)!important;
+  box-shadow:0 0 22px rgba(0,245,255,.08),inset 0 0 22px rgba(124,60,255,.05)!important;
+  transform:translateY(-1px)!important;
+}
+.settings-page .language-item strong{position:relative!important;color:#fff!important}
+.settings-page .language-item small{position:relative!important;color:#9bb0c9!important}
+.settings-page .language-item .check{position:relative!important;color:#00f5ff!important;text-shadow:0 0 12px rgba(0,245,255,.55)!important}
+.settings-page .settings-save{color:#00ff9d!important}
+.settings-page .account-row{border-bottom-color:rgba(255,255,255,.08)!important}
+.settings-page .account-row span{color:#8197b0!important}
+.settings-page .account-row strong{color:#f5faff!important}
+.settings-page .settings-footer{color:#607892!important}
