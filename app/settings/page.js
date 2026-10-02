@@ -19,13 +19,6 @@ const languages=[
  {id:'pt',name:'Portuguese',native:'Português'},
 ]
 
-const themes=[
- {id:'tialo-neon',name:'TIALO Neon',description:'Cyan, electric blue and violet',gradient:'linear-gradient(135deg,#00f5ff,#7c3cff)'},
- {id:'ai-default',name:'AI Default',description:'Clean blue and purple',gradient:'linear-gradient(135deg,#65a7ff,#9b6cff)'},
- {id:'midnight',name:'Midnight',description:'Deep dark minimal',gradient:'linear-gradient(135deg,#dbe7f7,#667892)'},
- {id:'emerald',name:'Emerald',description:'Bright green futuristic',gradient:'linear-gradient(135deg,#00ff9d,#00c98b)'},
- {id:'sunset',name:'Sunset',description:'Orange and pink neon',gradient:'linear-gradient(135deg,#ffb347,#ff4f9a)'},
-]
 
 export default function Settings(){
  const [language,setLanguage]=useState('en')
