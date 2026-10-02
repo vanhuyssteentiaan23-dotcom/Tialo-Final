@@ -128,9 +128,11 @@ export default function Dashboard(){
 
    .sidebar-tools{margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.07);display:grid;gap:3px}
    .sidebar-tool-subject select{width:100%;box-sizing:border-box;background:#101a29;color:#aeb9c9;border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:7px 8px;font-size:10px;margin-bottom:5px}
-   .side-tool-link{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;color:#8e9bad;padding:9px 7px;border-radius:8px;font-size:11px;font-weight:800;text-align:left;cursor:pointer}
-   .side-tool-link span{width:16px;text-align:center;color:#9d8cff;font-size:11px}
-   .side-tool-link:hover,.side-tool-link.active{background:rgba(128,103,255,.08);color:#f4f7fb}
+   .side-tool-link{display:flex;align-items:center;gap:13px;width:100%;border:0;background:transparent;color:#8f9caf;padding:12px;border-radius:11px;font-size:14px;font-weight:700;text-align:left;cursor:pointer;transition:background .18s ease,color .18s ease,transform .18s ease}
+   .side-tool-link span{width:20px;text-align:center;font-size:16px}
+   .side-tool-link:hover{background:rgba(255,255,255,.045);color:#eef4fb;transform:translateX(2px)}
+   .side-tool-link.active{background:linear-gradient(90deg,rgba(69,230,161,.12),rgba(69,230,161,.045));color:#fff;box-shadow:inset 2px 0 0 #45e6a1}
+   .side-tool-link.active span{color:#45e6a1}
 
    .dashboard-tools-live{margin-top:22px;padding:24px;border:1px solid rgba(128,103,255,.24);border-radius:20px;background:linear-gradient(145deg,#111b2a,#0d1624);box-shadow:0 20px 55px rgba(0,0,0,.18)}
    .dashboard-tools-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:18px}
