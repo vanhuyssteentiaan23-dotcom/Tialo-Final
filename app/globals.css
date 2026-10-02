@@ -2038,3 +2038,43 @@ body{letter-spacing:-.012em}
 .settings-page .account-row span{color:#8197b0!important}
 .settings-page .account-row strong{color:#f5faff!important}
 .settings-page .settings-footer{color:#607892!important}
+
+
+/* ===== AI TUTOR TEXT CONTRAST FIX ===== */
+.dashboard-shell .chat-message.user .tutor-content{
+  color:#f5f7ff!important;
+}
+.dashboard-shell .chat-message.user .tutor-content span,
+.dashboard-shell .chat-message.user .tutor-content strong,
+.dashboard-shell .chat-message.user .tutor-content em{
+  color:#f5f7ff!important;
+}
+.dashboard-shell .chat-message.user>span{
+  color:#73e8d7!important;
+}
+.dashboard-shell .chat-message.assistant .tutor-content{
+  color:#d7e0ed!important;
+}
+.dashboard-shell .chat-message.assistant .tutor-content span,
+.dashboard-shell .chat-message.assistant .tutor-content strong,
+.dashboard-shell .chat-message.assistant .tutor-content em{
+  color:#d7e0ed!important;
+}
+.dashboard-shell .chat-message.assistant .tutor-content p{
+  color:#d7e0ed!important;
+}
+.dashboard-shell .chat-message.assistant .tutor-content h4{
+  color:#f4f7fb!important;
+}
+.dashboard-shell .chat-message.assistant>span{
+  color:#7bdc64!important;
+}
+.dashboard-shell .tutor-images-title{
+  color:#aebbd0!important;
+}
+.dashboard-shell .tutor-source-caption{
+  color:#e9eef6!important;
+}
+.dashboard-shell .tutor-source-open{
+  color:#a99aff!important;
+}
