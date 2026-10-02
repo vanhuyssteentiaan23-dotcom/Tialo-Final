@@ -718,3 +718,256 @@ body{letter-spacing:-.012em}
   .dashboard-shell .dashboard-content{padding:20px 14px 68px}
   .dashboard-shell .dashboard-hero h1{font-size:37px}
 }
+
+
+/* ===== TIALO WORKSPACE V3 — ACTUAL DASHBOARD SCREEN ===== */
+/* Targets the real .new-* dashboard markup used by /dashboard. */
+.tialo-workspace{
+  min-height:100vh!important;
+  background:
+    radial-gradient(900px 560px at 92% -10%,rgba(128,103,255,.11),transparent 62%),
+    radial-gradient(700px 480px at 8% 0%,rgba(53,214,197,.055),transparent 60%),
+    #090f1b!important;
+  color:#f5f7fb!important;
+}
+.tialo-workspace .sidebar{
+  width:272px!important;
+  background:rgba(7,12,22,.97)!important;
+  border-right:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:18px 0 65px rgba(0,0,0,.24)!important;
+}
+.tialo-workspace .dashboard-main{
+  margin-left:272px!important;
+  width:calc(100% - 272px)!important;
+  background:transparent!important;
+}
+.tialo-workspace .dashboard-topbar,
+.tialo-workspace .new-header{
+  height:72px!important;
+  background:rgba(9,15,27,.78)!important;
+  border-bottom:1px solid rgba(255,255,255,.08)!important;
+  color:#f5f7fb!important;
+  backdrop-filter:blur(20px)!important;
+}
+.tialo-workspace .new-header strong{color:#fff!important}
+.tialo-workspace .new-header>div>span{color:#7f8ba0!important}
+.tialo-workspace .new-header-user{color:#eef2f8!important}
+.tialo-workspace .new-header-user .avatar-fallback{background:linear-gradient(135deg,#8e78ff,#45d9ca)!important;color:#08101b!important}
+
+/* sidebar */
+.tialo-workspace .sidebar .brand{color:#f7f9fc!important}
+.tialo-workspace .sidebar .brand span{color:#8f7dff!important}
+.tialo-workspace .sidebar-label{color:#68758a!important}
+.tialo-workspace .side-link{
+  color:#8995aa!important;
+  background:transparent!important;
+  border:1px solid transparent!important;
+  border-radius:12px!important;
+}
+.tialo-workspace .side-link span{color:#68758d!important}
+.tialo-workspace .side-link:hover{
+  color:#fff!important;
+  background:rgba(255,255,255,.045)!important;
+  border-color:rgba(255,255,255,.06)!important;
+}
+.tialo-workspace .side-link.active{
+  color:#fff!important;
+  background:linear-gradient(100deg,rgba(128,103,255,.17),rgba(91,140,255,.06))!important;
+  border-color:rgba(128,103,255,.19)!important;
+  box-shadow:inset 3px 0 #8067ff,0 8px 25px rgba(73,55,170,.13)!important;
+}
+.tialo-workspace .side-link.active span{color:#a99aff!important}
+.tialo-workspace .sidebar-bottom{border-top-color:rgba(255,255,255,.08)!important}
+.tialo-workspace .sidebar-profile-name{color:#dfe5ee!important}
+.tialo-workspace .side-signout{color:#718097!important}
+.tialo-workspace .avatar-fallback{background:linear-gradient(135deg,#8e78ff,#45d9ca)!important;color:#08101b!important}
+
+/* real dashboard content */
+.tialo-workspace .new-content{
+  max-width:1400px!important;
+  padding:46px 52px 90px!important;
+  color:#f5f7fb!important;
+}
+.tialo-workspace .welcome-row{
+  padding-bottom:42px!important;
+  align-items:flex-end!important;
+}
+.tialo-workspace .new-kicker{
+  color:#9e91ff!important;
+  font-size:9px!important;
+  letter-spacing:.2em!important;
+}
+.tialo-workspace .welcome-row h1{
+  color:#f7f9fc!important;
+  font-size:clamp(52px,6vw,84px)!important;
+  line-height:.91!important;
+  letter-spacing:-.075em!important;
+  margin:15px 0 22px!important;
+}
+.tialo-workspace .welcome-row h1 i{
+  color:#cfd5df!important;
+}
+.tialo-workspace .welcome-row p{
+  color:#8995a8!important;
+  font-size:14px!important;
+}
+.tialo-workspace .new-primary{
+  background:linear-gradient(135deg,#8d77ff,#6653e8 55%,#4d83ff)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:0 12px 30px rgba(92,72,210,.24)!important;
+}
+.tialo-workspace .new-primary span{color:#72eadb!important}
+.tialo-workspace .new-ghost{
+  background:rgba(255,255,255,.035)!important;
+  border-color:rgba(255,255,255,.12)!important;
+  color:#d9e0ea!important;
+}
+
+/* up-next card */
+.tialo-workspace .today-grid{
+  grid-template-columns:minmax(0,1fr) 245px!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018))!important;
+  border:1px solid rgba(128,103,255,.16)!important;
+  border-radius:20px!important;
+  box-shadow:0 24px 65px rgba(0,0,0,.20)!important;
+}
+.tialo-workspace .today-main{padding:30px 32px!important}
+.tialo-workspace .today-main h2{
+  color:#f4f7fb!important;
+  font-size:25px!important;
+}
+.tialo-workspace .today-main p{color:#8995a7!important}
+.tialo-workspace .today-side{
+  border-left:1px solid rgba(255,255,255,.08)!important;
+  background:rgba(255,255,255,.012)!important;
+}
+.tialo-workspace .today-number{color:#fff!important}
+.tialo-workspace .today-side>span{color:#7f8ba0!important}
+.tialo-workspace .mini-dots i{background:#252e3d!important}
+.tialo-workspace .mini-dots i.on{
+  background:linear-gradient(90deg,#8067ff,#42d9c9)!important;
+}
+
+/* subjects */
+.tialo-workspace .dashboard-block{padding-top:56px!important}
+.tialo-workspace .block-head h2,
+.tialo-workspace .insight-card h2{
+  color:#f4f7fb!important;
+  font-size:26px!important;
+}
+.tialo-workspace .block-head>a{
+  color:#9b91dc!important;
+}
+.tialo-workspace .new-subject-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:12px!important;
+}
+.tialo-workspace .new-subject{
+  background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018))!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:17px!important;
+  color:#f1f4f8!important;
+  min-height:158px!important;
+  box-shadow:0 15px 40px rgba(0,0,0,.13)!important;
+}
+.tialo-workspace .new-subject:hover{
+  transform:translateY(-3px)!important;
+  border-color:rgba(128,103,255,.28)!important;
+  box-shadow:0 22px 50px rgba(0,0,0,.2)!important;
+}
+.tialo-workspace .new-subject>span{
+  background:rgba(128,103,255,.12)!important;
+  color:#aa9cff!important;
+}
+.tialo-workspace .new-subject h3{color:#f4f7fb!important}
+.tialo-workspace .new-subject p{color:#7f8ba0!important}
+.tialo-workspace .new-subject>div{background:#202938!important}
+.tialo-workspace .new-subject>div i{
+  background:linear-gradient(90deg,#8067ff,#45d9ca)!important;
+}
+
+/* insights */
+.tialo-workspace .insight-grid{
+  grid-template-columns:minmax(0,1.55fr) minmax(280px,.7fr)!important;
+  gap:12px!important;
+  padding-top:48px!important;
+}
+.tialo-workspace .insight-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018))!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:17px!important;
+  color:#f4f7fb!important;
+  box-shadow:0 18px 45px rgba(0,0,0,.15)!important;
+}
+.tialo-workspace .performance .block-head>strong,
+.tialo-workspace .activity-stat strong{color:#fff!important}
+.tialo-workspace .new-chart line{stroke:rgba(255,255,255,.08)!important}
+.tialo-workspace .new-chart polyline{stroke:#7d6aff!important}
+.tialo-workspace .new-chart circle{fill:#0f1726!important;stroke:#62d9cf!important}
+.tialo-workspace .chart-labels,
+.tialo-workspace .activity-stat span,
+.tialo-workspace .activity-row{color:#7f8ba0!important}
+.tialo-workspace .activity-row{
+  border-color:rgba(255,255,255,.08)!important;
+}
+.tialo-workspace .insight-card>a{color:#9d91ff!important}
+
+/* bottom tool strip */
+.tialo-workspace .tool-strip{
+  border-top-color:rgba(255,255,255,.08)!important;
+}
+.tialo-workspace .tool-strip a{
+  color:#e9edf4!important;
+  border-right-color:rgba(255,255,255,.08)!important;
+}
+.tialo-workspace .tool-strip b{
+  background:rgba(128,103,255,.10)!important;
+  color:#a99aff!important;
+}
+.tialo-workspace .tool-strip small{color:#77849a!important}
+.tialo-workspace .tool-strip i{color:#8894a8!important}
+
+/* error/empty states */
+.tialo-workspace .new-empty{
+  background:rgba(255,255,255,.025)!important;
+  border-color:rgba(255,255,255,.12)!important;
+  color:#7f8ba0!important;
+}
+.tialo-workspace .new-empty a{color:#9e91ff!important}
+.tialo-workspace .new-notice{
+  background:rgba(255,180,80,.055)!important;
+  border-color:rgba(255,180,80,.2)!important;
+  color:#c4a77c!important;
+}
+
+/* mobile */
+@media(max-width:950px){
+  .tialo-workspace .new-content{padding:34px 30px 80px!important}
+  .tialo-workspace .new-subject-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:700px){
+  .tialo-workspace .sidebar{display:none!important}
+  .tialo-workspace .dashboard-main{margin-left:0!important;width:100%!important}
+  .tialo-workspace .new-header{height:68px!important;padding:0 16px!important}
+  .tialo-workspace .new-content{padding:28px 18px 76px!important}
+  .tialo-workspace .welcome-row{display:block!important;padding-bottom:34px!important}
+  .tialo-workspace .welcome-row h1{font-size:50px!important}
+  .tialo-workspace .welcome-row .new-primary{margin-top:24px!important}
+  .tialo-workspace .today-grid{grid-template-columns:1fr!important}
+  .tialo-workspace .today-side{
+    border-left:0!important;
+    border-top:1px solid rgba(255,255,255,.08)!important;
+  }
+  .tialo-workspace .insight-grid{grid-template-columns:1fr!important}
+  .tialo-workspace .tool-strip{grid-template-columns:1fr!important}
+  .tialo-workspace .tool-strip a{
+    border-right:0!important;
+    border-bottom:1px solid rgba(255,255,255,.08)!important;
+  }
+}
+@media(max-width:430px){
+  .tialo-workspace .new-content{padding:22px 14px 70px!important}
+  .tialo-workspace .welcome-row h1{font-size:43px!important}
+  .tialo-workspace .new-subject-grid{grid-template-columns:1fr!important}
+}
