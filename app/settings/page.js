@@ -54,7 +54,6 @@ export default function Settings(){
   setLanguageSaving(false)
   setLanguageNotice(error?'Could not save your language preference.':`Language set to ${languages.find(x=>x.id===id)?.name||id}.`)
  }
- function chooseTheme(id){setTheme(id);localStorage.setItem('tialo-color-theme',id);applyTheme(id)}
  async function signOut(){const supabase=getSupabaseBrowserClient();await supabase?.auth.signOut();location.href='/'}
  return <main className="settings-page">
   <style>{`
