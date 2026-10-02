@@ -1649,3 +1649,158 @@ body{letter-spacing:-.012em}
   border-color:rgba(128,103,255,.45)!important;
   box-shadow:0 0 0 3px rgba(128,103,255,.08)!important;
 }
+
+
+/* ===== FINAL POLISH: SETTINGS, HOME NEON, LOADING ===== */
+
+/* 1) Settings control: make it a real workspace control, not a plain text link. */
+.dashboard-shell .sidebar-bottom .side-settings{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  min-height:42px!important;
+  padding:10px 13px!important;
+  border:1px solid rgba(128,103,255,.28)!important;
+  border-radius:12px!important;
+  background:linear-gradient(135deg,rgba(128,103,255,.12),rgba(53,214,197,.055))!important;
+  color:#dfe5f1!important;
+  font-size:12px!important;
+  font-weight:800!important;
+  text-decoration:none!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 8px 22px rgba(0,0,0,.14)!important;
+  transition:.16s ease!important;
+}
+.dashboard-shell .sidebar-bottom .side-settings:hover{
+  color:#fff!important;
+  border-color:rgba(128,103,255,.58)!important;
+  background:linear-gradient(135deg,rgba(128,103,255,.24),rgba(53,214,197,.10))!important;
+  transform:translateY(-1px)!important;
+}
+
+/* 2) HOME PAGE ONLY: intentionally bright neon treatment. */
+.home-page{
+  background:
+    radial-gradient(900px 600px at 12% 8%,rgba(0,245,255,.20),transparent 58%),
+    radial-gradient(850px 620px at 88% 18%,rgba(124,60,255,.25),transparent 58%),
+    radial-gradient(700px 500px at 52% 95%,rgba(0,255,157,.13),transparent 60%),
+    #050914!important;
+  color:#f8fbff!important;
+}
+.home-page .nav{
+  background:rgba(4,8,18,.82)!important;
+  border-bottom:1px solid rgba(0,245,255,.18)!important;
+  box-shadow:0 8px 35px rgba(0,0,0,.24)!important;
+  backdrop-filter:blur(18px)!important;
+}
+.home-page .navlinks,
+.home-page .navlinks a{
+  color:#b8c7e0!important;
+}
+.home-page .navlinks a:hover{color:#00f5ff!important}
+.home-page .brand{
+  color:#fff!important;
+  text-shadow:0 0 18px rgba(0,245,255,.20)!important;
+}
+.home-page .brand span{color:#00f5ff!important}
+.home-page .eyebrow{
+  color:#53ffe0!important;
+  background:rgba(0,245,255,.08)!important;
+  border-color:rgba(0,245,255,.35)!important;
+  box-shadow:0 0 22px rgba(0,245,255,.08)!important;
+}
+.home-page .hero h1{
+  color:#fff!important;
+  text-shadow:0 0 35px rgba(124,60,255,.18)!important;
+}
+.home-page .hero h1 em{
+  background:linear-gradient(90deg,#00f5ff 0%,#7c3cff 48%,#00ff9d 100%)!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  color:transparent!important;
+  text-shadow:none!important;
+}
+.home-page .hero p,
+.home-page .muted{
+  color:#aab9d1!important;
+}
+.home-page .panel,
+.home-page .card{
+  background:linear-gradient(145deg,rgba(17,28,49,.92),rgba(8,15,30,.90))!important;
+  border:1px solid rgba(0,245,255,.20)!important;
+  box-shadow:0 22px 70px rgba(0,0,0,.35),0 0 35px rgba(124,60,255,.07)!important;
+  color:#f7faff!important;
+}
+.home-page .hero-panel{
+  border-color:rgba(124,60,255,.42)!important;
+  box-shadow:0 25px 80px rgba(0,0,0,.38),0 0 55px rgba(124,60,255,.12)!important;
+}
+.home-page .stat{
+  border-bottom-color:rgba(255,255,255,.10)!important;
+}
+.home-page .stat .muted{color:#8fa3c0!important}
+.home-page .stat .value{color:#fff!important}
+.home-page .card h3,
+.home-page .section-heading h2{
+  color:#fff!important;
+}
+.home-page .card p{
+  color:#9eb0cb!important;
+}
+.home-page .card>div:first-child{
+  color:#00ff9d!important;
+}
+.home-page .btn.primary{
+  background:linear-gradient(135deg,#7c3cff,#00b8ff)!important;
+  border:1px solid rgba(0,245,255,.38)!important;
+  color:#fff!important;
+  box-shadow:0 12px 35px rgba(76,48,210,.35),0 0 24px rgba(0,245,255,.10)!important;
+}
+.home-page .btn.primary:hover{
+  filter:brightness(1.15)!important;
+  box-shadow:0 15px 42px rgba(76,48,210,.46),0 0 30px rgba(0,245,255,.16)!important;
+}
+.home-page .btn.secondary{
+  background:rgba(255,255,255,.06)!important;
+  border:1px solid rgba(0,245,255,.22)!important;
+  color:#eaf7ff!important;
+}
+.home-page .btn.secondary:hover{
+  background:rgba(0,245,255,.09)!important;
+  border-color:rgba(0,245,255,.45)!important;
+  color:#fff!important;
+}
+.home-page .price-lockup strong{color:#fff!important}
+.home-page .footer{
+  color:#6f829f!important;
+  border-top-color:rgba(0,245,255,.12)!important;
+}
+
+/* 3) Loading screen: replace the black/green flash with purple + green immediately. */
+.dashboard-loading{
+  min-height:100vh!important;
+  background:
+    radial-gradient(650px 430px at 50% 42%,rgba(128,103,255,.24),transparent 58%),
+    radial-gradient(520px 360px at 28% 72%,rgba(53,214,197,.14),transparent 62%),
+    linear-gradient(145deg,#120b24 0%,#080d1a 52%,#071b1a 100%)!important;
+  color:#f7f9ff!important;
+}
+.dashboard-loading .loader-card{
+  min-width:220px!important;
+  padding:32px!important;
+  background:rgba(12,17,32,.72)!important;
+  border:1px solid rgba(128,103,255,.35)!important;
+  box-shadow:0 0 55px rgba(128,103,255,.12),0 24px 70px rgba(0,0,0,.35)!important;
+  backdrop-filter:blur(14px)!important;
+}
+.dashboard-loading .loader-card .brand{
+  color:#fff!important;
+  text-shadow:0 0 24px rgba(128,103,255,.35)!important;
+}
+.dashboard-loading .loader-card .brand span{
+  color:#62d9cf!important;
+  text-shadow:0 0 18px rgba(53,214,197,.35)!important;
+}
+.dashboard-loading .loader-card p{
+  color:#a99aff!important;
+}
