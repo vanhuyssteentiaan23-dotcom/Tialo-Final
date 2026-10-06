@@ -2,7 +2,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react'
 import {getSupabaseBrowserClient} from '../../lib/supabase'
 
-const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress'],['Settings','⚙','/settings']]
+const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['AI Tutor Voice','◉','#ai-tutor-voice'],['Visual Learning','△','#visual-learning'],['Flashcards','▣','#flashcards'],['Study Planner','◈','#study-planner'],['AI Assignment Checker','✓','#assignment-checker'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress'],['Level XP','★','#level-xp'],['Settings','⚙','/settings']]
 const day=v=>new Date(v).toISOString().slice(0,10)
 const age=dob=>{if(!dob)return null;const d=new Date(dob+'T00:00:00'),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))a--;return a}
 
