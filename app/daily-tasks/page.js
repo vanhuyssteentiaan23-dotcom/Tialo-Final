@@ -79,12 +79,18 @@ export default function DailyTasksPage() {
       <div className="sidebar-label">Workspace</div>
       <nav className="sidebar-nav">
         <a className="side-link" href="/dashboard"><span>⌂</span> Overview</a>
+        <a className="side-link" href="/dashboard?tool=planner"><span>◈</span> Study Planner</a>
         <a className="side-link" href="/subjects"><span>▣</span> Subjects</a>
         <a className="side-link" href="/summaries"><span>▤</span> Summaries</a>
-        <a className="side-link" href="/ai-tutor"><span>◈</span> AI Tutor</a>
+        <a className="side-link" href="/ai-tutor"><span>✦</span> AI Tutor</a>
         <a className="side-link" href="/mock-exams"><span>□</span> Mock Exams</a>
+        <a className="side-link" href="/dashboard?tool=voice"><span>◉</span> AI Tutor Voice</a>
+        <a className="side-link" href="/dashboard?tool=visual"><span>△</span> Visual Learning</a>
+        <a className="side-link" href="/dashboard?tool=flashcards"><span>▣</span> Flashcards</a>
+        <a className="side-link" href="/dashboard?tool=assignment"><span>✓</span> AI Assignment Checker</a>
         <a className="side-link active" href="/daily-tasks"><span>✓</span> Daily Tasks</a>
         <a className="side-link" href="/progress"><span>↗</span> Progress</a>
+        <a className="side-link" href="/dashboard?tool=xp"><span>★</span> Level XP</a>
 
       </nav>
       <div className="sidebar-bottom"><a className="side-settings" href="/settings">⚙ Settings</a></div>
