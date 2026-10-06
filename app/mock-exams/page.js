@@ -42,7 +42,7 @@ function SourceSketch({material,page,caption}){
  },[material?.id,page])
  return image?<figure className="mock-sketch"><img src={image} alt={caption||'Relevant source sketch'} loading="lazy"/><figcaption>{caption||'Relevant source sketch'} · Source page {page}</figcaption></figure>:<div className="mock-sketch-loading">{state}</div>
 }
-const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress']]
+const nav=[['Overview','⌂','/dashboard'],['Study Planner','◈','/dashboard?tool=planner'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['AI Tutor Voice','◉','/dashboard?tool=voice'],['Visual Learning','△','/dashboard?tool=visual'],['Flashcards','▣','/dashboard?tool=flashcards'],['AI Assignment Checker','✓','/dashboard?tool=assignment'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress'],['Level XP','★','/dashboard?tool=xp'],['Settings','⚙','/settings']]
 
 function ExamGraph({chart}) {
  if(!chart || !['bar','line'].includes(chart.chart_type) || !Array.isArray(chart.labels) || !Array.isArray(chart.values) || chart.labels.length<2 || chart.labels.length!==chart.values.length)return null
