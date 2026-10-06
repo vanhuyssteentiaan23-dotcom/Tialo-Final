@@ -2,7 +2,7 @@
 import {useEffect,useMemo,useState} from 'react'
 import {getSupabaseBrowserClient} from '../../lib/supabase'
 import WorkspaceHeader from '../components/WorkspaceHeader'
-const nav=[['Overview','⌂','/dashboard'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress']]
+const nav=[['Overview','⌂','/dashboard'],['Study Planner','◈','/dashboard?tool=planner'],['Subjects','▱','/subjects'],['Summaries','▤','/summaries'],['AI Tutor','✦','/ai-tutor'],['Mock Exams','□','/mock-exams'],['AI Tutor Voice','◉','/dashboard?tool=voice'],['Visual Learning','△','/dashboard?tool=visual'],['Flashcards','▣','/dashboard?tool=flashcards'],['AI Assignment Checker','✓','/dashboard?tool=assignment'],['Daily Tasks','✓','/daily-tasks'],['Progress','↗','/progress'],['Level XP','★','/dashboard?tool=xp'],['Settings','⚙','/settings']]
 function localDay(){const d=new Date(),o=d.getTimezoneOffset()*60000;return new Date(d.getTime()-o).toISOString().slice(0,10)}
 function fmt(v){return v?new Date(v).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):'—'}
 export default function ProgressPage(){
