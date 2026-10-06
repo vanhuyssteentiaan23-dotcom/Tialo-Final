@@ -2,14 +2,20 @@
 import {useState} from 'react'
 
 const nav=[
-  ['Overview','/dashboard'],
-  ['Subjects','/subjects'],
-  ['Summaries','/summaries'],
-  ['AI Tutor','/ai-tutor'],
-  ['Mock Exams','/mock-exams'],
-  ['Daily Tasks','/daily-tasks'],
-  ['Progress','/progress'],
-  ['Settings','/settings'],
+  ['Overview','⌂','/dashboard'],
+  ['Study Planner','◈','/dashboard?tool=planner'],
+  ['Subjects','▱','/subjects'],
+  ['Summaries','▤','/summaries'],
+  ['AI Tutor','✦','/ai-tutor'],
+  ['Mock Exams','□','/mock-exams'],
+  ['AI Tutor Voice','◉','/dashboard?tool=voice'],
+  ['Visual Learning','△','/dashboard?tool=visual'],
+  ['Flashcards','▣','/dashboard?tool=flashcards'],
+  ['AI Assignment Checker','✓','/dashboard?tool=assignment'],
+  ['Daily Tasks','✓','/daily-tasks'],
+  ['Progress','↗','/progress'],
+  ['Level XP','★','/dashboard?tool=xp'],
+  ['Settings','⚙','/settings'],
 ]
 
 export default function WorkspaceHeader({title,subtitle='',active=''}) {
@@ -25,7 +31,7 @@ export default function WorkspaceHeader({title,subtitle='',active=''}) {
       <aside className="workspace-drawer">
         <div className="workspace-drawer-head"><a className="brand" href="/dashboard">TIA<span>LO</span></a><button onClick={()=>setOpen(false)} aria-label="Close workspace menu">×</button></div>
         <div className="sidebar-label">Workspace</div>
-        <nav className="sidebar-nav">{nav.map(([label,href])=><a className={'side-link '+(href===active?'active':'')} href={href} key={href}><span>{label==='Overview'?'⌂':label==='Subjects'?'▱':label==='AI Tutor'?'✦':label==='Mock Exams'?'□':label==='Daily Tasks'?'✓':'↗'}</span>{label}</a>)}</nav>
+        <nav className="sidebar-nav">{nav.map(([label,icon,href])=><a className={'side-link '+(href===active?'active':'')} href={href} key={href}><span>{icon}</span>{label}</a>)}</nav>
       </aside>
     </>}
   </>
