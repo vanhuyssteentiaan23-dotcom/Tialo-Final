@@ -3,7 +3,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react'
 import {getSupabaseBrowserClient} from '../../lib/supabase'
 
-const nav=[['Overview','/dashboard'],['Subjects','/subjects'],['Summaries','/summaries'],['AI Tutor','/ai-tutor'],['Mock Exams','/mock-exams'],['Daily Tasks','/daily-tasks'],['Progress','/progress']]
+const nav=[['Overview','/dashboard'],['Study Planner','/dashboard?tool=planner'],['Subjects','/subjects'],['Summaries','/summaries'],['AI Tutor','/ai-tutor'],['Mock Exams','/mock-exams'],['AI Tutor Voice','/dashboard?tool=voice'],['Visual Learning','/dashboard?tool=visual'],['Flashcards','/dashboard?tool=flashcards'],['AI Assignment Checker','/dashboard?tool=assignment'],['Daily Tasks','/daily-tasks'],['Progress','/progress'],['Level XP','/dashboard?tool=xp'],['Settings','/settings']]
 const IMAGE_TYPES=['image/png','image/jpeg','image/webp']
 
 let pdfjsPromise
